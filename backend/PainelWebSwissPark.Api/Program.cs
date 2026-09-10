@@ -1,3 +1,4 @@
+using PainelWebSwissPark.Api.Extensions;
 using PainelWebSwissPark.Api.Middleware;
 using PainelWebSwissPark.Api.Options;
 using PainelWebSwissPark.Api.Services.BusinessLogic;
@@ -7,6 +8,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
+
+builder.Services.AddSqlServerData(builder.Configuration);
 
 builder.Services.AddScoped<IRestaurantesErpService, RestaurantesErpService>();
 builder.Services.AddScoped<IOutraFonteRestaurantesService, OutraFonteRestaurantesService>();
