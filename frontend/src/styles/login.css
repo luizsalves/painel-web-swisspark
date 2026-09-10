@@ -1,0 +1,285 @@
+.sp-login {
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  min-height: 100vh;
+  background: var(--color-white);
+}
+
+/* ==========================================================================
+   Lado esquerdo — identidade
+   ========================================================================== */
+
+.sp-login__hero {
+  position: relative;
+  background: var(--color-green);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 64px;
+  overflow: hidden;
+}
+
+.sp-login__hero-illustration {
+  position: absolute;
+  inset: 0;
+  opacity: 0.07;
+  background-repeat: no-repeat;
+  background-position: center 68%;
+  background-size: 120% auto;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 900 500' fill='none' stroke='%23FFFFFF' stroke-width='1.4'%3E%3Cpath d='M0 420 L60 420 L60 300 L120 300 L120 420 L170 420 L170 250 L230 250 L230 420 L280 420 L280 340 L360 340 L360 420 L420 420 L420 180 L500 180 L500 420 L560 420 L560 260 L640 260 L640 420 L700 420 L700 220 L780 220 L780 420 L840 420 L840 310 L900 310'/%3E%3Cpath d='M420 180 L420 120 L460 120 L460 180 M460 150 L500 150'/%3E%3Cg stroke-width='1'%3E%3Cpath d='M80 340 L100 340 M80 360 L100 360 M80 380 L100 380 M80 400 L100 400'/%3E%3Cpath d='M140 320 L160 320 M140 350 L160 350 M140 380 L160 380 M140 400 L160 400'/%3E%3Cpath d='M440 200 L440 220 M440 240 L440 260 M440 280 L440 300 M440 320 L440 340 M440 360 L440 380 M440 400 L440 420'/%3E%3Cpath d='M580 280 L580 300 M580 320 L580 340 M580 360 L580 380 M580 400 L580 420'/%3E%3Cpath d='M720 240 L720 260 M720 280 L720 300 M720 320 L720 340 M720 360 L720 380 M720 400 L720 420'/%3E%3C/g%3E%3Cline x1='0' y1='420' x2='900' y2='420'/%3E%3C/svg%3E");
+}
+
+.sp-login__hero-content {
+  position: relative;
+  z-index: 1;
+  max-width: 460px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.sp-login__brand-logo {
+  display: block;
+  align-self: flex-start;
+  width: min(340px, 100%);
+  max-height: 180px;
+  object-fit: contain;
+  object-position: left center;
+}
+
+.sp-login__hero-title {
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: 0.01em;
+  color: var(--color-white);
+}
+
+.sp-login__hero-text {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.sp-login__hero-stripes {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  display: flex;
+  width: 260px;
+  z-index: 1;
+}
+
+.sp-login__stripe {
+  height: 8px;
+  flex: 1;
+}
+
+.sp-login__stripe--green {
+  background: var(--color-green-dark);
+}
+
+.sp-login__stripe--red {
+  background: var(--color-red);
+}
+
+/* ==========================================================================
+   Lado direito — formulário
+   ========================================================================== */
+
+.sp-login__panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 32px;
+  background: var(--color-bg);
+}
+
+.sp-login__card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 36px 32px;
+}
+
+.sp-login__card-header {
+  margin-bottom: 28px;
+}
+
+.sp-login__card-header h2 {
+  font-size: 23px;
+  font-weight: 800;
+  color: var(--color-text);
+}
+
+.sp-login__card-header p {
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+.sp-login__form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.sp-login__form-error {
+  margin-top: -8px;
+  padding: 10px 12px;
+  background: var(--color-error-50);
+  border: 1px solid rgba(217, 45, 32, 0.25);
+  border-radius: var(--radius-sm);
+  color: var(--color-error);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.sp-login__forgot-link {
+  align-self: flex-end;
+  margin-top: -8px;
+  border: none;
+  background: transparent;
+  color: var(--color-green);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 0;
+}
+.sp-login__forgot-link:hover {
+  color: var(--color-green-dark);
+  text-decoration: underline;
+}
+
+.sp-login__divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 2px 0;
+}
+
+.sp-login__divider span:not(.sp-login__divider-text) {
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
+
+.sp-login__divider-text {
+  font-size: 12.5px;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.sp-login__footer {
+  margin-top: 28px;
+  font-size: 12.5px;
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+/* ==========================================================================
+   Modal de recuperação de senha
+   ========================================================================== */
+
+.sp-recovery-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sp-recovery-channels {
+  display: flex;
+  gap: 10px;
+}
+
+.sp-recovery-channel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 42px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-white);
+  color: var(--color-text-secondary);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.sp-recovery-channel:hover {
+  border-color: #c9cfd3;
+}
+.sp-recovery-channel--active {
+  border-color: var(--color-green);
+  background: var(--color-green-50);
+  color: var(--color-green);
+}
+
+.sp-recovery-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+  padding: 12px 0 4px;
+}
+
+.sp-recovery-success p {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+/* ==========================================================================
+   Responsividade
+   ========================================================================== */
+
+@media (max-width: 1280px) {
+  .sp-login__hero {
+    padding: 48px;
+  }
+
+  .sp-login__hero-title {
+    font-size: 30px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .sp-login {
+    grid-template-columns: 1fr;
+  }
+
+  .sp-login__hero {
+    min-height: 320px;
+    padding: 40px;
+  }
+
+  .sp-login__panel {
+    padding: 40px 24px 56px;
+  }
+}
+
+@media (max-width: 640px) {
+  .sp-login__hero {
+    min-height: 260px;
+    padding: 32px 24px;
+  }
+
+  .sp-login__hero-title {
+    font-size: 24px;
+  }
+
+  .sp-login__brand-logo {
+    width: min(260px, 100%);
+    max-height: 130px;
+  }
+
+  .sp-login__card {
+    padding: 28px 22px;
+  }
+}

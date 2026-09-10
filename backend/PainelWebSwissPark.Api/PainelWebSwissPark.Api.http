@@ -1,0 +1,6 @@
+@PainelWebSwissPark.Api_HostAddress = http://localhost:5017
+
+GET {{PainelWebSwissPark.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

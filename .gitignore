@@ -1,0 +1,17 @@
+# ---- Frontend (Node/Vite) ----
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+
+# ---- Backend (.NET) ----
+backend/**/bin/
+backend/**/obj/
+backend/**/appsettings.Development.local.json
+
+# ---- Editors/OS ----
+.vs/
+.vscode/
+*.user
+.DS_Store
+Thumbs.db
