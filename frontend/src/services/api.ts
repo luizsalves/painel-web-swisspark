@@ -1,4 +1,5 @@
 import axios from "axios";
+import { configuracao } from "./configuracao";
 import { obterAccessToken } from "./entraId";
 
 /**
@@ -15,7 +16,7 @@ export const EVENTO_SESSAO_EXPIRADA = "painel:sessao-expirada";
 export const EVENTO_ACESSO_NEGADO = "painel:acesso-negado";
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? "/api",
+  baseURL: configuracao.apiUrl,
 });
 
 api.interceptors.request.use(async (config) => {

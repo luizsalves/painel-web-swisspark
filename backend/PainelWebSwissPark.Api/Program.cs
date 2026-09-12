@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.Identity.Web;
@@ -104,6 +105,30 @@ builder.Services.AddHttpClient("OutraFonteApi", (sp, client) =>
     client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
 });
 
+// ==========================================================================
+// Hospedagem atrás de proxy reverso
+//
+// Em container o TLS termina no proxy (o nginx do serviço web), e a aplicação
+// fala só HTTP. Redirecionar para HTTPS aqui dentro criaria laço de redirect.
+// ==========================================================================
+var atrasDeProxyReverso = builder.Configuration.GetValue("Hosting:UseForwardedHeaders", false);
+var redirecionarParaHttps = builder.Configuration.GetValue("Hosting:UseHttpsRedirection", true);
+
+if (atrasDeProxyReverso)
+{
+    builder.Services.Configure<ForwardedHeadersOptions>(options =>
+    {
+        options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+
+        // O IP do proxy muda a cada recriação do container; o limite de confiança
+        // é a rede interna, que não é alcançável de fora.
+        options.KnownNetworks.Clear();
+        options.KnownProxies.Clear();
+    });
+}
+
+// Só faz falta quando o front é servido de outra origem. Atrás do nginx, front e
+// API dividem o mesmo domínio e o navegador nem chega a checar CORS.
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
 
 builder.Services.AddCors(opts =>
@@ -121,9 +146,19 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi().AllowAnonymous();
 }
 
+// Antes de qualquer coisa que leia esquema ou IP de origem.
+if (atrasDeProxyReverso)
+{
+    app.UseForwardedHeaders();
+}
+
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-app.UseHttpsRedirection();
+if (redirecionarParaHttps)
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseCors("Frontend");
 
 app.UseAuthentication();

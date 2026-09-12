@@ -1,9 +1,10 @@
 import { InteractionRequiredAuthError, PublicClientApplication } from "@azure/msal-browser";
 import type { AccountInfo, Configuration } from "@azure/msal-browser";
+import { configuracao } from "./configuracao";
 
-const tenantId = import.meta.env.VITE_ENTRA_TENANT_ID ?? "";
-const clientId = import.meta.env.VITE_ENTRA_CLIENT_ID ?? "";
-const apiScope = import.meta.env.VITE_ENTRA_API_SCOPE ?? "";
+const tenantId = configuracao.entraTenantId;
+const clientId = configuracao.entraClientId;
+const apiScope = configuracao.entraApiScope;
 
 /**
  * Enquanto a TI não devolver tenant, client id e escopo, a aplicação sobe do mesmo
@@ -12,14 +13,15 @@ const apiScope = import.meta.env.VITE_ENTRA_API_SCOPE ?? "";
 export const entraConfigurado = Boolean(tenantId && clientId && apiScope);
 
 export const MENSAGEM_ENTRA_NAO_CONFIGURADO =
-  "Login com Microsoft ainda não configurado. Preencha VITE_ENTRA_TENANT_ID, " +
-  "VITE_ENTRA_CLIENT_ID e VITE_ENTRA_API_SCOPE no arquivo .env.local.";
+  "Login com Microsoft ainda não configurado. Preencha o tenant, o client id e o " +
+  "escopo da API — no .env.local em desenvolvimento, ou nas variáveis PAINEL_ENTRA_* " +
+  "do container.";
 
-const configuracao: Configuration = {
+const configuracaoMsal: Configuration = {
   auth: {
     clientId,
     authority: `https://login.microsoftonline.com/${tenantId}`,
-    redirectUri: import.meta.env.VITE_ENTRA_REDIRECT_URI ?? window.location.origin,
+    redirectUri: configuracao.entraRedirectUri,
     postLogoutRedirectUri: `${window.location.origin}/login`,
   },
   cache: {
@@ -40,7 +42,7 @@ function obterInstancia(): PublicClientApplication {
     throw new Error(MENSAGEM_ENTRA_NAO_CONFIGURADO);
   }
 
-  instancia ??= new PublicClientApplication(configuracao);
+  instancia ??= new PublicClientApplication(configuracaoMsal);
   return instancia;
 }
 

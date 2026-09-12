@@ -133,6 +133,9 @@ psql -h SERVIDOR -U USUARIO -d contabil -f docs/sql/001_bi_users.sql
 O script é idempotente e reconcilia uma `bi_users` que já exista. Troque o e-mail do
 administrador de bootstrap antes de rodar.
 
+Para rodar tudo em container, veja [`DOCKER.md`](DOCKER.md) — lá a configuração vem por
+variável de ambiente e o nginx resolve o CORS servindo front e API na mesma origem.
+
 ### 2. Backend
 
 ```bash
