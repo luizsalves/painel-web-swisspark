@@ -11,11 +11,16 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
 
-      # Dois sublinhados viram ":" na configuração do ASP.NET Core.
-      # PainelDb__ConnectionString é o mesmo que "PainelDb:ConnectionString".
-      # Em container os segredos vêm por aqui — o keys.json fica para quem roda
-      # fora de container.
-      PainelDb__ConnectionString: ${PAINEL_DB_CONNECTION_STRING:?defina PAINEL_DB_CONNECTION_STRING no .env}
+      # Dois sublinhados viram ":" na configuração do ASP.NET Core:
+      # ConnectionStrings__Contabil é o mesmo que "ConnectionStrings:Contabil"
+      # do keys.json. Duas formas de entregar o segredo, escolha uma:
+      #
+      #   (a) por aqui, a partir do .env  — é o padrão
+      #   (b) montando o keys.json da raiz — descomente o bloco volumes abaixo
+      #
+      # Vazio não quebra o compose: a aplicação recusa subir com uma mensagem
+      # dizendo qual keys.json ela leu e qual chave faltou.
+      ConnectionStrings__Contabil: ${PAINEL_DB_CONNECTION_STRING:-}
       PainelDb__Schema: ${PAINEL_DB_SCHEMA:-public}
       PainelDb__CacheSeconds: ${PAINEL_DB_CACHE_SECONDS:-0}
 
@@ -25,6 +30,17 @@ services:
       # O TLS termina no nginx; redirecionar aqui dentro daria laço de redirect.
       Hosting__UseHttpsRedirection: "false"
       Hosting__UseForwardedHeaders: "true"
+
+    # (b) Usar o keys.json da raiz em vez do .env: descomente as quatro linhas.
+    # create_host_path: false faz o container falhar se o arquivo não existir,
+    # em vez de o Docker criar um diretório vazio no lugar.
+    # volumes:
+    #   - type: bind
+    #     source: ./keys.json
+    #     target: /app/keys.json
+    #     read_only: true
+    #     bind:
+    #       create_host_path: false
 
     # Para um Postgres que roda na própria máquina hospedeira, use
     # host.docker.internal como Host na connection string.

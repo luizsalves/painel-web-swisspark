@@ -18,14 +18,39 @@ var builder = WebApplication.CreateBuilder(args);
 
 // ==========================================================================
 // Segredos
-// Connection strings ficam no keys.json, que não entra no repositório.
-// Aponte PAINEL_KEYS_FILE para o arquivo em outro diretório se preferir.
-// Modelo do formato: keys.example.json
+//
+// Connection strings ficam no keys.json, que não entra no repositório. Na
+// prática ele fica na raiz do projeto, ao lado de backend/ e frontend/ — e não
+// dentro da pasta do projeto .NET. Por isso a busca sobe de diretório em vez de
+// olhar só o ContentRoot.
+//
+// PAINEL_KEYS_FILE tem precedência e aponta para qualquer caminho.
+// Modelo do formato: keys.example.json, na raiz.
 // ==========================================================================
-var arquivoDeChaves = Environment.GetEnvironmentVariable("PAINEL_KEYS_FILE")
-    ?? Path.Combine(builder.Environment.ContentRootPath, "keys.json");
+var arquivoDeChaves = Environment.GetEnvironmentVariable("PAINEL_KEYS_FILE");
 
-builder.Configuration.AddJsonFile(arquivoDeChaves, optional: true, reloadOnChange: true);
+if (string.IsNullOrWhiteSpace(arquivoDeChaves))
+{
+    var diretorio = new DirectoryInfo(builder.Environment.ContentRootPath);
+
+    for (var nivel = 0; nivel < 5 && diretorio is not null; nivel++)
+    {
+        var candidato = Path.Combine(diretorio.FullName, "keys.json");
+
+        if (File.Exists(candidato))
+        {
+            arquivoDeChaves = candidato;
+            break;
+        }
+
+        diretorio = diretorio.Parent;
+    }
+}
+
+if (!string.IsNullOrWhiteSpace(arquivoDeChaves))
+{
+    builder.Configuration.AddJsonFile(arquivoDeChaves, optional: true, reloadOnChange: true);
+}
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
@@ -34,18 +59,29 @@ builder.Services.AddMemoryCache();
 // ==========================================================================
 // Banco do painel (Postgres) — só as tabelas do próprio painel
 // ==========================================================================
-builder.Services.AddOptions<PainelDbOptions>()
-    .Bind(builder.Configuration.GetSection(PainelDbOptions.SectionName))
-    .Validate(
-        options => !string.IsNullOrWhiteSpace(options.ConnectionString),
-        $"{PainelDbOptions.SectionName}:ConnectionString não configurado. Crie o keys.json a partir do keys.example.json.")
-    .ValidateOnStart();
+builder.Services.Configure<PainelDbOptions>(
+    builder.Configuration.GetSection(PainelDbOptions.SectionName));
 
-builder.Services.AddDbContext<PainelDbContext>((serviceProvider, options) =>
+// "Contabil" é o nome usado no keys.example.json da raiz, junto das outras cinco
+// conexões. PainelDb:ConnectionString foi a grafia inicial e continua aceita.
+var conexaoDoPainel = builder.Configuration.GetConnectionString("Contabil")
+    ?? builder.Configuration["PainelDb:ConnectionString"];
+
+if (string.IsNullOrWhiteSpace(conexaoDoPainel))
 {
-    var painelDb = serviceProvider.GetRequiredService<IOptions<PainelDbOptions>>().Value;
-    options.UseNpgsql(painelDb.ConnectionString);
-});
+    // Dizer qual arquivo foi lido poupa a meia hora de procurar por que o valor
+    // "está lá" mas a aplicação não enxerga.
+    var ondeProcurou = arquivoDeChaves is null
+        ? $"Nenhum keys.json encontrado a partir de {builder.Environment.ContentRootPath} (subindo até 5 níveis)."
+        : $"keys.json lido: {arquivoDeChaves}";
+
+    throw new InvalidOperationException(
+        "Connection string do Postgres do painel não encontrada. Preencha ConnectionStrings:Contabil "
+        + "no keys.json, ou defina a variável de ambiente ConnectionStrings__Contabil. "
+        + ondeProcurou);
+}
+
+builder.Services.AddDbContext<PainelDbContext>(options => options.UseNpgsql(conexaoDoPainel));
 
 // ==========================================================================
 // Autenticação (Entra ID) e autorização (bi_users)

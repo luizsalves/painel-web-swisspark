@@ -1,7 +1,0 @@
-{
-  "_comentario": "Copie para keys.json e preencha. O keys.json está no .gitignore e nunca deve ser commitado. Para deixá-lo fora da pasta do projeto, aponte a variável de ambiente PAINEL_KEYS_FILE para o caminho do arquivo.",
-
-  "PainelDb": {
-    "ConnectionString": "Host=SERVIDOR;Port=5432;Database=contabil;Username=USUARIO;Password=SENHA;SSL Mode=Prefer;Trust Server Certificate=true"
-  }
-}
