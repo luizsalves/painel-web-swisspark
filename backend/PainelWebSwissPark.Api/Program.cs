@@ -8,6 +8,7 @@ using Microsoft.Identity.Web;
 using PainelWebSwissPark.Api.Authorization;
 using PainelWebSwissPark.Api.Data;
 using PainelWebSwissPark.Api.Entities;
+using PainelWebSwissPark.Api.Extensions;
 using PainelWebSwissPark.Api.Middleware;
 using PainelWebSwissPark.Api.Options;
 using PainelWebSwissPark.Api.Services.Auth;
@@ -82,6 +83,11 @@ if (string.IsNullOrWhiteSpace(conexaoDoPainel))
 }
 
 builder.Services.AddDbContext<PainelDbContext>(options => options.UseNpgsql(conexaoDoPainel));
+
+// ==========================================================================
+// Bases do TOTVS RM (SQL Server) — de onde vêm os fechamentos
+// ==========================================================================
+builder.Services.AddSqlServerData(builder.Configuration);
 
 // ==========================================================================
 // Autenticação (Entra ID) e autorização (bi_users)
