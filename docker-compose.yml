@@ -15,12 +15,17 @@ services:
       # ConnectionStrings__Contabil é o mesmo que "ConnectionStrings:Contabil"
       # do keys.json. Duas formas de entregar o segredo, escolha uma:
       #
-      #   (a) por aqui, a partir do .env  — é o padrão
+      #   (a) por aqui, a partir do .env  — uma variável por conexão
       #   (b) montando o keys.json da raiz — descomente o bloco volumes abaixo
+      #
+      # O caminho (b) escala melhor: as seis conexões vêm do arquivo e ligar uma
+      # nova não exige mexer neste compose. Pelo (a), cada conexão que o código
+      # passar a usar precisa de mais uma linha aqui.
       #
       # Vazio não quebra o compose: a aplicação recusa subir com uma mensagem
       # dizendo qual keys.json ela leu e qual chave faltou.
       ConnectionStrings__Contabil: ${PAINEL_DB_CONNECTION_STRING:-}
+      ConnectionStrings__Totvs_01: ${PAINEL_TOTVS_01_CONNECTION_STRING:-}
       PainelDb__Schema: ${PAINEL_DB_SCHEMA:-public}
       PainelDb__CacheSeconds: ${PAINEL_DB_CACHE_SECONDS:-0}
 

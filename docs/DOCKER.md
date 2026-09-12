@@ -47,8 +47,14 @@ chave que `ConnectionStrings:Contabil` do `keys.json`.
 
 ### Duas formas de entregar a senha do banco
 
-**(a) Pelo `.env`** — o padrão. Preencha `PAINEL_DB_CONNECTION_STRING`, e o compose injeta
-como `ConnectionStrings__Contabil` no container.
+**(a) Pelo `.env`** — uma variável por conexão:
+
+| `.env` | vira, no container |
+|---|---|
+| `PAINEL_DB_CONNECTION_STRING` | `ConnectionStrings__Contabil` (Postgres da `bi_users`) |
+| `PAINEL_TOTVS_01_CONNECTION_STRING` | `ConnectionStrings__Totvs_01` (SQL Server dos fechamentos) |
+
+Cada conexão nova que o código passar a usar precisa de mais uma linha no compose.
 
 **(b) Montando o `keys.json` que já está no servidor** — se você mantém o arquivo na raiz do
 projeto e não quer repetir a senha no `.env`, descomente o bloco `volumes` do serviço `api`
@@ -68,7 +74,10 @@ O `ContentRoot` dentro do container é `/app`, então a aplicação acha o arqui
 O `create_host_path: false` faz o container falhar se o `keys.json` não existir, em vez de o
 Docker criar um diretório vazio no lugar — que é o erro mais confuso de diagnosticar.
 
-Nesse caso deixe `PAINEL_DB_CONNECTION_STRING` vazio no `.env`.
+Nesse caso deixe as variáveis de connection string vazias no `.env`.
+
+É o caminho que escala: as seis conexões vêm do arquivo, e ligar uma nova não exige tocar
+no compose.
 
 ### Onde a aplicação procura o keys.json
 
