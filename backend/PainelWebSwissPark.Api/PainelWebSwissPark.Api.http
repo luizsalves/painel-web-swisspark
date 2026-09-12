@@ -1,6 +1,48 @@
 @PainelWebSwissPark.Api_HostAddress = http://localhost:5017
 
-GET {{PainelWebSwissPark.Api_HostAddress}}/weatherforecast/
+### Sonda de disponibilidade (único endpoint aberto)
+GET {{PainelWebSwissPark.Api_HostAddress}}/api/health
 Accept: application/json
 
-###
+### Quem sou eu — exige o access token do Entra ID
+# Pegue o token no navegador (DevTools > Application > Session Storage) depois de logar no front.
+@token = COLE_O_ACCESS_TOKEN_AQUI
+
+GET {{PainelWebSwissPark.Api_HostAddress}}/api/auth/me
+Authorization: Bearer {{token}}
+Accept: application/json
+
+### Listar usuários (exige perfil Administrador)
+GET {{PainelWebSwissPark.Api_HostAddress}}/api/usuarios
+Authorization: Bearer {{token}}
+Accept: application/json
+
+### Cadastrar usuário
+POST {{PainelWebSwissPark.Api_HostAddress}}/api/usuarios
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Nome da Pessoa",
+  "email": "nome.pessoa@swisspark.com.br",
+  "role": "Analista"
+}
+
+### Alterar nome/perfil
+PUT {{PainelWebSwissPark.Api_HostAddress}}/api/usuarios/00000000-0000-0000-0000-000000000000
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Nome da Pessoa",
+  "role": "Gerente"
+}
+
+### Desativar acesso (revogação vale no request seguinte)
+PATCH {{PainelWebSwissPark.Api_HostAddress}}/api/usuarios/00000000-0000-0000-0000-000000000000/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "isActive": false
+}

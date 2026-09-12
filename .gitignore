@@ -1,15 +1,28 @@
 # ---- Frontend (Node/Vite) ----
 frontend/node_modules/
 frontend/dist/
-frontend/.env
-frontend/.env.local
 
 # ---- Backend (.NET) ----
 backend/**/bin/
 backend/**/obj/
 backend/**/appsettings.Development.local.json
 
-# ---- Editors/OS ----
+# ---- Segredos: nada daqui pode entrar no repositório ----
+# Connection strings e chaves ficam no keys.json, fora do controle de versão.
+# O modelo do formato é o keys.example.json, esse sim versionado.
+keys.json
+**/keys.json
+*.secrets.json
+secrets/
+**/secrets/
+*.pfx
+*.p12
+*.key
+.env
+.env.*
+!.env.example
+
+# ---- Editores/SO ----
 .vs/
 .vscode/
 *.user

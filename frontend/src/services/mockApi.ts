@@ -1,19 +1,6 @@
 import type { AccountingAccount, CompanyRecord } from "../interfaces/Company";
 import type { CompanyOption, PeriodOption } from "../interfaces/Filtros";
 import type { DashboardSnapshot, RecentClosing } from "../interfaces/Dashboard";
-import type { User } from "../interfaces/Auth";
-
-// ==========================================================================
-// Usuário mock
-// ==========================================================================
-
-export const MOCK_USER: User = {
-  id: "usr-001",
-  name: "Karime",
-  email: "karime@swisspark.com.br",
-  role: "Gerente",
-  avatarInitials: "K",
-};
 
 // ==========================================================================
 // Filtros

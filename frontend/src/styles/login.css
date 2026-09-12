@@ -128,7 +128,10 @@
 }
 
 .sp-login__form-error {
-  margin-top: -8px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: -4px;
   padding: 10px 12px;
   background: var(--color-error-50);
   border: 1px solid rgba(217, 45, 32, 0.25);
@@ -136,41 +139,26 @@
   color: var(--color-error);
   font-size: 13px;
   font-weight: 500;
+  line-height: 1.45;
 }
 
-.sp-login__forgot-link {
-  align-self: flex-end;
-  margin-top: -8px;
-  border: none;
-  background: transparent;
-  color: var(--color-green);
-  font-size: 13.5px;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 2px 0;
-}
-.sp-login__forgot-link:hover {
-  color: var(--color-green-dark);
-  text-decoration: underline;
+.sp-login__form-error svg {
+  flex-shrink: 0;
+  margin-top: 1px;
 }
 
-.sp-login__divider {
+.sp-login__hint {
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--color-text-secondary);
+}
+
+.sp-login__carregando {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin: 2px 0;
-}
-
-.sp-login__divider span:not(.sp-login__divider-text) {
-  flex: 1;
-  height: 1px;
-  background: var(--color-border);
-}
-
-.sp-login__divider-text {
-  font-size: 12.5px;
-  color: var(--color-text-secondary);
-  font-weight: 500;
+  justify-content: center;
+  min-height: 100vh;
+  background: var(--color-bg);
 }
 
 .sp-login__footer {
@@ -178,61 +166,6 @@
   font-size: 12.5px;
   color: var(--color-text-secondary);
   text-align: center;
-}
-
-/* ==========================================================================
-   Modal de recuperação de senha
-   ========================================================================== */
-
-.sp-recovery-form {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.sp-recovery-channels {
-  display: flex;
-  gap: 10px;
-}
-
-.sp-recovery-channel {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  height: 42px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-border);
-  background: var(--color-white);
-  color: var(--color-text-secondary);
-  font-size: 13.5px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-.sp-recovery-channel:hover {
-  border-color: #c9cfd3;
-}
-.sp-recovery-channel--active {
-  border-color: var(--color-green);
-  background: var(--color-green-50);
-  color: var(--color-green);
-}
-
-.sp-recovery-success {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 14px;
-  padding: 12px 0 4px;
-}
-
-.sp-recovery-success p {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--color-text);
 }
 
 /* ==========================================================================
