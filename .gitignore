@@ -9,6 +9,10 @@ backend/**/bin/
 backend/**/obj/
 backend/**/appsettings.Development.local.json
 
+# ---- Secrets ----
+keys.json
+keys.json.bak
+
 # ---- Editors/OS ----
 .vs/
 .vscode/
