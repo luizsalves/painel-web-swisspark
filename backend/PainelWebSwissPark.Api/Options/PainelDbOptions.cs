@@ -4,11 +4,8 @@ public class PainelDbOptions
 {
     public const string SectionName = "PainelDb";
 
-    /// <summary>
-    /// Connection string do Postgres onde vive a bi_users.
-    /// Nunca fica no appsettings.json — vem do keys.json (fora do repositório).
-    /// </summary>
-    public string ConnectionString { get; init; } = string.Empty;
+    // A connection string não mora aqui: vem de ConnectionStrings:Contabil, junto
+    // das outras conexões do projeto. Esta seção guarda só o que não é segredo.
 
     /// <summary>
     /// Schema da bi_users. Hoje "public" no banco contabil; quando o banco do painel

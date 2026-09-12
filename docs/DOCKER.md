@@ -42,9 +42,44 @@ docker compose run --rm --publish 5017:8080 api
 Nenhum segredo entra na imagem. Tudo vem de variável de ambiente, lida do `.env` da raiz
 (que está no `.gitignore`).
 
-O ASP.NET Core traduz dois sublinhados em `:`, então `PainelDb__ConnectionString` é o mesmo
-que `PainelDb:ConnectionString` do `appsettings.json`. O `keys.json` continua valendo para
-quem roda fora de container.
+O ASP.NET Core traduz dois sublinhados em `:`, então `ConnectionStrings__Contabil` é a mesma
+chave que `ConnectionStrings:Contabil` do `keys.json`.
+
+### Duas formas de entregar a senha do banco
+
+**(a) Pelo `.env`** — o padrão. Preencha `PAINEL_DB_CONNECTION_STRING`, e o compose injeta
+como `ConnectionStrings__Contabil` no container.
+
+**(b) Montando o `keys.json` que já está no servidor** — se você mantém o arquivo na raiz do
+projeto e não quer repetir a senha no `.env`, descomente o bloco `volumes` do serviço `api`
+no `docker-compose.yml`:
+
+```yaml
+    volumes:
+      - type: bind
+        source: ./keys.json
+        target: /app/keys.json
+        read_only: true
+        bind:
+          create_host_path: false
+```
+
+O `ContentRoot` dentro do container é `/app`, então a aplicação acha o arquivo de imediato.
+O `create_host_path: false` faz o container falhar se o `keys.json` não existir, em vez de o
+Docker criar um diretório vazio no lugar — que é o erro mais confuso de diagnosticar.
+
+Nesse caso deixe `PAINEL_DB_CONNECTION_STRING` vazio no `.env`.
+
+### Onde a aplicação procura o keys.json
+
+Fora do container, ela sobe de diretório a partir da pasta do projeto .NET até achar um
+`keys.json` — até 5 níveis. Ou seja, o arquivo pode ficar na raiz do repositório, ao lado de
+`backend/` e `frontend/`, que é onde ele naturalmente vai parar.
+
+`PAINEL_KEYS_FILE` tem precedência sobre a busca e aceita qualquer caminho.
+
+Se a connection string não for encontrada, a aplicação recusa subir e a mensagem diz **qual
+`keys.json` foi lido** — ou que nenhum foi encontrado, e a partir de onde procurou.
 
 ### O problema do front, e como está resolvido
 

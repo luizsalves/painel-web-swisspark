@@ -139,18 +139,23 @@ variável de ambiente e o nginx resolve o CORS servindo front e API na mesma ori
 ### 2. Backend
 
 ```bash
+cp keys.example.json keys.json      # na RAIZ do projeto; preencha ConnectionStrings:Contabil
 cd backend/PainelWebSwissPark.Api
-cp keys.example.json keys.json      # preencha a connection string
 dotnet restore
 dotnet run
 ```
 
-O `keys.json` está no `.gitignore`. Para guardá-lo fora da pasta do projeto, aponte a
-variável de ambiente `PAINEL_KEYS_FILE` para o caminho do arquivo.
+O `keys.json` fica na raiz, ao lado de `backend/` e `frontend/`, e está no `.gitignore`. A
+aplicação sobe de diretório a partir da pasta do projeto até encontrá-lo. Para guardá-lo em
+outro lugar, aponte `PAINEL_KEYS_FILE` para o caminho.
+
+A chave que a autenticação lê é `ConnectionStrings:Contabil` — o Postgres onde vive a
+`bi_users`. A grafia antiga `PainelDb:ConnectionString` continua aceita.
 
 Preencha `AzureAd:TenantId` e `AzureAd:ClientId` no `appsettings.json` com o que a TI
-devolver. A aplicação recusa subir sem `PainelDb:ConnectionString` — de propósito, e a
-mensagem diz o que falta.
+devolver. A aplicação recusa subir sem a connection string do Postgres — de propósito, e a mensagem
+diz qual `keys.json` ela leu, para você não ficar procurando por que o valor "está lá" mas
+não é enxergado.
 
 ### 3. Frontend
 
