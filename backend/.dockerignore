@@ -1,0 +1,15 @@
+**/bin
+**/obj
+**/.vs
+**/*.user
+
+# Segredos nunca entram na imagem: em container a configuração vem por
+# variável de ambiente (PainelDb__ConnectionString) ou por volume montado.
+**/keys.json
+**/*.secrets.json
+**/appsettings.*.local.json
+**/*.pfx
+**/*.p12
+
+**/Dockerfile
+.dockerignore

@@ -15,12 +15,16 @@
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { NavLink } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
+import type { UserRole } from "../../interfaces/Auth";
 
 interface NavItem {
   label: string;
   icon: LucideIcon;
   path?: string;
   disabled?: boolean;
+  /** Item só aparece para esse perfil. Quem não tem, nem vê que existe. */
+  requerPerfil?: UserRole;
 }
 
 // Itens sem "disabled" já têm página implementada; os demais aguardam a próxima etapa.
@@ -29,7 +33,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Fechamentos", icon: CalendarCheck2, path: "/fechamentos" },
   { label: "Empresas", icon: Building2, path: "/empresas" },
   { label: "Contas Contábeis", icon: BookText, path: "/contas" },
-  { label: "Usuários", icon: Users, disabled: true },
+  { label: "Usuários", icon: Users, path: "/usuarios", requerPerfil: "Administrador" },
   { label: "Relatórios", icon: BarChart3, disabled: true },
   { label: "Pendências", icon: AlertTriangle, disabled: true },
   { label: "Configurações", icon: Settings, disabled: true },
@@ -49,6 +53,12 @@ export default function AppSidebar({
   onToggleCollapse,
   onToggleBrandTheme,
 }: AppSidebarProps) {
+  const { user } = useAuth();
+
+  const itensVisiveis = NAV_ITEMS.filter(
+    (item) => !item.requerPerfil || user?.role === item.requerPerfil
+  );
+
   return (
     <aside
       className={[
@@ -87,7 +97,7 @@ export default function AppSidebar({
 
         <nav className="sp-sidebar__nav" aria-label="Navegação principal">
           <ul>
-            {NAV_ITEMS.map((item) => {
+            {itensVisiveis.map((item) => {
               const Icon = item.icon;
               const content = (
                 <>

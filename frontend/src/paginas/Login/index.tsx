@@ -1,43 +1,40 @@
 import { useState } from "react";
-import type { FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Lock, Mail } from "lucide-react";
-import Input from "../../componentes/ui/Input";
+import { Navigate, useNavigate } from "react-router-dom";
+import { AlertCircle } from "lucide-react";
 import Button from "../../componentes/ui/Button";
-import ForgotPasswordModal from "../../componentes/auth/ForgotPasswordModal";
+import LoadingSpinner from "../../componentes/ui/LoadingSpinner";
 import MicrosoftIcon from "../../componentes/icons/MicrosoftIcon";
 import { useAuth } from "../../contexts/AuthContext";
+import { MENSAGEM_ENTRA_NAO_CONFIGURADO } from "../../services/entraId";
 
 export default function Login() {
   const navigate = useNavigate();
-  const { login } = useAuth();
-
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const { entrarComMicrosoft, erroDeAcesso, entraIndisponivel, isAuthenticated, isLoading } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
-  const [isRecoveryOpen, setIsRecoveryOpen] = useState(false);
 
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault();
-    setFormError(null);
-
-    if (!email.trim() || !password.trim()) {
-      setFormError("Preencha e-mail e senha para continuar.");
-      return;
-    }
-
+  async function handleEntrar() {
     setIsSubmitting(true);
-    const result = await login(email, password);
+    const resultado = await entrarComMicrosoft();
     setIsSubmitting(false);
 
-    if (result.success) {
+    if (resultado.success) {
       navigate("/dashboard", { replace: true });
-    } else {
-      setFormError(result.message ?? "Não foi possível entrar. Tente novamente.");
     }
   }
+
+  if (isLoading) {
+    return (
+      <div className="sp-login__carregando">
+        <LoadingSpinner size={32} />
+      </div>
+    );
+  }
+
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  const mensagemDeErro = entraIndisponivel ? MENSAGEM_ENTRA_NAO_CONFIGURADO : erroDeAcesso;
 
   return (
     <div className="sp-login">
@@ -52,7 +49,7 @@ export default function Login() {
             <br />
             CONTÁBIL
           </h1>
-          <p className="sp-login__hero-text">Acesse sua conta para continuar.</p>
+          <p className="sp-login__hero-text">Acesse com sua conta corporativa para continuar.</p>
         </div>
 
         <div className="sp-login__hero-stripes" aria-hidden="true">
@@ -65,69 +62,37 @@ export default function Login() {
         <div className="sp-login__card">
           <div className="sp-login__card-header">
             <h2>Bem-vindo(a)!</h2>
-            <p>Informe seus dados para acessar o sistema</p>
+            <p>Entre com a conta Microsoft da Swiss Park</p>
           </div>
 
-          <form className="sp-login__form" onSubmit={handleSubmit} noValidate>
-            <Input
-              label="E-mail"
-              type="email"
-              name="email"
-              placeholder="seu.email@swisspark.com.br"
-              leadingIcon={<Mail size={17} />}
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              error={formError && !email.trim() ? " " : undefined}
-              autoComplete="email"
-            />
-
-            <Input
-              label="Senha"
-              type={isPasswordVisible ? "text" : "password"}
-              name="password"
-              placeholder="Digite sua senha"
-              leadingIcon={<Lock size={17} />}
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              error={formError && !password.trim() ? " " : undefined}
-              autoComplete="current-password"
-              trailingAdornment={
-                <button
-                  type="button"
-                  onClick={() => setIsPasswordVisible((prev) => !prev)}
-                  aria-label={isPasswordVisible ? "Ocultar senha" : "Mostrar senha"}
-                >
-                  {isPasswordVisible ? <EyeOff size={17} /> : <Eye size={17} />}
-                </button>
-              }
-            />
-
-            {formError && <p className="sp-login__form-error">{formError}</p>}
-
-            <button type="button" className="sp-login__forgot-link" onClick={() => setIsRecoveryOpen(true)}>
-              Esqueceu sua senha?
-            </button>
-
-            <Button type="submit" fullWidth isLoading={isSubmitting}>
-              Entrar
-            </Button>
-
-            <div className="sp-login__divider">
-              <span />
-              <span className="sp-login__divider-text">ou</span>
-              <span />
-            </div>
-
-            <Button type="button" variant="secondary" fullWidth icon={<MicrosoftIcon size={18} />}>
+          <div className="sp-login__form">
+            <Button
+              type="button"
+              fullWidth
+              icon={<MicrosoftIcon size={18} />}
+              isLoading={isSubmitting}
+              disabled={entraIndisponivel}
+              onClick={handleEntrar}
+            >
               Entrar com Microsoft
             </Button>
-          </form>
+
+            {mensagemDeErro && (
+              <p className="sp-login__form-error" role="alert">
+                <AlertCircle size={16} aria-hidden="true" />
+                <span>{mensagemDeErro}</span>
+              </p>
+            )}
+
+            <p className="sp-login__hint">
+              A senha é digitada no ambiente da Microsoft e não passa por este sistema. O acesso ao
+              painel é liberado por um administrador.
+            </p>
+          </div>
         </div>
 
         <p className="sp-login__footer">© 2026 Swiss Park. Todos os direitos reservados.</p>
       </section>
-
-      <ForgotPasswordModal isOpen={isRecoveryOpen} onClose={() => setIsRecoveryOpen(false)} />
     </div>
   );
 }

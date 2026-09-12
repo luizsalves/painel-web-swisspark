@@ -1,0 +1,90 @@
+name: painel-swisspark
+
+services:
+  # ==========================================================================
+  # API (.NET) — sem porta publicada: só o nginx alcança
+  # ==========================================================================
+  api:
+    build:
+      context: ./backend
+      dockerfile: PainelWebSwissPark.Api/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+
+      # Dois sublinhados viram ":" na configuração do ASP.NET Core:
+      # ConnectionStrings__Contabil é o mesmo que "ConnectionStrings:Contabil"
+      # do keys.json. Duas formas de entregar o segredo, escolha uma:
+      #
+      #   (a) por aqui, a partir do .env  — é o padrão
+      #   (b) montando o keys.json da raiz — descomente o bloco volumes abaixo
+      #
+      # Vazio não quebra o compose: a aplicação recusa subir com uma mensagem
+      # dizendo qual keys.json ela leu e qual chave faltou.
+      ConnectionStrings__Contabil: ${PAINEL_DB_CONNECTION_STRING:-}
+      PainelDb__Schema: ${PAINEL_DB_SCHEMA:-public}
+      PainelDb__CacheSeconds: ${PAINEL_DB_CACHE_SECONDS:-0}
+
+      AzureAd__TenantId: ${PAINEL_ENTRA_TENANT_ID:-}
+      AzureAd__ClientId: ${PAINEL_ENTRA_CLIENT_ID:-}
+
+      # O TLS termina no nginx; redirecionar aqui dentro daria laço de redirect.
+      Hosting__UseHttpsRedirection: "false"
+      Hosting__UseForwardedHeaders: "true"
+
+    # (b) Usar o keys.json da raiz em vez do .env: descomente as quatro linhas.
+    # create_host_path: false faz o container falhar se o arquivo não existir,
+    # em vez de o Docker criar um diretório vazio no lugar.
+    # volumes:
+    #   - type: bind
+    #     source: ./keys.json
+    #     target: /app/keys.json
+    #     read_only: true
+    #     bind:
+    #       create_host_path: false
+
+    # Para um Postgres que roda na própria máquina hospedeira, use
+    # host.docker.internal como Host na connection string.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    expose:
+      - "8080"
+
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+    restart: unless-stopped
+    networks: [painel]
+
+  # ==========================================================================
+  # Front (nginx) — serve o SPA e repassa /api para a API
+  # Mesma origem para o navegador, então CORS nem entra na conversa.
+  # ==========================================================================
+  web:
+    build:
+      context: ./frontend
+    environment:
+      PAINEL_API_URL: /api
+      PAINEL_ENTRA_TENANT_ID: ${PAINEL_ENTRA_TENANT_ID:-}
+      PAINEL_ENTRA_CLIENT_ID: ${PAINEL_ENTRA_CLIENT_ID:-}
+      PAINEL_ENTRA_API_SCOPE: ${PAINEL_ENTRA_API_SCOPE:-}
+      # Precisa bater exatamente com a redirect URI cadastrada no Entra ID.
+      PAINEL_ENTRA_REDIRECT_URI: ${PAINEL_ENTRA_REDIRECT_URI:-}
+
+    ports:
+      - "${PAINEL_PORTA:-8080}:8080"
+
+    depends_on:
+      api:
+        condition: service_healthy
+
+    restart: unless-stopped
+    networks: [painel]
+
+networks:
+  painel:
+    driver: bridge
