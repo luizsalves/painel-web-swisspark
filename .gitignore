@@ -11,6 +11,7 @@ backend/**/appsettings.Development.local.json
 # Connection strings e chaves ficam no keys.json, fora do controle de versão.
 # O modelo do formato é o keys.example.json, esse sim versionado.
 keys.json
+keys.json.bak
 **/keys.json
 *.secrets.json
 secrets/
