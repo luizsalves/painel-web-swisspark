@@ -16,6 +16,12 @@
   width: min(100%, 440px);
 }
 
+.sp-management__acoes {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
 .sp-management__count {
   color: var(--color-text-secondary);
   font-size: 13.5px;
@@ -48,5 +54,90 @@
 
   .sp-management__search {
     width: 100%;
+  }
+}
+
+/* ==========================================================================
+   Usuários — área administrativa
+   ========================================================================== */
+
+.sp-usuarios__pessoa {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+}
+
+.sp-usuarios__avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--color-green);
+  color: var(--color-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 12.5px;
+  flex-shrink: 0;
+}
+
+.sp-usuarios__status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.sp-usuarios__pendente {
+  font-size: 11.5px;
+  color: var(--color-text-secondary);
+}
+
+.sp-usuarios__acoes {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.sp-usuarios__carregando {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 0;
+}
+
+.sp-usuarios__erro {
+  padding: 10px 12px;
+  background: var(--color-error-50);
+  border: 1px solid rgba(217, 45, 32, 0.25);
+  border-radius: var(--radius-sm);
+  color: var(--color-error);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.sp-usuarios__form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sp-usuarios__form-acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+@media (max-width: 640px) {
+  .sp-management__acoes {
+    justify-content: space-between;
+  }
+
+  .sp-usuarios__acoes {
+    flex-wrap: wrap;
   }
 }

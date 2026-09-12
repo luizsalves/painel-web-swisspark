@@ -6,6 +6,7 @@ import Dashboard from "./paginas/Dashboard";
 import Fechamentos from "./paginas/Fechamentos";
 import Empresas from "./paginas/Empresas";
 import ContasContabeis from "./paginas/ContasContabeis";
+import Usuarios from "./paginas/Usuarios";
 
 function App() {
   return (
@@ -42,6 +43,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <ContasContabeis />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/usuarios"
+            element={
+              <ProtectedRoute requireRole="Administrador">
+                <Usuarios />
               </ProtectedRoute>
             }
           />
