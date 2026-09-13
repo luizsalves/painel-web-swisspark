@@ -21,6 +21,14 @@ export default function UserMenu() {
 
   if (!user) return null;
 
+  // O perfil agora é por módulo, então não existe "o perfil" da pessoa. Em um
+  // módulo só, mostra o perfil; em vários, só diz quantos.
+  const descricao = user.isSuperAdmin
+    ? "Superadministrador"
+    : user.modulos.length === 1
+      ? `${user.modulos[0].role} · ${user.modulos[0].moduleName}`
+      : `${user.modulos.length} módulos`;
+
   function handleLogout() {
     logout();
     navigate("/login", { replace: true });
@@ -37,7 +45,7 @@ export default function UserMenu() {
         <span className="sp-user-menu__avatar">{user.avatarInitials}</span>
         <span className="sp-user-menu__info">
           <span className="sp-user-menu__name">{user.name}</span>
-          <span className="sp-user-menu__role">{user.role}</span>
+          <span className="sp-user-menu__role">{descricao}</span>
         </span>
         <ChevronDown size={16} className="sp-user-menu__chevron" />
       </button>

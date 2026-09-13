@@ -110,6 +110,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     encerrarSessao(null);
   }, [encerrarSessao]);
 
+  const podeAcessarModulo = useCallback(
+    (moduloKey: string) =>
+      Boolean(user?.isSuperAdmin) ||
+      Boolean(user?.modulos.some((modulo) => modulo.moduleKey === moduloKey)),
+    [user]
+  );
+
+  // Quem administra algum módulo vê a tela de Usuários. Quais usuários ela
+  // mostra é o backend que decide, módulo a módulo.
+  const administraAlgumModulo =
+    Boolean(user?.isSuperAdmin) ||
+    Boolean(user?.modulos.some((modulo) => modulo.role === "Administrador"));
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
@@ -117,11 +130,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading,
       precisaTrocarSenha: user?.mustChangePassword ?? false,
       erroDeAcesso,
+      podeAcessarModulo,
+      administraAlgumModulo,
       login,
       trocarSenha,
       logout,
     }),
-    [user, isLoading, erroDeAcesso, login, trocarSenha, logout]
+    [user, isLoading, erroDeAcesso, podeAcessarModulo, administraAlgumModulo, login, trocarSenha, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

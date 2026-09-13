@@ -38,9 +38,9 @@ public class LoginService(
             return Recusar();
         }
 
-        var usuario = await db.BiUsers.FirstOrDefaultAsync(
-            u => u.Email.ToLower() == normalizado,
-            cancellationToken);
+        var usuario = await db.BiUsers
+            .Include(u => u.Modules)
+            .FirstOrDefaultAsync(u => u.Email.ToLower() == normalizado, cancellationToken);
 
         var hashArmazenado = usuario?.PasswordHash ?? HashDeDescarte;
         var verificacao = hasher.VerifyHashedPassword(usuario ?? new BiUser(), hashArmazenado, senha);
@@ -75,6 +75,10 @@ public class LoginService(
 
         var token = tokenService.Emitir(usuario);
 
+        var nomesDeModulos = await db.BiModules
+            .AsNoTracking()
+            .ToDictionaryAsync(m => m.Key, m => m.Name, cancellationToken);
+
         logger.LogInformation("Login de {Email} ({UserId}).", usuario.Email, usuario.Id);
 
         return new ResultadoLogin(
@@ -82,7 +86,7 @@ public class LoginService(
             null,
             token.AccessToken,
             token.ExpiraEm,
-            UsuariosService.Mapear(usuario));
+            UsuariosService.Mapear(usuario, nomesDeModulos));
     }
 
     public async Task TrocarSenhaAsync(
@@ -118,6 +122,7 @@ public class LoginService(
             TargetUserId = usuario.Id,
             Action = AcoesAuditoria.SenhaTrocada,
             Details = "trocada pelo próprio usuário",
+            ModuleKey = null,
             PerformedBy = usuario.Id,
             PerformedAt = DateTimeOffset.UtcNow,
         });

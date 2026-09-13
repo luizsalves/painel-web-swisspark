@@ -16,11 +16,12 @@ import {
   alterarStatusUsuario,
   atualizarUsuario,
   criarUsuario,
+  listarModulosGerenciaveis,
   listarUsuarios,
   redefinirSenhaUsuario,
 } from "../../services/usuariosService";
 import type { UserRole } from "../../interfaces/Auth";
-import type { Usuario } from "../../interfaces/Usuario";
+import type { ModuloGerenciavel, Usuario, VinculoDeModulo } from "../../interfaces/Usuario";
 
 const OPCOES_DE_PERFIL: { value: UserRole; label: string }[] = [
   { value: "Administrador", label: "Administrador" },
@@ -32,14 +33,24 @@ const TAMANHO_MINIMO_DE_SENHA = 8;
 
 type Formulario = { modo: "criar" } | { modo: "editar"; usuario: Usuario };
 
+/** Módulo marcado tem um perfil; desmarcado é null. */
+type Vinculos = Record<string, UserRole | null>;
+
 function ordenarPorNome(usuarios: Usuario[]): Usuario[] {
   return [...usuarios].sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+}
+
+function paraLista(vinculos: Vinculos): VinculoDeModulo[] {
+  return Object.entries(vinculos)
+    .filter(([, role]) => role !== null)
+    .map(([moduleKey, role]) => ({ moduleKey, role: role as UserRole }));
 }
 
 export default function Usuarios() {
   const { user } = useAuth();
 
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  const [modulos, setModulos] = useState<ModuloGerenciavel[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erroDaLista, setErroDaLista] = useState<string | null>(null);
   const [busca, setBusca] = useState("");
@@ -47,7 +58,7 @@ export default function Usuarios() {
   const [formulario, setFormulario] = useState<Formulario | null>(null);
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
-  const [perfil, setPerfil] = useState<UserRole>("Analista");
+  const [vinculos, setVinculos] = useState<Vinculos>({});
   const [senhaInicial, setSenhaInicial] = useState("");
   const [erroDoFormulario, setErroDoFormulario] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
@@ -66,7 +77,13 @@ export default function Usuarios() {
     setErroDaLista(null);
 
     try {
-      setUsuarios(ordenarPorNome(await listarUsuarios()));
+      const [lista, gerenciaveis] = await Promise.all([
+        listarUsuarios(),
+        listarModulosGerenciaveis(),
+      ]);
+
+      setUsuarios(ordenarPorNome(lista));
+      setModulos(gerenciaveis);
     } catch (erro) {
       setErroDaLista(extrairMensagemDeErro(erro, "Não foi possível carregar os usuários."));
     } finally {
@@ -86,15 +103,30 @@ export default function Usuarios() {
       (usuario) =>
         usuario.name.toLocaleLowerCase("pt-BR").includes(termo) ||
         usuario.email.toLocaleLowerCase("pt-BR").includes(termo) ||
-        usuario.role.toLocaleLowerCase("pt-BR").includes(termo)
+        usuario.modulos.some(
+          (modulo) =>
+            modulo.moduleName.toLocaleLowerCase("pt-BR").includes(termo) ||
+            modulo.role.toLocaleLowerCase("pt-BR").includes(termo)
+        )
     );
   }, [usuarios, busca]);
+
+  function vinculosDe(usuario: Usuario | null): Vinculos {
+    const mapa: Vinculos = {};
+
+    for (const modulo of modulos) {
+      mapa[modulo.key] =
+        usuario?.modulos.find((vinculo) => vinculo.moduleKey === modulo.key)?.role ?? null;
+    }
+
+    return mapa;
+  }
 
   function abrirCriacao() {
     setFormulario({ modo: "criar" });
     setNome("");
     setEmail("");
-    setPerfil("Analista");
+    setVinculos(vinculosDe(null));
     setSenhaInicial("");
     setErroDoFormulario(null);
   }
@@ -103,7 +135,7 @@ export default function Usuarios() {
     setFormulario({ modo: "editar", usuario });
     setNome(usuario.name);
     setEmail(usuario.email);
-    setPerfil(usuario.role);
+    setVinculos(vinculosDe(usuario));
     setSenhaInicial("");
     setErroDoFormulario(null);
   }
@@ -112,6 +144,14 @@ export default function Usuarios() {
     setFormulario(null);
     setSenhaInicial("");
     setErroDoFormulario(null);
+  }
+
+  function alternarModulo(moduloKey: string, marcado: boolean) {
+    setVinculos((atuais) => ({ ...atuais, [moduloKey]: marcado ? "Analista" : null }));
+  }
+
+  function definirPerfil(moduloKey: string, role: UserRole) {
+    setVinculos((atuais) => ({ ...atuais, [moduloKey]: role }));
   }
 
   function guardarNaLista(salvo: Usuario) {
@@ -129,8 +169,15 @@ export default function Usuarios() {
   async function salvar() {
     if (!formulario) return;
 
+    const selecionados = paraLista(vinculos);
+
+    if (selecionados.length === 0) {
+      setErroDoFormulario("Marque ao menos um módulo.");
+      return;
+    }
+
     if (formulario.modo === "criar" && senhaInicial.length < TAMANHO_MINIMO_DE_SENHA) {
-      setErroDoFormulario(`A senha inicial precisa ter pelo menos ${TAMANHO_MINIMO_DE_SENHA} caracteres.`);
+      setErroDoFormulario(`A senha provisória precisa ter pelo menos ${TAMANHO_MINIMO_DE_SENHA} caracteres.`);
       return;
     }
 
@@ -140,8 +187,8 @@ export default function Usuarios() {
     try {
       const salvo =
         formulario.modo === "criar"
-          ? await criarUsuario({ name: nome, email, role: perfil, senhaInicial })
-          : await atualizarUsuario(formulario.usuario.id, { name: nome, role: perfil });
+          ? await criarUsuario({ name: nome, email, modulos: selecionados, senhaInicial })
+          : await atualizarUsuario(formulario.usuario.id, { name: nome, modulos: selecionados });
 
       guardarNaLista(salvo);
       fecharFormulario();
@@ -159,8 +206,7 @@ export default function Usuarios() {
     setErroDaConfirmacao(null);
 
     try {
-      const salvo = await alterarStatusUsuario(alvoDaConfirmacao.id, !alvoDaConfirmacao.isActive);
-      guardarNaLista(salvo);
+      guardarNaLista(await alterarStatusUsuario(alvoDaConfirmacao.id, !alvoDaConfirmacao.isActive));
       setAlvoDaConfirmacao(null);
     } catch (erro) {
       setErroDaConfirmacao(extrairMensagemDeErro(erro, "Não foi possível alterar o acesso."));
@@ -203,7 +249,23 @@ export default function Usuarios() {
       ),
     },
     { key: "email", header: "E-mail", render: (linha) => linha.email },
-    { key: "role", header: "Perfil", render: (linha) => linha.role },
+    {
+      key: "modulos",
+      header: "Módulos",
+      render: (linha) =>
+        linha.isSuperAdmin ? (
+          <StatusBadge label="Todos os módulos" tone="green" />
+        ) : (
+          <div className="sp-usuarios__modulos">
+            {linha.modulos.map((modulo) => (
+              <span key={modulo.moduleKey} className="sp-usuarios__modulo">
+                {modulo.moduleName}
+                <em>{modulo.role}</em>
+              </span>
+            ))}
+          </div>
+        ),
+    },
     {
       key: "status",
       header: "Status",
@@ -276,14 +338,21 @@ export default function Usuarios() {
 
   return (
     <AppLayout>
-      <AppHeader title="Usuários" subtitle="Controle quem entra no painel e com qual perfil" />
+      <AppHeader
+        title="Usuários"
+        subtitle={
+          user?.isSuperAdmin
+            ? "Controle quem entra no painel, em quais módulos e com qual perfil"
+            : "Controle quem entra nos módulos que você administra"
+        }
+      />
 
       <main className="sp-management">
         <div className="sp-management__toolbar">
           <div className="sp-management__search">
             <Input
               aria-label="Buscar usuários"
-              placeholder="Buscar por nome, e-mail ou perfil"
+              placeholder="Buscar por nome, e-mail, módulo ou perfil"
               value={busca}
               onChange={(evento) => setBusca(evento.target.value)}
               leadingIcon={<Search size={18} />}
@@ -359,13 +428,34 @@ export default function Usuarios() {
             autoComplete="off"
           />
 
-          <Select
-            label="Perfil"
-            name="perfil"
-            options={OPCOES_DE_PERFIL}
-            value={perfil}
-            onChange={(evento) => setPerfil(evento.target.value as UserRole)}
-          />
+          <fieldset className="sp-usuarios__modulos-campo">
+            <legend>Módulos e perfil</legend>
+
+            {modulos.map((modulo) => {
+              const perfil = vinculos[modulo.key] ?? null;
+
+              return (
+                <div key={modulo.key} className="sp-usuarios__modulo-linha">
+                  <label className="sp-usuarios__modulo-check">
+                    <input
+                      type="checkbox"
+                      checked={perfil !== null}
+                      onChange={(evento) => alternarModulo(modulo.key, evento.target.checked)}
+                    />
+                    <span>{modulo.name}</span>
+                  </label>
+
+                  <Select
+                    aria-label={`Perfil em ${modulo.name}`}
+                    options={OPCOES_DE_PERFIL}
+                    value={perfil ?? "Analista"}
+                    disabled={perfil === null}
+                    onChange={(evento) => definirPerfil(modulo.key, evento.target.value as UserRole)}
+                  />
+                </div>
+              );
+            })}
+          </fieldset>
 
           {!ehEdicao && (
             <Input
@@ -442,7 +532,7 @@ export default function Usuarios() {
         title={alvoDaConfirmacao?.isActive ? "Desativar acesso" : "Reativar acesso"}
         description={
           alvoDaConfirmacao?.isActive
-            ? `${alvoDaConfirmacao?.name} perde o acesso na próxima ação que fizer no painel.`
+            ? `${alvoDaConfirmacao?.name} perde o acesso a todos os módulos na próxima ação que fizer.`
             : `${alvoDaConfirmacao?.name} volta a conseguir entrar.`
         }
       >

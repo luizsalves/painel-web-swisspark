@@ -16,7 +16,7 @@ Content-Type: application/json
 ### Cole aqui o accessToken devolvido acima
 @token = COLE_O_ACCESS_TOKEN_AQUI
 
-### Quem sou eu
+### Quem sou eu, com os módulos a que pertenço
 GET {{PainelWebSwissPark.Api_HostAddress}}/api/auth/me
 Authorization: Bearer {{token}}
 Accept: application/json
@@ -31,8 +31,13 @@ Content-Type: application/json
   "novaSenha": "minha-nova-senha"
 }
 
-### Listar usuários (exige perfil Administrador)
+### Listar usuários — só a turma dos módulos que quem está logado administra
 GET {{PainelWebSwissPark.Api_HostAddress}}/api/usuarios
+Authorization: Bearer {{token}}
+Accept: application/json
+
+### Módulos que quem está logado pode conceder — alimenta o formulário
+GET {{PainelWebSwissPark.Api_HostAddress}}/api/usuarios/modulos
 Authorization: Bearer {{token}}
 Accept: application/json
 
@@ -44,18 +49,22 @@ Content-Type: application/json
 {
   "name": "Nome da Pessoa",
   "email": "nome.pessoa@swisspark.com.br",
-  "role": "Analista",
+  "modulos": [
+    { "moduleKey": "conciliacao", "role": "Analista" }
+  ],
   "senhaInicial": "provisoria123"
 }
 
-### Alterar nome/perfil
+### Alterar nome e vínculos de módulo
 PUT {{PainelWebSwissPark.Api_HostAddress}}/api/usuarios/00000000-0000-0000-0000-000000000000
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
   "name": "Nome da Pessoa",
-  "role": "Gerente"
+  "modulos": [
+    { "moduleKey": "conciliacao", "role": "Gerente" }
+  ]
 }
 
 ### Redefinir a senha de outra pessoa (ela é obrigada a trocar em seguida)
@@ -67,7 +76,7 @@ Content-Type: application/json
   "novaSenha": "provisoria123"
 }
 
-### Desativar acesso (revogação vale no request seguinte)
+### Desativar acesso — tira a pessoa de TODOS os módulos de uma vez
 PATCH {{PainelWebSwissPark.Api_HostAddress}}/api/usuarios/00000000-0000-0000-0000-000000000000/status
 Authorization: Bearer {{token}}
 Content-Type: application/json

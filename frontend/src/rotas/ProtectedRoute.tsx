@@ -2,16 +2,22 @@ import { Navigate } from "react-router-dom";
 import type { ReactNode } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import LoadingSpinner from "../componentes/ui/LoadingSpinner";
-import type { UserRole } from "../interfaces/Auth";
 
 interface ProtectedRouteProps {
   children: ReactNode;
-  /** Quando informado, só esse perfil entra. Quem não tem volta para o dashboard. */
-  requireRole?: UserRole;
+  /** A tela pertence a este módulo. Quem não está nele volta para a raiz. */
+  requireModulo?: string;
+  /** A tela é da área administrativa. */
+  requireAdministrador?: boolean;
 }
 
-export default function ProtectedRoute({ children, requireRole }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading, precisaTrocarSenha, user } = useAuth();
+export default function ProtectedRoute({
+  children,
+  requireModulo,
+  requireAdministrador,
+}: ProtectedRouteProps) {
+  const { isAuthenticated, isLoading, precisaTrocarSenha, podeAcessarModulo, administraAlgumModulo } =
+    useAuth();
 
   if (isLoading) {
     return (
@@ -31,10 +37,14 @@ export default function ProtectedRoute({ children, requireRole }: ProtectedRoute
     return <Navigate to="/trocar-senha" replace />;
   }
 
-  // A trava de verdade está no backend; aqui é só para não mostrar uma tela que
-  // a pessoa não pode usar.
-  if (requireRole && user?.role !== requireRole) {
-    return <Navigate to="/dashboard" replace />;
+  // A trava de verdade está no backend, no [ExigeModulo] de cada endpoint; aqui
+  // é só para não mostrar uma tela que a pessoa não pode usar.
+  if (requireModulo && !podeAcessarModulo(requireModulo)) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (requireAdministrador && !administraAlgumModulo) {
+    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;

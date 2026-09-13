@@ -1,9 +1,10 @@
 namespace PainelWebSwissPark.Api.Entities;
 
 /// <summary>
-/// Quem pode entrar no painel, com qual perfil, e a senha com que entra.
-/// A senha nunca é guardada em texto: só o hash PBKDF2 produzido pelo
-/// PasswordHasher do ASP.NET Core.
+/// Quem pode entrar no painel e a senha com que entra. A senha nunca é guardada
+/// em texto: só o hash PBKDF2 produzido pelo PasswordHasher do ASP.NET Core.
+///
+/// O perfil NÃO fica aqui — ele é por módulo, na <see cref="BiUserModule"/>.
 /// </summary>
 public class BiUser
 {
@@ -23,7 +24,14 @@ public class BiUser
     /// </summary>
     public bool MustChangePassword { get; set; }
 
-    public string Role { get; set; } = PerfisUsuario.Analista;
+    /// <summary>
+    /// Enxerga e administra todos os módulos. É quem cria os administradores de
+    /// cada módulo — sem ele, o administrador da conciliação não teria como
+    /// criar o administrador do outro sistema, já que um não enxerga o outro.
+    ///
+    /// Criado uma única vez, pelas variáveis PAINEL_ADMIN_*.
+    /// </summary>
+    public bool IsSuperAdmin { get; set; }
 
     public bool IsActive { get; set; } = true;
 
@@ -36,4 +44,6 @@ public class BiUser
     public DateTimeOffset UpdatedAt { get; set; }
 
     public Guid? UpdatedBy { get; set; }
+
+    public List<BiUserModule> Modules { get; set; } = [];
 }

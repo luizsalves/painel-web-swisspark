@@ -16,7 +16,7 @@ public class UsuarioAtualService(
 {
     private readonly int _cacheSeconds = options.Value.CacheSeconds;
 
-    // Cache de requisição: o handler de autorização, a transformação de claims e o
+    // Cache de requisição: o handler de autorização, os filtros de módulo e o
     // controller pedem o mesmo usuário — o banco é consultado uma vez só.
     private bool _resolvido;
     private UsuarioAutorizado? _usuario;
@@ -52,15 +52,37 @@ public class UsuarioAtualService(
         var usuario = await db.BiUsers
             .AsNoTracking()
             .Where(u => u.Id == id)
-            .Select(u => new UsuarioAutorizado(u.Id, u.Email, u.Name, u.Role, u.IsActive, u.MustChangePassword))
+            .Select(u => new
+            {
+                u.Id,
+                u.Email,
+                u.Name,
+                u.IsActive,
+                u.MustChangePassword,
+                u.IsSuperAdmin,
+                Modulos = u.Modules
+                    .Select(m => new ModuloDoUsuario(m.ModuleKey, m.Role))
+                    .ToList(),
+            })
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (usuario is not null && _cacheSeconds > 0)
+        if (usuario is null) return null;
+
+        var autorizado = new UsuarioAutorizado(
+            usuario.Id,
+            usuario.Email,
+            usuario.Name,
+            usuario.IsActive,
+            usuario.MustChangePassword,
+            usuario.IsSuperAdmin,
+            usuario.Modulos);
+
+        if (_cacheSeconds > 0)
         {
-            cache.Set(ChaveCache(id), usuario, TimeSpan.FromSeconds(_cacheSeconds));
+            cache.Set(ChaveCache(id), autorizado, TimeSpan.FromSeconds(_cacheSeconds));
         }
 
-        return usuario;
+        return autorizado;
     }
 
     private static string ChaveCache(Guid id) => $"bi_users:{id}";

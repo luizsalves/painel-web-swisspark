@@ -17,6 +17,10 @@ public class PainelDbContext(
 
     public DbSet<BiUser> BiUsers => Set<BiUser>();
 
+    public DbSet<BiUserModule> BiUserModules => Set<BiUserModule>();
+
+    public DbSet<BiModule> BiModules => Set<BiModule>();
+
     public DbSet<BiUserAudit> BiUserAudits => Set<BiUserAudit>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -33,13 +37,45 @@ public class PainelDbContext(
             entity.Property(e => e.Name).HasColumnName("name").IsRequired();
             entity.Property(e => e.PasswordHash).HasColumnName("password_hash").IsRequired();
             entity.Property(e => e.MustChangePassword).HasColumnName("must_change_password").HasDefaultValue(true);
-            entity.Property(e => e.Role).HasColumnName("role").IsRequired();
+            entity.Property(e => e.IsSuperAdmin).HasColumnName("is_superadmin").HasDefaultValue(false);
             entity.Property(e => e.IsActive).HasColumnName("is_active").HasDefaultValue(true);
             entity.Property(e => e.LastLoginAt).HasColumnName("last_login_at");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
             entity.Property(e => e.CreatedBy).HasColumnName("created_by");
             entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("now()");
             entity.Property(e => e.UpdatedBy).HasColumnName("updated_by");
+
+            entity.HasMany(e => e.Modules)
+                  .WithOne(m => m.User!)
+                  .HasForeignKey(m => m.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<BiUserModule>(entity =>
+        {
+            entity.ToTable("bi_user_modules", _schema);
+
+            // Uma pessoa tem no máximo um perfil por módulo.
+            entity.HasKey(e => new { e.UserId, e.ModuleKey });
+
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.ModuleKey).HasColumnName("module_key").IsRequired();
+            entity.Property(e => e.Role).HasColumnName("role").IsRequired();
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
+            entity.Property(e => e.CreatedBy).HasColumnName("created_by");
+
+            entity.HasIndex(e => e.ModuleKey);
+        });
+
+        modelBuilder.Entity<BiModule>(entity =>
+        {
+            entity.ToTable("bi_modules", _schema);
+            entity.HasKey(e => e.Key);
+
+            entity.Property(e => e.Key).HasColumnName("key").ValueGeneratedNever();
+            entity.Property(e => e.Name).HasColumnName("name").IsRequired();
+            entity.Property(e => e.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+            entity.Property(e => e.SortOrder).HasColumnName("sort_order").HasDefaultValue(0);
         });
 
         modelBuilder.Entity<BiUserAudit>(entity =>
@@ -51,6 +87,7 @@ public class PainelDbContext(
             entity.Property(e => e.TargetUserId).HasColumnName("target_user_id").IsRequired();
             entity.Property(e => e.Action).HasColumnName("action").IsRequired();
             entity.Property(e => e.Details).HasColumnName("details");
+            entity.Property(e => e.ModuleKey).HasColumnName("module_key");
             entity.Property(e => e.PerformedBy).HasColumnName("performed_by");
             entity.Property(e => e.PerformedAt).HasColumnName("performed_at").HasDefaultValueSql("now()");
 

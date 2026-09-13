@@ -1,6 +1,5 @@
 using System.Security.Claims;
 using System.Text;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -145,8 +144,8 @@ builder.Services.AddSingleton<IPasswordHasher<BiUser>, PasswordHasher<BiUser>>()
 builder.Services.AddSingleton<ITokenService, TokenService>();
 builder.Services.AddScoped<ILoginService, LoginService>();
 builder.Services.AddScoped<IUsuarioAtualService, UsuarioAtualService>();
-builder.Services.AddScoped<IClaimsTransformation, BiUsersClaimsTransformation>();
 builder.Services.AddScoped<IAuthorizationHandler, UsuarioAtivoHandler>();
+builder.Services.AddScoped<IAuthorizationHandler, AdministradorDeModuloHandler>();
 
 var politicaUsuarioAtivo = new AuthorizationPolicyBuilder(JwtBearerDefaults.AuthenticationScheme)
     .RequireAuthenticatedUser()
@@ -158,10 +157,11 @@ builder.Services.AddAuthorizationBuilder()
     // Para abrir um endpoint é preciso dizer [AllowAnonymous] explicitamente.
     .SetFallbackPolicy(politicaUsuarioAtivo)
     .AddPolicy(PoliticasAutorizacao.UsuarioAtivo, politicaUsuarioAtivo)
-    .AddPolicy(PoliticasAutorizacao.Administrador, policy => policy
+    // Abre a área administrativa para quem administra algum módulo. Quais
+    // usuários ela mostra é decidido no serviço, módulo a módulo.
+    .AddPolicy(PoliticasAutorizacao.AdministradorDeModulo, policy => policy
         .RequireAuthenticatedUser()
-        .AddRequirements(new UsuarioAtivoRequirement())
-        .RequireRole(PerfisUsuario.Administrador));
+        .AddRequirements(new AdministradorDeModuloRequirement()));
 
 // ==========================================================================
 // Serviços da aplicação

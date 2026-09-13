@@ -1,39 +1,44 @@
 using PainelWebSwissPark.Api.DTOs.Requests;
 using PainelWebSwissPark.Api.DTOs.ViewModels;
+using PainelWebSwissPark.Api.Services.Auth;
 
 namespace PainelWebSwissPark.Api.Services.BusinessLogic;
 
 public interface IUsuariosService
 {
-    Task<IReadOnlyList<UsuarioViewModel>> ListarAsync(CancellationToken cancellationToken);
+    /// <summary>Só a turma dos módulos que o autor administra. O superadministrador vê todos.</summary>
+    Task<IReadOnlyList<UsuarioViewModel>> ListarAsync(
+        UsuarioAutorizado autor,
+        CancellationToken cancellationToken);
+
+    /// <summary>Módulos que o autor pode conceder ao cadastrar ou editar alguém.</summary>
+    Task<IReadOnlyList<ModuloViewModel>> ListarModulosGerenciaveisAsync(
+        UsuarioAutorizado autor,
+        CancellationToken cancellationToken);
 
     Task<UsuarioViewModel> CriarAsync(
         CriarUsuarioRequest request,
-        Guid autorId,
+        UsuarioAutorizado autor,
         CancellationToken cancellationToken);
 
-    /// <summary>Retorna null quando o usuário não existe.</summary>
+    /// <summary>Retorna null quando o usuário não existe ou está fora do alcance do autor.</summary>
     Task<UsuarioViewModel?> AtualizarAsync(
         Guid id,
         AtualizarUsuarioRequest request,
-        Guid autorId,
+        UsuarioAutorizado autor,
         CancellationToken cancellationToken);
 
-    /// <summary>Retorna null quando o usuário não existe.</summary>
+    /// <summary>Retorna null quando o usuário não existe ou está fora do alcance do autor.</summary>
     Task<UsuarioViewModel?> AlterarStatusAsync(
         Guid id,
         bool ativo,
-        Guid autorId,
+        UsuarioAutorizado autor,
         CancellationToken cancellationToken);
 
-    /// <summary>
-    /// Administrador define uma senha nova para outra pessoa. Entra como provisória:
-    /// quem receber é obrigado a trocar no próximo acesso.
-    /// Retorna null quando o usuário não existe.
-    /// </summary>
+    /// <summary>Retorna null quando o usuário não existe ou está fora do alcance do autor.</summary>
     Task<UsuarioViewModel?> RedefinirSenhaAsync(
         Guid id,
         string novaSenha,
-        Guid autorId,
+        UsuarioAutorizado autor,
         CancellationToken cancellationToken);
 }

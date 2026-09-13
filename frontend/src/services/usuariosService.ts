@@ -1,10 +1,21 @@
 import api from "./api";
-import type { AlteracaoUsuario, NovoUsuario, Usuario } from "../interfaces/Usuario";
+import type {
+  AlteracaoUsuario,
+  ModuloGerenciavel,
+  NovoUsuario,
+  Usuario,
+} from "../interfaces/Usuario";
 
 const RECURSO = "/usuarios";
 
 export async function listarUsuarios(): Promise<Usuario[]> {
   const { data } = await api.get<Usuario[]>(RECURSO);
+  return data;
+}
+
+/** Os módulos que quem está logado pode conceder — alimenta o formulário. */
+export async function listarModulosGerenciaveis(): Promise<ModuloGerenciavel[]> {
+  const { data } = await api.get<ModuloGerenciavel[]>(`${RECURSO}/modulos`);
   return data;
 }
 

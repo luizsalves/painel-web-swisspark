@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using PainelWebSwissPark.Api.Authorization;
+using PainelWebSwissPark.Api.Data;
 using PainelWebSwissPark.Api.DTOs.Requests;
 using PainelWebSwissPark.Api.DTOs.ViewModels;
 using PainelWebSwissPark.Api.Services.Auth;
@@ -12,7 +14,8 @@ namespace PainelWebSwissPark.Api.Controllers;
 [Route("api/auth")]
 public class AuthController(
     ILoginService loginService,
-    IUsuarioAtualService usuarioAtual) : ControllerBase
+    IUsuarioAtualService usuarioAtual,
+    PainelDbContext db) : ControllerBase
 {
     /// <summary>
     /// Troca e-mail e senha por um token. A senha é conferida contra o hash
@@ -40,8 +43,8 @@ public class AuthController(
     }
 
     /// <summary>
-    /// Quem está falando com a API. É o primeiro request do front depois do login,
-    /// e o que o app usa para recuperar a sessão ao recarregar a página.
+    /// Quem está falando com a API, com os módulos a que pertence. É o primeiro
+    /// request do front depois do login, e o que monta o menu.
     /// </summary>
     /// <remarks>
     /// Exige apenas autenticação, e não a política padrão da API, de propósito: assim
@@ -68,15 +71,41 @@ public class AuthController(
                 new { error = "Seu acesso ao painel foi desativado. Procure um administrador." });
         }
 
+        var nomes = await db.BiModules
+            .AsNoTracking()
+            .ToDictionaryAsync(m => m.Key, m => m.Name, cancellationToken);
+
+        // O superadministrador enxerga todos os módulos ativos, mesmo sem vínculo
+        // em bi_user_modules — o acesso dele não vem de vínculo, vem do papel.
+        var modulos = usuario.IsSuperAdmin
+            ? await db.BiModules
+                .AsNoTracking()
+                .Where(m => m.IsActive)
+                .OrderBy(m => m.SortOrder)
+                .Select(m => new ModuloDoUsuarioViewModel
+                {
+                    ModuleKey = m.Key,
+                    ModuleName = m.Name,
+                    Role = PainelWebSwissPark.Api.Entities.PerfisUsuario.Administrador,
+                })
+                .ToListAsync(cancellationToken)
+            : [.. usuario.Modulos.Select(modulo => new ModuloDoUsuarioViewModel
+                {
+                    ModuleKey = modulo.Key,
+                    ModuleName = nomes.TryGetValue(modulo.Key, out var nome) ? nome : modulo.Key,
+                    Role = modulo.Role,
+                })];
+
         return Ok(new UsuarioViewModel
         {
             Id = usuario.Id.ToString(),
             Name = usuario.Name,
             Email = usuario.Email,
-            Role = usuario.Role,
             IsActive = usuario.IsActive,
+            IsSuperAdmin = usuario.IsSuperAdmin,
             MustChangePassword = usuario.MustChangePassword,
             AvatarInitials = UsuariosService.MontarIniciais(usuario.Name),
+            Modulos = modulos,
         });
     }
 

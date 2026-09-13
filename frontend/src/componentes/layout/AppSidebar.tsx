@@ -16,28 +16,30 @@
 import type { LucideIcon } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
-import type { UserRole } from "../../interfaces/Auth";
+import { MODULO_CONCILIACAO } from "../../interfaces/Auth";
 
 interface NavItem {
   label: string;
   icon: LucideIcon;
   path?: string;
   disabled?: boolean;
-  /** Item só aparece para esse perfil. Quem não tem, nem vê que existe. */
-  requerPerfil?: UserRole;
+  /** A tela pertence a este módulo. Quem não está nele nem vê que ela existe. */
+  modulo?: string;
+  /** A tela é da área administrativa. */
+  requerAdministrador?: boolean;
 }
 
 // Itens sem "disabled" já têm página implementada; os demais aguardam a próxima etapa.
 const NAV_ITEMS: NavItem[] = [
-  { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
-  { label: "Fechamentos", icon: CalendarCheck2, path: "/fechamentos" },
-  { label: "Empresas", icon: Building2, path: "/empresas" },
-  { label: "Contas Contábeis", icon: BookText, path: "/contas" },
-  { label: "Usuários", icon: Users, path: "/usuarios", requerPerfil: "Administrador" },
-  { label: "Relatórios", icon: BarChart3, disabled: true },
-  { label: "Pendências", icon: AlertTriangle, disabled: true },
-  { label: "Configurações", icon: Settings, disabled: true },
-  { label: "Auditoria", icon: ShieldCheck, disabled: true },
+  { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard", modulo: MODULO_CONCILIACAO },
+  { label: "Fechamentos", icon: CalendarCheck2, path: "/fechamentos", modulo: MODULO_CONCILIACAO },
+  { label: "Empresas", icon: Building2, path: "/empresas", modulo: MODULO_CONCILIACAO },
+  { label: "Contas Contábeis", icon: BookText, path: "/contas", modulo: MODULO_CONCILIACAO },
+  { label: "Usuários", icon: Users, path: "/usuarios", requerAdministrador: true },
+  { label: "Relatórios", icon: BarChart3, disabled: true, modulo: MODULO_CONCILIACAO },
+  { label: "Pendências", icon: AlertTriangle, disabled: true, modulo: MODULO_CONCILIACAO },
+  { label: "Configurações", icon: Settings, disabled: true, requerAdministrador: true },
+  { label: "Auditoria", icon: ShieldCheck, disabled: true, requerAdministrador: true },
 ];
 
 interface AppSidebarProps {
@@ -53,11 +55,15 @@ export default function AppSidebar({
   onToggleCollapse,
   onToggleBrandTheme,
 }: AppSidebarProps) {
-  const { user } = useAuth();
+  const { podeAcessarModulo, administraAlgumModulo } = useAuth();
 
-  const itensVisiveis = NAV_ITEMS.filter(
-    (item) => !item.requerPerfil || user?.role === item.requerPerfil
-  );
+  // O menu mostra só o que a pessoa pode abrir. Esconder aqui é cosmético — o
+  // que protege de verdade é o [ExigeModulo] de cada endpoint no backend.
+  const itensVisiveis = NAV_ITEMS.filter((item) => {
+    if (item.requerAdministrador && !administraAlgumModulo) return false;
+    if (item.modulo && !podeAcessarModulo(item.modulo)) return false;
+    return true;
+  });
 
   return (
     <aside

@@ -2,9 +2,58 @@
 
 ## O desenho em uma frase
 
-A tabela **`bi_users` guarda o hash da senha e o perfil**. O login confere a senha e
-devolve um token; o token diz apenas quem a pessoa é, e **perfil e situação são lidos do
-banco a cada requisição**.
+A **`bi_users`** guarda o hash da senha; a **`bi_user_modules`** guarda em quais módulos a
+pessoa entra e com qual perfil em cada um. O login confere a senha e devolve um token; o
+token diz apenas quem a pessoa é, e **módulos, perfis e situação são lidos do banco a cada
+requisição**.
+
+## Dois sistemas em um painel
+
+O painel hospeda módulos independentes — hoje `conciliacao` e `mkt`. Quem pertence a um não
+enxerga o outro: nem as telas, nem os usuários.
+
+```
+bi_users           quem é a pessoa, senha, situação
+bi_user_modules    pessoa + módulo + perfil NAQUELE módulo
+bi_modules         os módulos existentes
+```
+
+O perfil não fica na `bi_users` porque não é uma propriedade da pessoa: é da relação entre
+ela e o módulo. A mesma pessoa pode ser Administrador na conciliação e Analista no mkt — com
+**uma conta só**, uma senha só.
+
+### Quem administra o quê
+
+| | |
+|---|---|
+| **Administrador de módulo** | Lista, cria, edita e desativa só quem tem vínculo com os módulos que ele administra |
+| **Superadministrador** | Enxerga e administra todos os módulos |
+
+O superadministrador existe por um motivo estrutural, não por conveniência: o administrador
+da conciliação não enxerga o mkt e vice-versa, então nenhum dos dois conseguiria criar o
+outro. Alguém precisa estar acima dos módulos.
+
+Ele é criado uma única vez, pelas variáveis `PAINEL_ADMIN_*`. **Não há tela para promover
+ninguém a superadministrador**, de propósito.
+
+### Duas travas que não são óbvias
+
+Um administrador de módulo **não enxerga o superadministrador** na lista — senão poderia
+desativá-lo e deixar o painel sem ninguém acima dos módulos.
+
+E ele **não vê os vínculos da pessoa em módulos alheios**: saber que o fulano da conciliação
+também é do mkt não é da conta dele. Ao editar, os vínculos dos outros módulos ficam
+intocados.
+
+### Onde a separação realmente acontece
+
+No `[ExigeModulo]` de cada controller. Esconder o item do menu é cosmético — sem a checagem
+no backend, bastaria digitar a URL.
+
+```csharp
+[ExigeModulo(Modulos.Conciliacao)]
+public class FechamentosController : ControllerBase
+```
 
 ## Por que o token carrega tão pouco
 
@@ -116,7 +165,8 @@ bem-sucedido regrava a senha no formato novo.
 | `Services/Auth/UsuarioAtualService.cs` | Traduz o `sub` do token para o registro na `bi_users` |
 | `Services/Auth/AdministradorInicial.cs` | Bootstrap do primeiro administrador |
 | `Authorization/UsuarioAtivoHandler.cs` | A checagem por requisição que torna a revogação imediata |
-| `Authorization/BiUsersClaimsTransformation.cs` | Traz o perfil do banco para dentro do principal |
+| `Authorization/ExigeModuloAttribute.cs` | Amarra um endpoint a um módulo — é aqui que os sistemas se separam |
+| `Authorization/AdministradorDeModuloHandler.cs` | Abre a área administrativa para quem administra algum módulo |
 | `Controllers/AuthController.cs` | `login`, `me`, `trocar-senha` |
 | `Controllers/UsuariosController.cs` | Área administrativa |
 | `Services/BusinessLogic/UsuariosService.cs` | As travas |
@@ -136,15 +186,29 @@ Todo endpoint já nasce protegido: a política padrão (`FallbackPolicy`) exige 
 | `src/rotas/ProtectedRoute.tsx` | Rota protegida, com variante por perfil |
 | `src/paginas/TrocarSenha/` | Tela obrigatória de quem tem senha provisória |
 | `src/paginas/Usuarios/` | A área administrativa |
+| `src/paginas/Inicio/` | Decide a primeira tela conforme os módulos da pessoa |
 
 O token fica em `sessionStorage`, não `localStorage`: a sessão morre ao fechar a aba. Em
 máquina compartilhada isso vale mais que a conveniência de continuar logado.
 
 ## Perfis
 
-`Administrador`, `Gerente`, `Analista` — o `CHECK` da coluna `role` no banco e a constante
-`PerfisUsuario` no backend precisam continuar iguais. Hoje só `Administrador` tem efeito
-(libera a área de usuários); `Gerente` e `Analista` existem para as próximas etapas.
+`Administrador`, `Gerente`, `Analista` — o `CHECK` da coluna `role` em `bi_user_modules` e a
+constante `PerfisUsuario` no backend precisam continuar iguais. Hoje só `Administrador` tem
+efeito (libera a área de usuários daquele módulo); `Gerente` e `Analista` diferenciam apenas
+o que aparece no menu do usuário.
+
+## Acrescentar um módulo
+
+É um `INSERT`, não um deploy:
+
+```sql
+insert into public.bi_modules (key, name, sort_order)
+values ('novo_modulo', 'Nome do Módulo', 3);
+```
+
+As telas dele é que precisam ser escritas, declarando o módulo na rota do front
+(`requireModulo`) e no controller do backend (`[ExigeModulo]`).
 
 ## Como rodar
 
@@ -152,9 +216,10 @@ máquina compartilhada isso vale mais que a conveniência de continuar logado.
 
 ```bash
 psql -h SERVIDOR -U USUARIO -d contabil -f docs/sql/001_bi_users.sql
+psql -h SERVIDOR -U USUARIO -d contabil -f docs/sql/002_modulos.sql
 ```
 
-O script é idempotente e reconcilia uma `bi_users` que já exista — inclusive a versão
+Os scripts são idempotentes e reconciliam uma `bi_users` que já exista — inclusive a versão
 anterior, baseada em Entra ID. Linhas antigas ficam sem senha e entram como inativas; um
 administrador redefine a senha delas pela tela e elas voltam.
 

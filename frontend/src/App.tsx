@@ -6,6 +6,8 @@ import Dashboard from "./paginas/Dashboard";
 import Fechamentos from "./paginas/Fechamentos";
 import Empresas from "./paginas/Empresas";
 import ContasContabeis from "./paginas/ContasContabeis";
+import Inicio from "./paginas/Inicio";
+import { MODULO_CONCILIACAO } from "./interfaces/Auth";
 import Usuarios from "./paginas/Usuarios";
 import TrocarSenha from "./paginas/TrocarSenha";
 
@@ -19,7 +21,7 @@ function App() {
           <Route
             path="/dashboard"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requireModulo={MODULO_CONCILIACAO}>
                 <Dashboard />
               </ProtectedRoute>
             }
@@ -27,7 +29,7 @@ function App() {
           <Route
             path="/fechamentos"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requireModulo={MODULO_CONCILIACAO}>
                 <Fechamentos />
               </ProtectedRoute>
             }
@@ -35,7 +37,7 @@ function App() {
           <Route
             path="/empresas"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requireModulo={MODULO_CONCILIACAO}>
                 <Empresas />
               </ProtectedRoute>
             }
@@ -43,7 +45,7 @@ function App() {
           <Route
             path="/contas"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requireModulo={MODULO_CONCILIACAO}>
                 <ContasContabeis />
               </ProtectedRoute>
             }
@@ -51,13 +53,20 @@ function App() {
           <Route
             path="/usuarios"
             element={
-              <ProtectedRoute requireRole="Administrador">
+              <ProtectedRoute requireAdministrador>
                 <Usuarios />
               </ProtectedRoute>
             }
           />
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <Inicio />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

@@ -2,11 +2,14 @@ namespace PainelWebSwissPark.Api.Authorization;
 
 public static class PoliticasAutorizacao
 {
-    /// <summary>Autenticado e ativo na bi_users. É a política padrão da API.</summary>
+    /// <summary>Autenticado, ativo e sem senha provisória pendente. É a política padrão da API.</summary>
     public const string UsuarioAtivo = "UsuarioAtivo";
 
-    /// <summary>Usuário ativo com perfil Administrador. Protege a área administrativa.</summary>
-    public const string Administrador = "Administrador";
+    /// <summary>
+    /// Administra pelo menos um módulo — ou é superadministrador.
+    /// Libera a tela de Usuários; o recorte de QUEM ela mostra é feito no serviço.
+    /// </summary>
+    public const string AdministradorDeModulo = "AdministradorDeModulo";
 }
 
 public static class ClaimsPainel

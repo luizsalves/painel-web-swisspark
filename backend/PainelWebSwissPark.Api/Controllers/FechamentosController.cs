@@ -1,11 +1,16 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
+using PainelWebSwissPark.Api.Authorization;
+using PainelWebSwissPark.Api.Entities;
 using PainelWebSwissPark.Api.Services.BusinessLogic;
 
 namespace PainelWebSwissPark.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+// Fechamentos é tela da conciliação: quem é só do mkt não passa daqui, mesmo
+// digitando a URL direto.
+[ExigeModulo(Modulos.Conciliacao)]
 public class FechamentosController(IFechamentosService fechamentosService) : ControllerBase
 {
     /// <summary>

@@ -6,7 +6,11 @@ public class CriarUsuarioRequest
 
     public string Email { get; set; } = string.Empty;
 
-    public string Role { get; set; } = string.Empty;
+    /// <summary>
+    /// Em quais módulos a pessoa entra, e com qual perfil em cada um.
+    /// Só é possível conceder módulos que quem está criando administra.
+    /// </summary>
+    public List<VinculoDeModuloRequest> Modulos { get; set; } = [];
 
     /// <summary>
     /// Senha inicial definida pelo administrador. Entra como provisória: a pessoa
