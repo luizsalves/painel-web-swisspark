@@ -26,7 +26,9 @@ public class PainelDbContext(
             entity.ToTable("bi_users", _schema);
             entity.HasKey(e => e.Id);
 
-            entity.Property(e => e.Id).HasColumnName("id").HasDefaultValueSql("gen_random_uuid()");
+            // Sem HasDefaultValueSql: gen_random_uuid() não existe em Postgres
+            // anterior ao 13 sem a pgcrypto. O id é gerado na aplicação.
+            entity.Property(e => e.Id).HasColumnName("id").ValueGeneratedNever();
             entity.Property(e => e.Email).HasColumnName("email").IsRequired();
             entity.Property(e => e.Name).HasColumnName("name").IsRequired();
             entity.Property(e => e.PasswordHash).HasColumnName("password_hash").IsRequired();

@@ -17,16 +17,29 @@
 -- assim nenhuma senha, nem hash de senha conhecida, fica versionada.
 -- ============================================================================
 
--- gen_random_uuid() é nativo no Postgres 13+. Em versões anteriores, descomente:
--- create extension if not exists pgcrypto;
-
 -- create schema if not exists painel;
+
+-- ----------------------------------------------------------------------------
+-- gen_random_uuid()
+--
+-- Nativo no Postgres 13+. Antes disso vem da extensão pgcrypto, que costuma
+-- exigir superusuário para instalar. Se não der, tudo bem: quem gera o id é
+-- sempre a aplicação, e o default só serve para insert manual. O bloco abaixo
+-- tenta, e segue em frente se não conseguir.
+-- ----------------------------------------------------------------------------
+do $$
+begin
+  create extension if not exists pgcrypto;
+exception
+  when others then
+    raise notice 'pgcrypto não instalada (%). Seguindo sem default no id — a aplicação gera.', sqlerrm;
+end $$;
 
 -- ----------------------------------------------------------------------------
 -- Quem pode entrar
 -- ----------------------------------------------------------------------------
 create table if not exists public.bi_users (
-  id                    uuid primary key default gen_random_uuid(),
+  id                    uuid primary key,
   email                 text        not null,
   name                  text        not null,
   password_hash         text        not null,
@@ -68,6 +81,18 @@ end $$;
 update public.bi_users set password_hash = '' where password_hash is null;
 alter table public.bi_users alter column password_hash set not null;
 
+-- O default do id só é aplicado se a função existir neste banco.
+do $$
+begin
+  if exists (
+    select 1 from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where p.proname = 'gen_random_uuid'
+  ) then
+    alter table public.bi_users alter column id set default gen_random_uuid();
+  end if;
+end $$;
+
 -- Postgres diferencia maiúsculas: sem isso, "Luiz@x.com" e "luiz@x.com" entrariam
 -- como dois usuários e o login casaria com um ou outro conforme a digitação.
 create unique index if not exists ux_bi_users_email_lower
@@ -105,7 +130,7 @@ end $$;
 -- Trilha de auditoria da área administrativa
 -- ----------------------------------------------------------------------------
 create table if not exists public.bi_users_audit (
-  id             bigint generated always as identity primary key,
+  id             bigserial   primary key,
   target_user_id uuid        not null references public.bi_users(id),
   action         text        not null,
   details        text,
