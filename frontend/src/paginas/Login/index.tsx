@@ -1,25 +1,41 @@
 import { useState } from "react";
+import type { FormEvent } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Eye, EyeOff, Lock, Mail } from "lucide-react";
+import Input from "../../componentes/ui/Input";
 import Button from "../../componentes/ui/Button";
 import LoadingSpinner from "../../componentes/ui/LoadingSpinner";
-import MicrosoftIcon from "../../componentes/icons/MicrosoftIcon";
 import { useAuth } from "../../contexts/AuthContext";
-import { MENSAGEM_ENTRA_NAO_CONFIGURADO } from "../../services/entraId";
 
 export default function Login() {
   const navigate = useNavigate();
-  const { entrarComMicrosoft, erroDeAcesso, entraIndisponivel, isAuthenticated, isLoading } = useAuth();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { login, erroDeAcesso, isAuthenticated, isLoading, precisaTrocarSenha } = useAuth();
 
-  async function handleEntrar() {
-    setIsSubmitting(true);
-    const resultado = await entrarComMicrosoft();
-    setIsSubmitting(false);
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
+  const [senhaVisivel, setSenhaVisivel] = useState(false);
+  const [enviando, setEnviando] = useState(false);
+  const [erroDoFormulario, setErroDoFormulario] = useState<string | null>(null);
 
-    if (resultado.success) {
-      navigate("/dashboard", { replace: true });
+  async function handleSubmit(evento: FormEvent) {
+    evento.preventDefault();
+    setErroDoFormulario(null);
+
+    if (!email.trim() || !senha) {
+      setErroDoFormulario("Preencha e-mail e senha para continuar.");
+      return;
     }
+
+    setEnviando(true);
+    const resultado = await login(email, senha);
+    setEnviando(false);
+
+    if (!resultado.success) {
+      setSenha("");
+      return;
+    }
+
+    navigate("/dashboard", { replace: true });
   }
 
   if (isLoading) {
@@ -31,10 +47,10 @@ export default function Login() {
   }
 
   if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to={precisaTrocarSenha ? "/trocar-senha" : "/dashboard"} replace />;
   }
 
-  const mensagemDeErro = entraIndisponivel ? MENSAGEM_ENTRA_NAO_CONFIGURADO : erroDeAcesso;
+  const mensagemDeErro = erroDoFormulario ?? erroDeAcesso;
 
   return (
     <div className="sp-login">
@@ -49,7 +65,7 @@ export default function Login() {
             <br />
             CONTÁBIL
           </h1>
-          <p className="sp-login__hero-text">Acesse com sua conta corporativa para continuar.</p>
+          <p className="sp-login__hero-text">Acesse sua conta para continuar.</p>
         </div>
 
         <div className="sp-login__hero-stripes" aria-hidden="true">
@@ -62,20 +78,40 @@ export default function Login() {
         <div className="sp-login__card">
           <div className="sp-login__card-header">
             <h2>Bem-vindo(a)!</h2>
-            <p>Entre com a conta Microsoft da Swiss Park</p>
+            <p>Informe seus dados para acessar o sistema</p>
           </div>
 
-          <div className="sp-login__form">
-            <Button
-              type="button"
-              fullWidth
-              icon={<MicrosoftIcon size={18} />}
-              isLoading={isSubmitting}
-              disabled={entraIndisponivel}
-              onClick={handleEntrar}
-            >
-              Entrar com Microsoft
-            </Button>
+          <form className="sp-login__form" onSubmit={handleSubmit} noValidate>
+            <Input
+              label="E-mail"
+              type="email"
+              name="email"
+              placeholder="seu.email@swisspark.com.br"
+              leadingIcon={<Mail size={17} />}
+              value={email}
+              onChange={(evento) => setEmail(evento.target.value)}
+              autoComplete="username"
+            />
+
+            <Input
+              label="Senha"
+              type={senhaVisivel ? "text" : "password"}
+              name="senha"
+              placeholder="Digite sua senha"
+              leadingIcon={<Lock size={17} />}
+              value={senha}
+              onChange={(evento) => setSenha(evento.target.value)}
+              autoComplete="current-password"
+              trailingAdornment={
+                <button
+                  type="button"
+                  onClick={() => setSenhaVisivel((visivel) => !visivel)}
+                  aria-label={senhaVisivel ? "Ocultar senha" : "Mostrar senha"}
+                >
+                  {senhaVisivel ? <EyeOff size={17} /> : <Eye size={17} />}
+                </button>
+              }
+            />
 
             {mensagemDeErro && (
               <p className="sp-login__form-error" role="alert">
@@ -84,11 +120,15 @@ export default function Login() {
               </p>
             )}
 
+            <Button type="submit" fullWidth isLoading={enviando}>
+              Entrar
+            </Button>
+
             <p className="sp-login__hint">
-              A senha é digitada no ambiente da Microsoft e não passa por este sistema. O acesso ao
-              painel é liberado por um administrador.
+              Esqueceu a senha? Procure um administrador do painel — ele consegue definir uma
+              senha provisória para você.
             </p>
-          </div>
+          </form>
         </div>
 
         <p className="sp-login__footer">© 2026 Swiss Park. Todos os direitos reservados.</p>

@@ -1,10 +1,13 @@
+using System.Security.Claims;
+using System.Text;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using Microsoft.Identity.Web;
+using Microsoft.IdentityModel.Tokens;
 using PainelWebSwissPark.Api.Authorization;
 using PainelWebSwissPark.Api.Data;
 using PainelWebSwissPark.Api.Entities;
@@ -90,17 +93,57 @@ builder.Services.AddDbContext<PainelDbContext>(options => options.UseNpgsql(cone
 builder.Services.AddSqlServerData(builder.Configuration);
 
 // ==========================================================================
-// Autenticação (Entra ID) e autorização (bi_users)
+// Autenticação e autorização
 //
-// O Entra ID prova quem a pessoa é; a bi_users diz se ela pode entrar.
-// Nenhum token próprio é emitido: o front manda o access token do Entra e o
-// backend consulta a bi_users a cada requisição. É isso que faz a desativação
-// valer no request seguinte, sem esperar token expirar.
+// A bi_users guarda o hash PBKDF2 da senha e é quem prova a identidade. O login
+// devolve um token assinado que carrega apenas quem a pessoa é.
+//
+// Perfil e situação NÃO viajam no token: são lidos do banco a cada requisição.
+// É isso que faz desativar ou rebaixar alguém valer no request seguinte, em vez
+// de esperar o token expirar.
 // ==========================================================================
+builder.Services.Configure<AuthOptions>(builder.Configuration.GetSection(AuthOptions.SectionName));
+
+var auth = builder.Configuration.GetSection(AuthOptions.SectionName).Get<AuthOptions>() ?? new AuthOptions();
+
+if (Encoding.UTF8.GetByteCount(auth.JwtSigningKey) < 32)
+{
+    var ondeProcurou = arquivoDeChaves is null
+        ? $"Nenhum keys.json encontrado a partir de {builder.Environment.ContentRootPath}."
+        : $"keys.json lido: {arquivoDeChaves}";
+
+    throw new InvalidOperationException(
+        "Auth:JwtSigningKey ausente ou curta demais — HMAC-SHA256 exige no mínimo 32 bytes. "
+        + "Gere uma com: openssl rand -base64 48, e guarde no keys.json "
+        + "(ou na variável de ambiente Auth__JwtSigningKey). " + ondeProcurou);
+}
+
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddMicrosoftIdentityWebApi(builder.Configuration, "AzureAd");
+    .AddJwtBearer(options =>
+    {
+        // Sem o mapeamento legado, "sub" continua sendo "sub" em vez de virar
+        // um claim de nome longo do WS-Federation.
+        options.MapInboundClaims = false;
 
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = auth.Issuer,
+            ValidateAudience = true,
+            ValidAudience = auth.Audience,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(auth.JwtSigningKey)),
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromMinutes(1),
+            NameClaimType = ClaimsPainel.Nome,
+            RoleClaimType = ClaimTypes.Role,
+        };
+    });
+
+builder.Services.AddSingleton<IPasswordHasher<BiUser>, PasswordHasher<BiUser>>();
+builder.Services.AddSingleton<ITokenService, TokenService>();
+builder.Services.AddScoped<ILoginService, LoginService>();
 builder.Services.AddScoped<IUsuarioAtualService, UsuarioAtualService>();
 builder.Services.AddScoped<IClaimsTransformation, BiUsersClaimsTransformation>();
 builder.Services.AddScoped<IAuthorizationHandler, UsuarioAtivoHandler>();
@@ -207,5 +250,9 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Primeiro administrador, quando PAINEL_ADMIN_EMAIL/PASSWORD estiverem definidos
+// e a bi_users ainda não tiver nenhum administrador ativo.
+await AdministradorInicial.GarantirAsync(app.Services, app.Logger);
 
 app.Run();

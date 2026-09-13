@@ -27,17 +27,17 @@ public class PainelDbContext(
             entity.HasKey(e => e.Id);
 
             entity.Property(e => e.Id).HasColumnName("id").HasDefaultValueSql("gen_random_uuid()");
-            entity.Property(e => e.EntraObjectId).HasColumnName("entra_object_id");
             entity.Property(e => e.Email).HasColumnName("email").IsRequired();
             entity.Property(e => e.Name).HasColumnName("name").IsRequired();
+            entity.Property(e => e.PasswordHash).HasColumnName("password_hash").IsRequired();
+            entity.Property(e => e.MustChangePassword).HasColumnName("must_change_password").HasDefaultValue(true);
             entity.Property(e => e.Role).HasColumnName("role").IsRequired();
             entity.Property(e => e.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+            entity.Property(e => e.LastLoginAt).HasColumnName("last_login_at");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
             entity.Property(e => e.CreatedBy).HasColumnName("created_by");
             entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("now()");
             entity.Property(e => e.UpdatedBy).HasColumnName("updated_by");
-
-            entity.HasIndex(e => e.EntraObjectId).IsUnique().HasFilter("entra_object_id IS NOT NULL");
         });
 
         modelBuilder.Entity<BiUserAudit>(entity =>

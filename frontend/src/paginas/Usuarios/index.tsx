@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Pencil, Search, UserPlus } from "lucide-react";
+import { KeyRound, Pencil, Search, UserPlus } from "lucide-react";
 import AppHeader from "../../componentes/layout/AppHeader";
 import AppLayout from "../../componentes/layout/AppLayout";
 import Button from "../../componentes/ui/Button";
@@ -17,6 +17,7 @@ import {
   atualizarUsuario,
   criarUsuario,
   listarUsuarios,
+  redefinirSenhaUsuario,
 } from "../../services/usuariosService";
 import type { UserRole } from "../../interfaces/Auth";
 import type { Usuario } from "../../interfaces/Usuario";
@@ -26,6 +27,8 @@ const OPCOES_DE_PERFIL: { value: UserRole; label: string }[] = [
   { value: "Gerente", label: "Gerente" },
   { value: "Analista", label: "Analista" },
 ];
+
+const TAMANHO_MINIMO_DE_SENHA = 8;
 
 type Formulario = { modo: "criar" } | { modo: "editar"; usuario: Usuario };
 
@@ -45,12 +48,18 @@ export default function Usuarios() {
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [perfil, setPerfil] = useState<UserRole>("Analista");
+  const [senhaInicial, setSenhaInicial] = useState("");
   const [erroDoFormulario, setErroDoFormulario] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
 
   const [alvoDaConfirmacao, setAlvoDaConfirmacao] = useState<Usuario | null>(null);
   const [erroDaConfirmacao, setErroDaConfirmacao] = useState<string | null>(null);
   const [alterandoStatus, setAlterandoStatus] = useState(false);
+
+  const [alvoDaSenha, setAlvoDaSenha] = useState<Usuario | null>(null);
+  const [novaSenha, setNovaSenha] = useState("");
+  const [erroDaSenha, setErroDaSenha] = useState<string | null>(null);
+  const [redefinindoSenha, setRedefinindoSenha] = useState(false);
 
   const carregarLista = useCallback(async () => {
     setCarregando(true);
@@ -86,6 +95,7 @@ export default function Usuarios() {
     setNome("");
     setEmail("");
     setPerfil("Analista");
+    setSenhaInicial("");
     setErroDoFormulario(null);
   }
 
@@ -94,11 +104,13 @@ export default function Usuarios() {
     setNome(usuario.name);
     setEmail(usuario.email);
     setPerfil(usuario.role);
+    setSenhaInicial("");
     setErroDoFormulario(null);
   }
 
   function fecharFormulario() {
     setFormulario(null);
+    setSenhaInicial("");
     setErroDoFormulario(null);
   }
 
@@ -117,13 +129,18 @@ export default function Usuarios() {
   async function salvar() {
     if (!formulario) return;
 
+    if (formulario.modo === "criar" && senhaInicial.length < TAMANHO_MINIMO_DE_SENHA) {
+      setErroDoFormulario(`A senha inicial precisa ter pelo menos ${TAMANHO_MINIMO_DE_SENHA} caracteres.`);
+      return;
+    }
+
     setSalvando(true);
     setErroDoFormulario(null);
 
     try {
       const salvo =
         formulario.modo === "criar"
-          ? await criarUsuario({ name: nome, email, role: perfil })
+          ? await criarUsuario({ name: nome, email, role: perfil, senhaInicial })
           : await atualizarUsuario(formulario.usuario.id, { name: nome, role: perfil });
 
       guardarNaLista(salvo);
@@ -152,6 +169,28 @@ export default function Usuarios() {
     }
   }
 
+  async function confirmarRedefinicaoDeSenha() {
+    if (!alvoDaSenha) return;
+
+    if (novaSenha.length < TAMANHO_MINIMO_DE_SENHA) {
+      setErroDaSenha(`A senha precisa ter pelo menos ${TAMANHO_MINIMO_DE_SENHA} caracteres.`);
+      return;
+    }
+
+    setRedefinindoSenha(true);
+    setErroDaSenha(null);
+
+    try {
+      guardarNaLista(await redefinirSenhaUsuario(alvoDaSenha.id, novaSenha));
+      setAlvoDaSenha(null);
+      setNovaSenha("");
+    } catch (erro) {
+      setErroDaSenha(extrairMensagemDeErro(erro, "Não foi possível redefinir a senha."));
+    } finally {
+      setRedefinindoSenha(false);
+    }
+  }
+
   const colunas: TableColumn<Usuario>[] = [
     {
       key: "name",
@@ -174,8 +213,8 @@ export default function Usuarios() {
             label={linha.isActive ? "Ativo" : "Inativo"}
             tone={linha.isActive ? "green" : "neutral"}
           />
-          {linha.isActive && linha.primeiroAcessoPendente && (
-            <span className="sp-usuarios__pendente">aguardando 1º acesso</span>
+          {linha.isActive && linha.mustChangePassword && (
+            <span className="sp-usuarios__pendente">senha provisória</span>
           )}
         </div>
       ),
@@ -196,6 +235,19 @@ export default function Usuarios() {
               onClick={() => abrirEdicao(linha)}
             >
               Editar
+            </Button>
+
+            <Button
+              type="button"
+              variant="ghost"
+              icon={<KeyRound size={15} />}
+              onClick={() => {
+                setErroDaSenha(null);
+                setNovaSenha("");
+                setAlvoDaSenha(linha);
+              }}
+            >
+              Senha
             </Button>
 
             <Button
@@ -224,10 +276,7 @@ export default function Usuarios() {
 
   return (
     <AppLayout>
-      <AppHeader
-        title="Usuários"
-        subtitle="Controle quem entra no painel e com qual perfil"
-      />
+      <AppHeader title="Usuários" subtitle="Controle quem entra no painel e com qual perfil" />
 
       <main className="sp-management">
         <div className="sp-management__toolbar">
@@ -279,8 +328,8 @@ export default function Usuarios() {
         title={ehEdicao ? "Editar usuário" : "Novo usuário"}
         description={
           ehEdicao
-            ? "O e-mail não muda: é ele que liga a pessoa à conta Microsoft."
-            : "A pessoa entra com a conta Microsoft dela. O acesso vale a partir do primeiro login."
+            ? "O e-mail não muda: é por ele que a pessoa entra."
+            : "A senha que você definir é provisória — a pessoa é obrigada a trocar no primeiro acesso."
         }
       >
         <form
@@ -318,6 +367,18 @@ export default function Usuarios() {
             onChange={(evento) => setPerfil(evento.target.value as UserRole)}
           />
 
+          {!ehEdicao && (
+            <Input
+              label="Senha provisória"
+              name="senhaInicial"
+              type="text"
+              placeholder={`Mínimo de ${TAMANHO_MINIMO_DE_SENHA} caracteres`}
+              value={senhaInicial}
+              onChange={(evento) => setSenhaInicial(evento.target.value)}
+              autoComplete="off"
+            />
+          )}
+
           {erroDoFormulario && (
             <p className="sp-usuarios__erro" role="alert">
               {erroDoFormulario}
@@ -336,13 +397,53 @@ export default function Usuarios() {
       </Modal>
 
       <Modal
+        isOpen={alvoDaSenha !== null}
+        onClose={() => setAlvoDaSenha(null)}
+        title="Redefinir senha"
+        description={`${alvoDaSenha?.name} entra com esta senha e é obrigado a trocar em seguida.`}
+      >
+        <form
+          className="sp-usuarios__form"
+          onSubmit={(evento) => {
+            evento.preventDefault();
+            void confirmarRedefinicaoDeSenha();
+          }}
+        >
+          <Input
+            label="Senha provisória"
+            name="novaSenha"
+            type="text"
+            placeholder={`Mínimo de ${TAMANHO_MINIMO_DE_SENHA} caracteres`}
+            value={novaSenha}
+            onChange={(evento) => setNovaSenha(evento.target.value)}
+            autoComplete="off"
+          />
+
+          {erroDaSenha && (
+            <p className="sp-usuarios__erro" role="alert">
+              {erroDaSenha}
+            </p>
+          )}
+
+          <div className="sp-usuarios__form-acoes">
+            <Button type="button" variant="secondary" onClick={() => setAlvoDaSenha(null)}>
+              Cancelar
+            </Button>
+            <Button type="submit" isLoading={redefinindoSenha}>
+              Redefinir
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal
         isOpen={alvoDaConfirmacao !== null}
         onClose={() => setAlvoDaConfirmacao(null)}
         title={alvoDaConfirmacao?.isActive ? "Desativar acesso" : "Reativar acesso"}
         description={
           alvoDaConfirmacao?.isActive
             ? `${alvoDaConfirmacao?.name} perde o acesso na próxima ação que fizer no painel.`
-            : `${alvoDaConfirmacao?.name} volta a entrar com a conta Microsoft.`
+            : `${alvoDaConfirmacao?.name} volta a conseguir entrar.`
         }
       >
         <div className="sp-usuarios__form">

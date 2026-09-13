@@ -90,15 +90,34 @@ Fora do container, ela sobe de diretório a partir da pasta do projeto .NET até
 Se a connection string não for encontrada, a aplicação recusa subir e a mensagem diz **qual
 `keys.json` foi lido** — ou que nenhum foi encontrado, e a partir de onde procurou.
 
+### Sessão e primeiro administrador
+
+Duas variáveis a mais no `.env`:
+
+```bash
+# Assina os tokens de sessão. Mínimo de 32 bytes; gere com: openssl rand -base64 48
+PAINEL_JWT_SIGNING_KEY=
+
+# Primeiro administrador — só é criado se a bi_users ainda não tiver nenhum
+# administrador ativo. A senha entra como provisória.
+PAINEL_ADMIN_EMAIL=
+PAINEL_ADMIN_PASSWORD=
+PAINEL_ADMIN_NAME=
+```
+
+Depois do primeiro acesso, apague `PAINEL_ADMIN_EMAIL` e `PAINEL_ADMIN_PASSWORD`. Trocar a
+chave de assinatura invalida todas as sessões abertas.
+
+A chave também pode vir do `keys.json`, como as connection strings: `Auth:JwtSigningKey`.
+
 ### O problema do front, e como está resolvido
 
 O Vite embute as variáveis `VITE_*` no bundle **durante o build**. Se dependêssemos disso, a
-imagem ficaria amarrada a um tenant e a uma URL — e não daria para construir nada antes de a
-TI devolver os dados do Entra ID.
+imagem ficaria amarrada a uma URL de API e cada ambiente exigiria uma imagem própria.
 
-Em vez disso, o container gera um `/config.js` no start, a partir das variáveis
-`PAINEL_ENTRA_*` (veja `frontend/docker-entrypoint.sh`). A mesma imagem serve para homologação
-e produção; trocar de ambiente é reiniciar o container com outro `.env`, não rebuildar.
+Em vez disso, o container gera um `/config.js` no start (veja
+`frontend/docker-entrypoint.sh`). Nada de segredo passa por ali: a autenticação acontece
+toda no backend, e o front só guarda o token que recebe depois do login.
 
 Fora do container nada muda: `npm run dev` continua lendo o `.env.local`.
 
@@ -115,20 +134,15 @@ Para um Postgres em outro servidor, use o host normalmente.
 
 ## Produção
 
-Três pontos além do `.env`:
+Dois pontos além do `.env`:
 
 1. **TLS.** Os containers falam só HTTP. Coloque um proxy na frente (nginx, Traefik,
-   Caddy, o balanceador da empresa) terminando HTTPS na porta publicada. O Entra ID só
-   aceita redirect URI `http://` para `localhost` — em produção, sem certificado não entra.
-   A API já está preparada para proxy: `Hosting__UseForwardedHeaders` vem `true` do compose.
+   Caddy, o balanceador da empresa) terminando HTTPS na porta publicada. Sem isso, senha e
+   token trafegam em texto claro na rede. A API já está preparada para proxy:
+   `Hosting__UseForwardedHeaders` vem `true` do compose.
 
-2. **`PAINEL_ENTRA_REDIRECT_URI` idêntica à cadastrada no Entra ID.** A Microsoft compara
-   caractere por caractere: `https://painel.swisspark.com.br` e
-   `https://painel.swisspark.com.br/` são URIs diferentes para ela.
-
-3. **Saída HTTPS para `login.microsoftonline.com`.** O container `api` baixa as chaves
-   públicas da Microsoft para validar a assinatura dos tokens. Em rede fechada isso falha,
-   e o sintoma (401 em tudo) não aponta para a causa. Vale confirmar com a TI.
+2. **`PAINEL_JWT_SIGNING_KEY` própria de produção.** Não reaproveite a de
+   desenvolvimento. Quem tem a chave consegue forjar um token de qualquer usuário.
 
 ## Imagens
 
@@ -148,5 +162,6 @@ O container não cria tabela. Rode o script uma vez no Postgres:
 psql -h SERVIDOR -U USUARIO -d contabil -f docs/sql/001_bi_users.sql
 ```
 
-Sem o administrador de bootstrap (o `INSERT` no fim do script, **com o e-mail trocado**)
-ninguém consegue abrir a tela de usuários.
+O script não cria usuário nenhum: o primeiro administrador vem das variáveis
+`PAINEL_ADMIN_*` na primeira subida. Assim nenhuma senha, nem hash de senha conhecida, fica
+versionada.

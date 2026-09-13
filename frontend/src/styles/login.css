@@ -216,3 +216,33 @@
     padding: 28px 22px;
   }
 }
+
+/* ==========================================================================
+   Troca de senha
+   ========================================================================== */
+
+.sp-troca-senha {
+  max-width: 420px;
+}
+
+.sp-troca-senha .sp-login__card-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sp-troca-senha__sair {
+  align-self: center;
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.sp-troca-senha__sair:hover {
+  color: var(--color-text);
+  text-decoration: underline;
+}

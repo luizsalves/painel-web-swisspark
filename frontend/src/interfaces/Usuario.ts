@@ -6,8 +6,9 @@ export interface Usuario {
   email: string;
   role: UserRole;
   isActive: boolean;
-  /** Cadastrado, mas ainda sem primeiro login — o oid do Entra ainda não foi vinculado. */
-  primeiroAcessoPendente: boolean;
+  /** Senha provisória: definida por um administrador e ainda não trocada. */
+  mustChangePassword: boolean;
+  lastLoginAt?: string | null;
   avatarInitials: string;
 }
 
@@ -15,6 +16,7 @@ export interface NovoUsuario {
   name: string;
   email: string;
   role: UserRole;
+  senhaInicial: string;
 }
 
 export interface AlteracaoUsuario {

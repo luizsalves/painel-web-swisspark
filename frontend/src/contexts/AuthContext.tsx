@@ -1,30 +1,20 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { carregarUsuarioAtual } from "../services/authService";
+import {
+  carregarUsuarioAtual,
+  login as autenticar,
+  sair,
+  trocarSenha as trocarSenhaRequest,
+} from "../services/authService";
+import { obterSessao } from "../services/authStorage";
 import {
   EVENTO_ACESSO_NEGADO,
   EVENTO_SESSAO_EXPIRADA,
   extrairMensagemDeErro,
 } from "../services/api";
-import {
-  entraConfigurado,
-  entrarComMicrosoft as entrarNoEntra,
-  inicializarEntra,
-  limparSessaoLocal,
-  obterContaAtiva,
-  sairDoEntra,
-} from "../services/entraId";
 import type { AuthContextValue, ResultadoLogin, User } from "../interfaces/Auth";
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
-
-/** Fechar o popup do Entra não é erro — não vale assustar quem só desistiu. */
-const CODIGOS_DE_DESISTENCIA = ["user_cancelled", "popup_window_error", "interaction_in_progress"];
-
-function ehDesistenciaDoUsuario(erro: unknown): boolean {
-  const codigo = (erro as { errorCode?: string } | null)?.errorCode;
-  return typeof codigo === "string" && CODIGOS_DE_DESISTENCIA.includes(codigo);
-}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -32,27 +22,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [erroDeAcesso, setErroDeAcesso] = useState<string | null>(null);
 
   const encerrarSessao = useCallback((mensagem: string | null) => {
+    sair();
     setUser(null);
     setErroDeAcesso(mensagem);
-    void limparSessaoLocal();
   }, []);
 
-  // Recupera a sessão ao abrir o app: o MSAL guarda a conta, mas quem manda é a
-  // bi_users — por isso o perfil vem sempre da API, nunca do armazenamento local.
+  // Recupera a sessão ao abrir o app. O token guardado diz quem somos, mas quem
+  // manda é a bi_users — por isso o perfil vem sempre da API, nunca do storage.
   useEffect(() => {
     let cancelado = false;
 
     async function restaurarSessao() {
-      try {
-        await inicializarEntra();
+      if (!obterSessao()) {
+        if (!cancelado) setIsLoading(false);
+        return;
+      }
 
-        if (obterContaAtiva()) {
-          const usuarioAtual = await carregarUsuarioAtual();
-          if (!cancelado) setUser(usuarioAtual);
-        }
+      try {
+        const usuarioAtual = await carregarUsuarioAtual();
+        if (!cancelado) setUser(usuarioAtual);
       } catch (erro) {
-        if (cancelado) return;
-        encerrarSessao(extrairMensagemDeErro(erro, "Não foi possível restaurar sua sessão."));
+        if (!cancelado) {
+          encerrarSessao(extrairMensagemDeErro(erro, "Não foi possível restaurar sua sessão."));
+        }
       } finally {
         if (!cancelado) setIsLoading(false);
       }
@@ -76,8 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const motivo = (evento as CustomEvent<string>).detail;
 
       try {
-        const usuarioAtual = await carregarUsuarioAtual();
-        setUser(usuarioAtual);
+        setUser(await carregarUsuarioAtual());
       } catch {
         encerrarSessao(motivo ?? "Seu acesso ao painel foi revogado.");
       }
@@ -94,45 +85,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [encerrarSessao]);
 
-  const entrarComMicrosoft = useCallback(async (): Promise<ResultadoLogin> => {
+  const login = useCallback(async (email: string, senha: string): Promise<ResultadoLogin> => {
     setErroDeAcesso(null);
 
     try {
-      await entrarNoEntra();
-
-      const usuarioAtual = await carregarUsuarioAtual();
-      setUser(usuarioAtual);
-
+      setUser(await autenticar(email, senha));
       return { success: true };
     } catch (erro) {
-      if (ehDesistenciaDoUsuario(erro)) {
-        return { success: false };
-      }
-
       const mensagem = extrairMensagemDeErro(erro, "Não foi possível entrar. Tente novamente.");
       encerrarSessao(mensagem);
-
       return { success: false, message: mensagem };
     }
   }, [encerrarSessao]);
 
-  const logout = useCallback(() => {
-    setUser(null);
-    setErroDeAcesso(null);
-    void sairDoEntra();
+  const trocarSenha = useCallback(async (senhaAtual: string, novaSenha: string) => {
+    await trocarSenhaRequest(senhaAtual, novaSenha);
+
+    // A troca derruba o must_change_password no banco; recarregar é o que libera
+    // o resto do painel para esta sessão.
+    setUser(await carregarUsuarioAtual());
   }, []);
+
+  const logout = useCallback(() => {
+    encerrarSessao(null);
+  }, [encerrarSessao]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
       isAuthenticated: Boolean(user),
       isLoading,
-      entraIndisponivel: !entraConfigurado,
+      precisaTrocarSenha: user?.mustChangePassword ?? false,
       erroDeAcesso,
-      entrarComMicrosoft,
+      login,
+      trocarSenha,
       logout,
     }),
-    [user, isLoading, erroDeAcesso, entrarComMicrosoft, logout]
+    [user, isLoading, erroDeAcesso, login, trocarSenha, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

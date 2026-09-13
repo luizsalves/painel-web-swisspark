@@ -23,3 +23,9 @@ export async function alterarStatusUsuario(id: string, isActive: boolean): Promi
   const { data } = await api.patch<Usuario>(`${RECURSO}/${id}/status`, { isActive });
   return data;
 }
+
+/** Define uma senha provisória para outra pessoa: ela é obrigada a trocar no próximo acesso. */
+export async function redefinirSenhaUsuario(id: string, novaSenha: string): Promise<Usuario> {
+  const { data } = await api.post<Usuario>(`${RECURSO}/${id}/senha`, { novaSenha });
+  return data;
+}

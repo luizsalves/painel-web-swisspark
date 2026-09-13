@@ -8,19 +8,23 @@ namespace PainelWebSwissPark.Api.Services.Auth;
 /// </summary>
 public sealed record UsuarioAutorizado(
     Guid Id,
-    Guid? EntraObjectId,
     string Email,
     string Name,
     string Role,
-    bool IsActive);
+    bool IsActive,
+    bool MustChangePassword);
 
 public interface IUsuarioAtualService
 {
     /// <summary>
-    /// Traduz o token do Entra ID para o registro correspondente na bi_users.
-    /// Casa por oid; no primeiro login casa por e-mail e grava o oid.
-    /// Retorna null quando a pessoa não está cadastrada — quem decide o 403 é a autorização.
-    /// O resultado ainda pode estar inativo: cabe ao chamador checar <c>IsActive</c>.
+    /// Traduz o token para o registro correspondente na bi_users.
+    ///
+    /// O token prova quem a pessoa é; perfil e situação vêm sempre do banco, nunca
+    /// do próprio token. É isso que faz desativar ou rebaixar alguém valer na
+    /// requisição seguinte.
+    ///
+    /// Retorna null quando o registro não existe mais. O resultado ainda pode estar
+    /// inativo: cabe ao chamador checar <c>IsActive</c>.
     /// </summary>
     Task<UsuarioAutorizado?> ResolverAsync(ClaimsPrincipal principal, CancellationToken cancellationToken);
 }

@@ -25,4 +25,15 @@ public interface IUsuariosService
         bool ativo,
         Guid autorId,
         CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Administrador define uma senha nova para outra pessoa. Entra como provisória:
+    /// quem receber é obrigado a trocar no próximo acesso.
+    /// Retorna null quando o usuário não existe.
+    /// </summary>
+    Task<UsuarioViewModel?> RedefinirSenhaAsync(
+        Guid id,
+        string novaSenha,
+        Guid autorId,
+        CancellationToken cancellationToken);
 }

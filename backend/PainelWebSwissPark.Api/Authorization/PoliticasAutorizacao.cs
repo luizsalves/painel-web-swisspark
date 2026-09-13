@@ -2,7 +2,7 @@ namespace PainelWebSwissPark.Api.Authorization;
 
 public static class PoliticasAutorizacao
 {
-    /// <summary>Autenticado no Entra ID e ativo na bi_users. É a política padrão da API.</summary>
+    /// <summary>Autenticado e ativo na bi_users. É a política padrão da API.</summary>
     public const string UsuarioAtivo = "UsuarioAtivo";
 
     /// <summary>Usuário ativo com perfil Administrador. Protege a área administrativa.</summary>
@@ -11,6 +11,10 @@ public static class PoliticasAutorizacao
 
 public static class ClaimsPainel
 {
-    /// <summary>Id do registro na bi_users — não confundir com o oid do Entra.</summary>
-    public const string BiUserId = "painel:bi_user_id";
+    /// <summary>Id do usuário na bi_users. Vai no token e é por ele que a API o encontra.</summary>
+    public const string Subject = "sub";
+
+    public const string Email = "email";
+
+    public const string Nome = "name";
 }

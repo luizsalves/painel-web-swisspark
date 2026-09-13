@@ -1,11 +1,15 @@
 using System.Net.Mail;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
 using PainelWebSwissPark.Api.Data;
 using PainelWebSwissPark.Api.DTOs.Requests;
 using PainelWebSwissPark.Api.DTOs.ViewModels;
 using PainelWebSwissPark.Api.Entities;
 using PainelWebSwissPark.Api.Exceptions;
+using PainelWebSwissPark.Api.Options;
+using PainelWebSwissPark.Api.Services.Auth;
 
 namespace PainelWebSwissPark.Api.Services.BusinessLogic;
 
@@ -16,9 +20,13 @@ namespace PainelWebSwissPark.Api.Services.BusinessLogic;
 /// </summary>
 public class UsuariosService(
     PainelDbContext db,
+    IPasswordHasher<BiUser> hasher,
     IMemoryCache cache,
+    IOptions<AuthOptions> authOptions,
     ILogger<UsuariosService> logger) : IUsuariosService
 {
+    private readonly int _tamanhoMinimoDeSenha = authOptions.Value.MinimumPasswordLength;
+
     public async Task<IReadOnlyList<UsuarioViewModel>> ListarAsync(CancellationToken cancellationToken)
     {
         var usuarios = await db.BiUsers
@@ -53,6 +61,8 @@ public class UsuariosService(
             throw new RegraDeNegocioException($"Perfil inválido. Use um destes: {string.Join(", ", PerfisUsuario.Todos)}.");
         }
 
+        LoginService.ValidarSenha(request.SenhaInicial, _tamanhoMinimoDeSenha);
+
         var jaExiste = await db.BiUsers.AnyAsync(u => u.Email.ToLower() == email, cancellationToken);
         if (jaExiste)
         {
@@ -63,16 +73,18 @@ public class UsuariosService(
         var usuario = new BiUser
         {
             Id = Guid.NewGuid(),
-            EntraObjectId = null,
             Email = email,
             Name = nome,
             Role = perfil,
             IsActive = true,
+            MustChangePassword = true,
             CreatedAt = agora,
             CreatedBy = autorId,
             UpdatedAt = agora,
             UpdatedBy = autorId,
         };
+
+        usuario.PasswordHash = hasher.HashPassword(usuario, request.SenhaInicial);
 
         db.BiUsers.Add(usuario);
         RegistrarAuditoria(usuario.Id, AcoesAuditoria.Criado, $"{email} como {perfil}", autorId);
@@ -134,7 +146,7 @@ public class UsuariosService(
         RegistrarAuditoria(usuario.Id, AcoesAuditoria.Atualizado, string.Join("; ", mudancas), autorId);
 
         await db.SaveChangesAsync(cancellationToken);
-        InvalidarCache(usuario);
+        InvalidarCache(usuario.Id);
 
         logger.LogInformation("Usuário {UserId} atualizado por {AutorId}: {Mudancas}.", usuario.Id, autorId, string.Join("; ", mudancas));
 
@@ -154,8 +166,7 @@ public class UsuariosService(
         {
             if (usuario.Id == autorId)
             {
-                throw new RegraDeNegocioException(
-                    "Você não pode desativar o seu próprio acesso.");
+                throw new RegraDeNegocioException("Você não pode desativar o seu próprio acesso.");
             }
 
             if (usuario.Role == PerfisUsuario.Administrador && usuario.IsActive)
@@ -177,13 +188,42 @@ public class UsuariosService(
             autorId);
 
         await db.SaveChangesAsync(cancellationToken);
-        InvalidarCache(usuario);
+        InvalidarCache(usuario.Id);
 
         logger.LogInformation(
             "Usuário {UserId} {Status} por {AutorId}.",
             usuario.Id,
             ativo ? "ativado" : "desativado",
             autorId);
+
+        return Mapear(usuario);
+    }
+
+    public async Task<UsuarioViewModel?> RedefinirSenhaAsync(
+        Guid id,
+        string novaSenha,
+        Guid autorId,
+        CancellationToken cancellationToken)
+    {
+        var usuario = await db.BiUsers.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+        if (usuario is null) return null;
+
+        LoginService.ValidarSenha(novaSenha, _tamanhoMinimoDeSenha);
+
+        usuario.PasswordHash = hasher.HashPassword(usuario, novaSenha);
+
+        // Provisória: quem receber é obrigado a trocar antes de usar o painel.
+        // Sem isso, o administrador continuaria conhecendo a senha de outra pessoa.
+        usuario.MustChangePassword = true;
+        usuario.UpdatedAt = DateTimeOffset.UtcNow;
+        usuario.UpdatedBy = autorId;
+
+        RegistrarAuditoria(usuario.Id, AcoesAuditoria.SenhaRedefinida, "senha provisória definida por administrador", autorId);
+
+        await db.SaveChangesAsync(cancellationToken);
+        InvalidarCache(usuario.Id);
+
+        logger.LogInformation("Senha de {UserId} redefinida por {AutorId}.", usuario.Id, autorId);
 
         return Mapear(usuario);
     }
@@ -217,13 +257,7 @@ public class UsuariosService(
     /// Só faz diferença quando PainelDb:CacheSeconds está ligado — sem isso o próximo
     /// request já consulta o banco. Com cache ligado, é o que mantém a revogação imediata.
     /// </summary>
-    private void InvalidarCache(BiUser usuario)
-    {
-        if (usuario.EntraObjectId is { } oid)
-        {
-            cache.Remove($"bi_users:oid:{oid}");
-        }
-    }
+    private void InvalidarCache(Guid usuarioId) => cache.Remove($"bi_users:{usuarioId}");
 
     private static string NormalizarEmail(string? email) =>
         (email ?? string.Empty).Trim().ToLowerInvariant();
@@ -233,14 +267,15 @@ public class UsuariosService(
         && MailAddress.TryCreate(email, out var endereco)
         && endereco.Address == email;
 
-    private static UsuarioViewModel Mapear(BiUser usuario) => new()
+    public static UsuarioViewModel Mapear(BiUser usuario) => new()
     {
         Id = usuario.Id.ToString(),
         Name = usuario.Name,
         Email = usuario.Email,
         Role = usuario.Role,
         IsActive = usuario.IsActive,
-        PrimeiroAcessoPendente = usuario.EntraObjectId is null,
+        MustChangePassword = usuario.MustChangePassword,
+        LastLoginAt = usuario.LastLoginAt,
         AvatarInitials = MontarIniciais(usuario.Name),
     };
 

@@ -1,23 +1,42 @@
 @PainelWebSwissPark.Api_HostAddress = http://localhost:5017
 
-### Sonda de disponibilidade (único endpoint aberto)
+### Sonda de disponibilidade (aberta, sem token)
 GET {{PainelWebSwissPark.Api_HostAddress}}/api/health
 Accept: application/json
 
-### Quem sou eu — exige o access token do Entra ID
-# Pegue o token no navegador (DevTools > Application > Session Storage) depois de logar no front.
+### Login — devolve o token usado em todos os outros requests
+POST {{PainelWebSwissPark.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "seu.email@swisspark.com.br",
+  "password": "sua-senha"
+}
+
+### Cole aqui o accessToken devolvido acima
 @token = COLE_O_ACCESS_TOKEN_AQUI
 
+### Quem sou eu
 GET {{PainelWebSwissPark.Api_HostAddress}}/api/auth/me
 Authorization: Bearer {{token}}
 Accept: application/json
+
+### Trocar a própria senha (obrigatório para quem está com senha provisória)
+POST {{PainelWebSwissPark.Api_HostAddress}}/api/auth/trocar-senha
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "senhaAtual": "senha-provisoria",
+  "novaSenha": "minha-nova-senha"
+}
 
 ### Listar usuários (exige perfil Administrador)
 GET {{PainelWebSwissPark.Api_HostAddress}}/api/usuarios
 Authorization: Bearer {{token}}
 Accept: application/json
 
-### Cadastrar usuário
+### Cadastrar usuário — a senha inicial entra como provisória
 POST {{PainelWebSwissPark.Api_HostAddress}}/api/usuarios
 Authorization: Bearer {{token}}
 Content-Type: application/json
@@ -25,7 +44,8 @@ Content-Type: application/json
 {
   "name": "Nome da Pessoa",
   "email": "nome.pessoa@swisspark.com.br",
-  "role": "Analista"
+  "role": "Analista",
+  "senhaInicial": "provisoria123"
 }
 
 ### Alterar nome/perfil
@@ -36,6 +56,15 @@ Content-Type: application/json
 {
   "name": "Nome da Pessoa",
   "role": "Gerente"
+}
+
+### Redefinir a senha de outra pessoa (ela é obrigada a trocar em seguida)
+POST {{PainelWebSwissPark.Api_HostAddress}}/api/usuarios/00000000-0000-0000-0000-000000000000/senha
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "novaSenha": "provisoria123"
 }
 
 ### Desativar acesso (revogação vale no request seguinte)

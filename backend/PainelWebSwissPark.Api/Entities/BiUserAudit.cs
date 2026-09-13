@@ -14,10 +14,10 @@ public class BiUserAudit
     /// <summary>Ver <see cref="AcoesAuditoria"/>.</summary>
     public string Action { get; set; } = string.Empty;
 
-    /// <summary>Resumo legível do que mudou (ex.: "role: Analista -> Gerente").</summary>
+    /// <summary>Resumo legível do que mudou (ex.: "perfil: Analista -> Gerente").</summary>
     public string? Details { get; set; }
 
-    /// <summary>Administrador que executou a alteração.</summary>
+    /// <summary>Quem executou a alteração.</summary>
     public Guid? PerformedBy { get; set; }
 
     public DateTimeOffset PerformedAt { get; set; }
@@ -29,5 +29,6 @@ public static class AcoesAuditoria
     public const string Atualizado = "atualizado";
     public const string Ativado = "ativado";
     public const string Desativado = "desativado";
-    public const string PrimeiroLogin = "primeiro-login";
+    public const string SenhaRedefinida = "senha-redefinida";
+    public const string SenhaTrocada = "senha-trocada";
 }

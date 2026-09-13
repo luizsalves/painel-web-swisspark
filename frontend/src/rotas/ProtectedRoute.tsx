@@ -11,7 +11,7 @@ interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ children, requireRole }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { isAuthenticated, isLoading, precisaTrocarSenha, user } = useAuth();
 
   if (isLoading) {
     return (
@@ -23,6 +23,12 @@ export default function ProtectedRoute({ children, requireRole }: ProtectedRoute
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Senha provisória fecha o painel até ser trocada. O backend recusa do mesmo
+  // jeito — aqui é só para a pessoa ver a tela certa em vez de um 403.
+  if (precisaTrocarSenha) {
+    return <Navigate to="/trocar-senha" replace />;
   }
 
   // A trava de verdade está no backend; aqui é só para não mostrar uma tela que

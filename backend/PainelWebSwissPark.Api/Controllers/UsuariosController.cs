@@ -55,4 +55,20 @@ public class UsuariosController(IUsuariosService usuariosService) : ControllerBa
 
         return usuario is null ? NotFound(new { error = "Usuário não encontrado." }) : Ok(usuario);
     }
+
+    /// <summary>Define uma senha provisória para outra pessoa.</summary>
+    [HttpPost("{id:guid}/senha")]
+    public async Task<IActionResult> RedefinirSenha(
+        Guid id,
+        [FromBody] RedefinirSenhaRequest request,
+        CancellationToken cancellationToken)
+    {
+        var usuario = await usuariosService.RedefinirSenhaAsync(
+            id,
+            request.NovaSenha,
+            User.ObterBiUserId(),
+            cancellationToken);
+
+        return usuario is null ? NotFound(new { error = "Usuário não encontrado." }) : Ok(usuario);
+    }
 }

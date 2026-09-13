@@ -6,8 +6,9 @@ export interface User {
   email: string;
   role: UserRole;
   isActive: boolean;
-  /** Cadastrado, mas ainda não entrou nenhuma vez (entra_object_id nulo no backend). */
-  primeiroAcessoPendente: boolean;
+  /** A senha atual foi definida por um administrador e ainda não foi trocada. */
+  mustChangePassword: boolean;
+  lastLoginAt?: string | null;
   avatarInitials: string;
 }
 
@@ -20,10 +21,11 @@ export interface AuthContextValue {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  /** True quando o tenant/client id do Entra ID ainda não foram configurados. */
-  entraIndisponivel: boolean;
-  /** Motivo da recusa de acesso, quando houver (não cadastrado, desativado). */
+  /** Entrou, mas está com senha provisória: só pode trocar a senha. */
+  precisaTrocarSenha: boolean;
+  /** Motivo da recusa de acesso, quando houver. */
   erroDeAcesso: string | null;
-  entrarComMicrosoft: () => Promise<ResultadoLogin>;
+  login: (email: string, senha: string) => Promise<ResultadoLogin>;
+  trocarSenha: (senhaAtual: string, novaSenha: string) => Promise<void>;
   logout: () => void;
 }

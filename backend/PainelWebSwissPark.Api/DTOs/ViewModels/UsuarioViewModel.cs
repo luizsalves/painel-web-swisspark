@@ -9,10 +9,12 @@ public class UsuarioViewModel
     public bool IsActive { get; set; }
 
     /// <summary>
-    /// True enquanto o entra_object_id estiver nulo: cadastrado, mas ainda não entrou
-    /// nenhuma vez. Serve para a tela mostrar "aguardando primeiro acesso".
+    /// A senha atual foi definida por um administrador e ainda não foi trocada.
+    /// A tela mostra isso como "senha provisória".
     /// </summary>
-    public bool PrimeiroAcessoPendente { get; set; }
+    public bool MustChangePassword { get; set; }
+
+    public DateTimeOffset? LastLoginAt { get; set; }
 
     public string AvatarInitials { get; set; } = string.Empty;
 }

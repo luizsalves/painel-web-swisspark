@@ -29,8 +29,17 @@ services:
       PainelDb__Schema: ${PAINEL_DB_SCHEMA:-public}
       PainelDb__CacheSeconds: ${PAINEL_DB_CACHE_SECONDS:-0}
 
-      AzureAd__TenantId: ${PAINEL_ENTRA_TENANT_ID:-}
-      AzureAd__ClientId: ${PAINEL_ENTRA_CLIENT_ID:-}
+      # Chave que assina os tokens de sessão. Mínimo de 32 bytes; a aplicação
+      # recusa subir com menos. Gere com: openssl rand -base64 48
+      # Pode vir do keys.json em vez daqui (Auth:JwtSigningKey).
+      Auth__JwtSigningKey: ${PAINEL_JWT_SIGNING_KEY:-}
+
+      # Primeiro administrador, criado na primeira subida se a bi_users ainda não
+      # tiver nenhum administrador ativo. A senha entra como provisória.
+      # Depois do primeiro acesso, apague as duas do .env.
+      PAINEL_ADMIN_EMAIL: ${PAINEL_ADMIN_EMAIL:-}
+      PAINEL_ADMIN_PASSWORD: ${PAINEL_ADMIN_PASSWORD:-}
+      PAINEL_ADMIN_NAME: ${PAINEL_ADMIN_NAME:-}
 
       # O TLS termina no nginx; redirecionar aqui dentro daria laço de redirect.
       Hosting__UseHttpsRedirection: "false"
@@ -74,11 +83,6 @@ services:
       context: ./frontend
     environment:
       PAINEL_API_URL: /api
-      PAINEL_ENTRA_TENANT_ID: ${PAINEL_ENTRA_TENANT_ID:-}
-      PAINEL_ENTRA_CLIENT_ID: ${PAINEL_ENTRA_CLIENT_ID:-}
-      PAINEL_ENTRA_API_SCOPE: ${PAINEL_ENTRA_API_SCOPE:-}
-      # Precisa bater exatamente com a redirect URI cadastrada no Entra ID.
-      PAINEL_ENTRA_REDIRECT_URI: ${PAINEL_ENTRA_REDIRECT_URI:-}
 
     ports:
       - "${PAINEL_PORTA:-8080}:8080"

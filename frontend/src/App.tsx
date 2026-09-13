@@ -7,6 +7,7 @@ import Fechamentos from "./paginas/Fechamentos";
 import Empresas from "./paginas/Empresas";
 import ContasContabeis from "./paginas/ContasContabeis";
 import Usuarios from "./paginas/Usuarios";
+import TrocarSenha from "./paginas/TrocarSenha";
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/trocar-senha" element={<TrocarSenha />} />
           <Route
             path="/dashboard"
             element={

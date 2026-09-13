@@ -2,74 +2,75 @@
 
 ## O desenho em uma frase
 
-O **Entra ID autentica** (prova que a pessoa é quem diz ser) e a **tabela `bi_users`
-autoriza** (diz se ela pode entrar e com qual perfil).
+A tabela **`bi_users` guarda o hash da senha e o perfil**. O login confere a senha e
+devolve um token; o token diz apenas quem a pessoa é, e **perfil e situação são lidos do
+banco a cada requisição**.
 
-O painel não guarda senha, não faz hash de senha e não emite token próprio.
+## Por que o token carrega tão pouco
 
-## Por que não emitir um token próprio
+Seria natural colocar o perfil dentro do token — economiza uma consulta. Mas aí, quando um
+administrador desativasse alguém ou rebaixasse um perfil, o acesso antigo continuaria
+valendo até aquele token expirar. Como a área administrativa existe justamente para
+controlar acesso, isso a esvaziaria.
 
-Seria natural validar o token da Microsoft uma vez e emitir um JWT da aplicação. Mas aí,
-quando um administrador desativasse alguém, o acesso continuaria valendo até aquele token
-expirar. Como o objetivo da área administrativa é justamente controlar acesso, isso
-esvaziaria a funcionalidade.
-
-Em vez disso: o front manda o access token do Entra a cada requisição, e o backend valida
-a assinatura **e** consulta a `bi_users`. Desativou na tela, o próximo request toma 403.
+Então o token carrega só `sub` (o id na `bi_users`), `email` e `name`. Perfil e situação
+vêm do banco em toda requisição. Desativou na tela, o próximo request toma 403.
 
 O custo é uma consulta por requisição — barata e indexada. Se um dia incomodar, existe
-`PainelDb:CacheSeconds` no `appsettings.json`: qualquer valor acima de 0 liga um cache de
-autorização, e o atraso na revogação passa a ser esse número de segundos. O padrão é 0.
+`PainelDb:CacheSeconds`: qualquer valor acima de 0 liga um cache, e o atraso na revogação
+passa a ser esse número de segundos. O padrão é 0.
 
-## O fluxo, passo a passo
+## O fluxo
 
 ```
-1. usuário clica "Entrar com Microsoft"
-2. MSAL abre login.microsoftonline.com        ← senha e MFA são digitados AQUI
-3. Microsoft autentica e devolve um authorization code
-4. MSAL troca o code por tokens (PKCE, sem client secret no navegador)
-5. front recebe o access token da NOSSA api
-6. front chama a API: Authorization: Bearer <access token>
-7. backend valida a assinatura contra as chaves públicas da Microsoft,
-   lê o claim "oid" e consulta a bi_users
-8. não cadastrado ou inativo -> 403
+1. pessoa digita e-mail e senha
+2. POST /api/auth/login
+3. backend busca na bi_users por lower(email)
+4. confere a senha contra o hash PBKDF2
+5. devolve { accessToken, expiraEm, usuario }
+6. front guarda o token e o manda em todo request:
+      Authorization: Bearer <token>
+7. backend valida a assinatura, lê o "sub" e consulta a bi_users
+8. inativo, inexistente ou com senha provisória -> 403
 ```
 
-A senha nunca passa pela aplicação. O que chega é a identidade já verificada.
+A senha nunca é guardada em texto. A coluna `password_hash` recebe o hash produzido pelo
+`PasswordHasher` do ASP.NET Core (PBKDF2 com HMAC-SHA512), o mesmo componente usado pelo
+ASP.NET Identity — não é implementação caseira.
 
-### A pegadinha que derruba a primeira tentativa
+## Senha provisória
 
-O front precisa pedir um token **para a nossa API** — escopo
-`api://<client-id>/access_as_user`. Se mandar o ID token ou um token do Microsoft Graph,
-a validação de audience falha e a resposta é 401 sem explicação aparente. É o erro
-clássico. Está resolvido em `frontend/src/services/entraId.ts`, mas vale saber ao
-depurar.
+Quem define senha para outra pessoa é sempre o administrador, e essa senha nasce
+provisória: `must_change_password = true`. Até trocar, a pessoa entra mas o painel fica
+fechado — só `/api/auth/me` e `/api/auth/trocar-senha` respondem.
 
-## Casamento por `oid`, não por e-mail
+Isso vale para o cadastro de um usuário novo e para a redefinição de senha de alguém que
+esqueceu. Sem essa trava, o administrador continuaria conhecendo a senha de outra pessoa
+indefinidamente.
 
-E-mail corporativo muda (casamento, troca de domínio). O `oid` do Entra é imutável dentro
-do tenant. Mas o administrador cadastra pessoas por e-mail, porque ele não conhece o
-`oid` de ninguém.
-
-A solução tem três tempos:
-
-1. o administrador cadastra com `entra_object_id` nulo;
-2. no primeiro login o backend casa por e-mail e grava o `oid`;
-3. dali em diante casa sempre por `oid`.
-
-Enquanto o `oid` estiver nulo, a tela de usuários mostra "aguardando 1º acesso".
-
-Se o e-mail bater mas a linha já tiver outro `oid` gravado, o acesso é negado — reaproveitar
-seria entregar o acesso de uma pessoa a outra que herdou o endereço.
+Não existe "esqueci minha senha" por e-mail: exigiria SMTP, que não está definido. O
+caminho é pedir a um administrador, que redefine pela tela.
 
 ## O primeiro administrador
 
 A tela de administração exige perfil `Administrador`, e a tabela nasce vazia: ninguém
-consegue entrar. O `INSERT` de bootstrap está em `docs/sql/001_bi_users.sql` — **troque o
-e-mail antes de rodar**.
+entra. O primeiro é criado na primeira subida da aplicação, a partir de variáveis de
+ambiente:
 
-Nunca resolva isso com "o primeiro que logar vira admin": qualquer pessoa do tenant
-viraria dona do sistema.
+```bash
+PAINEL_ADMIN_EMAIL=seu.email@swisspark.com.br
+PAINEL_ADMIN_PASSWORD=uma-senha-provisoria
+PAINEL_ADMIN_NAME=Seu Nome
+```
+
+Só roda se **não existir nenhum administrador ativo**. Se o e-mail já estiver cadastrado,
+nada acontece e um aviso vai para o log — promover alguém por variável de ambiente seria
+uma porta dos fundos.
+
+Depois do primeiro acesso, apague as duas primeiras linhas do `.env`.
+
+Nunca resolva o bootstrap com "o primeiro que logar vira admin": qualquer pessoa que
+achasse a URL viraria dona do sistema.
 
 ## Travas da área administrativa
 
@@ -80,11 +81,27 @@ resolve com acesso direto ao banco:
 - administrador não pode rebaixar o próprio perfil;
 - não é possível desativar nem rebaixar o último `Administrador` ativo;
 - usuário não é excluído, é desativado — a auditoria depende do registro continuar existindo;
-- toda alteração grava uma linha em `bi_users_audit`.
+- toda alteração grava uma linha em `bi_users_audit`, incluindo troca e redefinição de senha.
 
 As travas estão no backend (`Services/BusinessLogic/UsuariosService.cs`). O front também
 desabilita o botão de auto-desativação, mas isso é conveniência: a regra que vale é a do
 servidor.
+
+## Detalhes que não são óbvios
+
+**E-mail não diferencia maiúsculas.** O índice é `lower(email)`, e a escrita normaliza para
+minúsculo. Sem isso, `Luiz@x.com` e `luiz@x.com` seriam dois usuários e o login casaria com
+um ou outro conforme a digitação.
+
+**A resposta do login não revela se o e-mail existe.** Errar o e-mail e errar a senha dão a
+mesma mensagem. Quando o e-mail não existe, a verificação roda contra um hash descartável
+assim mesmo — sem isso o tempo de resposta denunciaria quais e-mails estão cadastrados.
+
+**"Acesso desativado" só aparece para quem acertou a senha.** Quem errou continua recebendo
+a mensagem genérica.
+
+**O hash se atualiza sozinho.** Quando o .NET muda os parâmetros do PBKDF2, o próximo login
+bem-sucedido regrava a senha no formato novo.
 
 ## Onde está cada coisa
 
@@ -92,29 +109,36 @@ servidor.
 
 | Arquivo | Papel |
 |---|---|
-| `Program.cs` | Liga o Entra ID, define a política padrão e a de administrador |
-| `Entities/BiUser.cs` | A tabela de autorização |
-| `Data/PainelDbContext.cs` | Mapeamento; o schema vem de `PainelDb:Schema` |
-| `Services/Auth/UsuarioAtualService.cs` | Traduz token → registro na `bi_users`, vincula o `oid` no 1º login |
+| `Program.cs` | Valida a chave de assinatura, liga o JWT e define as políticas |
+| `Entities/BiUser.cs` | A tabela: hash, perfil, situação |
+| `Services/Auth/LoginService.cs` | Confere a senha, emite o token, troca de senha |
+| `Services/Auth/TokenService.cs` | Monta e assina o token |
+| `Services/Auth/UsuarioAtualService.cs` | Traduz o `sub` do token para o registro na `bi_users` |
+| `Services/Auth/AdministradorInicial.cs` | Bootstrap do primeiro administrador |
 | `Authorization/UsuarioAtivoHandler.cs` | A checagem por requisição que torna a revogação imediata |
-| `Authorization/BiUsersClaimsTransformation.cs` | Traz o perfil da `bi_users` para dentro do principal |
-| `Controllers/AuthController.cs` | `GET /api/auth/me` |
-| `Controllers/UsuariosController.cs` | CRUD da área administrativa |
+| `Authorization/BiUsersClaimsTransformation.cs` | Traz o perfil do banco para dentro do principal |
+| `Controllers/AuthController.cs` | `login`, `me`, `trocar-senha` |
+| `Controllers/UsuariosController.cs` | Área administrativa |
 | `Services/BusinessLogic/UsuariosService.cs` | As travas |
 
 Todo endpoint já nasce protegido: a política padrão (`FallbackPolicy`) exige autenticação
-**e** usuário ativo. Para abrir um endpoint é preciso dizer `[AllowAnonymous]`
-explicitamente — só o `/api/health` faz isso.
+**e** usuário ativo sem senha provisória. Para abrir um endpoint é preciso dizer
+`[AllowAnonymous]` explicitamente — só `/api/health` e `/api/auth/login` fazem isso.
 
 ### Frontend
 
 | Arquivo | Papel |
 |---|---|
-| `src/services/entraId.ts` | Configuração do MSAL, login, obtenção e renovação do token |
+| `src/services/authService.ts` | Login, `me`, troca de senha |
+| `src/services/authStorage.ts` | Guarda o token em `sessionStorage` |
 | `src/services/api.ts` | Injeta o Bearer; traduz 401/403 em eventos |
 | `src/contexts/AuthContext.tsx` | Estado da sessão; reage à revogação |
 | `src/rotas/ProtectedRoute.tsx` | Rota protegida, com variante por perfil |
+| `src/paginas/TrocarSenha/` | Tela obrigatória de quem tem senha provisória |
 | `src/paginas/Usuarios/` | A área administrativa |
+
+O token fica em `sessionStorage`, não `localStorage`: a sessão morre ao fechar a aba. Em
+máquina compartilhada isso vale mais que a conveniência de continuar logado.
 
 ## Perfis
 
@@ -130,59 +154,54 @@ explicitamente — só o `/api/health` faz isso.
 psql -h SERVIDOR -U USUARIO -d contabil -f docs/sql/001_bi_users.sql
 ```
 
-O script é idempotente e reconcilia uma `bi_users` que já exista. Troque o e-mail do
-administrador de bootstrap antes de rodar.
+O script é idempotente e reconcilia uma `bi_users` que já exista — inclusive a versão
+anterior, baseada em Entra ID. Linhas antigas ficam sem senha e entram como inativas; um
+administrador redefine a senha delas pela tela e elas voltam.
 
-Para rodar tudo em container, veja [`DOCKER.md`](DOCKER.md) — lá a configuração vem por
-variável de ambiente e o nginx resolve o CORS servindo front e API na mesma origem.
+Nenhuma senha, nem hash de senha, fica no script.
 
-### 2. Backend
+### 2. Chave de assinatura
 
 ```bash
-cp keys.example.json keys.json      # na RAIZ do projeto; preencha ConnectionStrings:Contabil
+openssl rand -base64 48
+```
+
+Guarde em `Auth:JwtSigningKey` no `keys.json`, ou na variável `Auth__JwtSigningKey`. Menos
+de 32 bytes e a aplicação recusa subir — HMAC-SHA256 exige isso.
+
+Trocar a chave invalida todas as sessões abertas.
+
+### 3. Backend
+
+```bash
+cp keys.example.json keys.json      # na RAIZ; preencha ConnectionStrings:Contabil
 cd backend/PainelWebSwissPark.Api
 dotnet restore
 dotnet run
 ```
 
 O `keys.json` fica na raiz, ao lado de `backend/` e `frontend/`, e está no `.gitignore`. A
-aplicação sobe de diretório a partir da pasta do projeto até encontrá-lo. Para guardá-lo em
-outro lugar, aponte `PAINEL_KEYS_FILE` para o caminho.
+aplicação sobe de diretório a partir da pasta do projeto até encontrá-lo. `PAINEL_KEYS_FILE`
+aponta para outro caminho, se preferir.
 
-A chave que a autenticação lê é `ConnectionStrings:Contabil` — o Postgres onde vive a
-`bi_users`. A grafia antiga `PainelDb:ConnectionString` continua aceita.
+Para rodar tudo em container, veja [`DOCKER.md`](DOCKER.md).
 
-Preencha `AzureAd:TenantId` e `AzureAd:ClientId` no `appsettings.json` com o que a TI
-devolver. A aplicação recusa subir sem a connection string do Postgres — de propósito, e a mensagem
-diz qual `keys.json` ela leu, para você não ficar procurando por que o valor "está lá" mas
-não é enxergado.
-
-### 3. Frontend
+### 4. Frontend
 
 ```bash
 cd frontend
-cp .env.example .env.local          # preencha tenant, client id e escopo
 npm install
 npm run dev
 ```
 
-Sem as variáveis do Entra a aplicação sobe do mesmo jeito e a tela de login explica o que
-está faltando, em vez de quebrar.
-
-### 4. Conferência
+### 5. Conferência
 
 ```
-GET  /api/health        -> 200 sem token
-GET  /api/auth/me       -> 401 sem token
-                        -> 403 com token de quem não está na bi_users
-                        -> 200 com o perfil de quem está
-GET  /api/usuarios      -> 403 para Gerente/Analista, 200 para Administrador
+GET  /api/health              -> 200 sem token
+POST /api/auth/login          -> 200 com credenciais certas, 401 com erradas
+GET  /api/auth/me             -> 401 sem token, 200 com token
+GET  /api/usuarios            -> 403 para Gerente/Analista, 200 para Administrador
 ```
 
-Teste a revogação: entre com uma conta, desative-a pela tela de outro navegador e recarregue
+Teste a revogação: entre com uma conta, desative-a pela tela em outro navegador e recarregue
 a primeira. O acesso cai na primeira requisição — não no próximo login.
-
-## O que ainda depende da TI
-
-O registro do aplicativo no Entra ID. Sem ele não dá nem para testar local.
-O pedido pronto para enviar está em [`PEDIDO-TI-ENTRA-ID.md`](PEDIDO-TI-ENTRA-ID.md).

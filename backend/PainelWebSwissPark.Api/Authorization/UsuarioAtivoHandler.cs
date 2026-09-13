@@ -17,13 +17,22 @@ public class UsuarioAtivoHandler(
 
         if (usuario is null)
         {
-            logger.LogInformation("Token válido do Entra, mas o usuário não está na bi_users.");
+            logger.LogInformation("Token válido, mas o usuário não está mais na bi_users.");
             return;
         }
 
         if (!usuario.IsActive)
         {
             logger.LogInformation("Acesso negado: usuário {UserId} está inativo na bi_users.", usuario.Id);
+            return;
+        }
+
+        if (usuario.MustChangePassword)
+        {
+            // Senha definida por um administrador: até trocar, o painel fica fechado.
+            // /api/auth/me e /api/auth/trocar-senha seguem acessíveis — eles exigem
+            // só [Authorize], sem esta política.
+            logger.LogInformation("Acesso bloqueado: usuário {UserId} precisa trocar a senha.", usuario.Id);
             return;
         }
 
