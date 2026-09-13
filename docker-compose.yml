@@ -2,7 +2,7 @@ name: painel-swisspark
 
 services:
   # ==========================================================================
-  # API (.NET) — sem porta publicada: só o nginx alcança
+  # API (.NET) â€” sem porta publicada: sÃ³ o nginx alcanÃ§a
   # ==========================================================================
   api:
     build:
@@ -11,52 +11,50 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
 
-      # Dois sublinhados viram ":" na configuração do ASP.NET Core:
-      # ConnectionStrings__Contabil é o mesmo que "ConnectionStrings:Contabil"
+      # Dois sublinhados viram ":" na configuraÃ§Ã£o do ASP.NET Core:
+      # ConnectionStrings__Contabil Ã© o mesmo que "ConnectionStrings:Contabil"
       # do keys.json. Duas formas de entregar o segredo, escolha uma:
       #
-      #   (a) por aqui, a partir do .env  — uma variável por conexão
-      #   (b) montando o keys.json da raiz — descomente o bloco volumes abaixo
+      #   (a) por aqui, a partir do .env  â€” uma variÃ¡vel por conexÃ£o
+      #   (b) montando o keys.json da raiz â€” descomente o bloco volumes abaixo
       #
-      # O caminho (b) escala melhor: as seis conexões vêm do arquivo e ligar uma
-      # nova não exige mexer neste compose. Pelo (a), cada conexão que o código
+      # O caminho (b) escala melhor: as seis conexÃµes vÃªm do arquivo e ligar uma
+      # nova nÃ£o exige mexer neste compose. Pelo (a), cada conexÃ£o que o cÃ³digo
       # passar a usar precisa de mais uma linha aqui.
       #
-      # Vazio não quebra o compose: a aplicação recusa subir com uma mensagem
+      # Vazio nÃ£o quebra o compose: a aplicaÃ§Ã£o recusa subir com uma mensagem
       # dizendo qual keys.json ela leu e qual chave faltou.
-      ConnectionStrings__Contabil: ${PAINEL_DB_CONNECTION_STRING:-}
       ConnectionStrings__Totvs_01: ${PAINEL_TOTVS_01_CONNECTION_STRING:-}
       PainelDb__Schema: ${PAINEL_DB_SCHEMA:-public}
       PainelDb__CacheSeconds: ${PAINEL_DB_CACHE_SECONDS:-0}
 
-      # Chave que assina os tokens de sessão. Mínimo de 32 bytes; a aplicação
+      # Chave que assina os tokens de sessÃ£o. MÃ­nimo de 32 bytes; a aplicaÃ§Ã£o
       # recusa subir com menos. Gere com: openssl rand -base64 48
       # Pode vir do keys.json em vez daqui (Auth:JwtSigningKey).
-      Auth__JwtSigningKey: ${PAINEL_JWT_SIGNING_KEY:-}
 
-      # Primeiro administrador, criado na primeira subida se a bi_users ainda não
-      # tiver nenhum administrador ativo. A senha entra como provisória.
+      # Primeiro administrador, criado na primeira subida se a bi_users ainda nÃ£o
+      # tiver nenhum administrador ativo. A senha entra como provisÃ³ria.
       # Depois do primeiro acesso, apague as duas do .env.
       PAINEL_ADMIN_EMAIL: ${PAINEL_ADMIN_EMAIL:-}
       PAINEL_ADMIN_PASSWORD: ${PAINEL_ADMIN_PASSWORD:-}
       PAINEL_ADMIN_NAME: ${PAINEL_ADMIN_NAME:-}
 
-      # O TLS termina no nginx; redirecionar aqui dentro daria laço de redirect.
+      # O TLS termina no nginx; redirecionar aqui dentro daria laÃ§o de redirect.
       Hosting__UseHttpsRedirection: "false"
       Hosting__UseForwardedHeaders: "true"
 
     # (b) Usar o keys.json da raiz em vez do .env: descomente as quatro linhas.
-    # create_host_path: false faz o container falhar se o arquivo não existir,
-    # em vez de o Docker criar um diretório vazio no lugar.
-    # volumes:
-    #   - type: bind
-    #     source: ./keys.json
-    #     target: /app/keys.json
-    #     read_only: true
-    #     bind:
-    #       create_host_path: false
+    # create_host_path: false faz o container falhar se o arquivo nÃ£o existir,
+    # em vez de o Docker criar um diretÃ³rio vazio no lugar.
+    volumes:
+      - type: bind
+        source: ./keys.json
+        target: /app/keys.json
+        read_only: true
+        bind:
+          create_host_path: false
 
-    # Para um Postgres que roda na própria máquina hospedeira, use
+    # Para um Postgres que roda na prÃ³pria mÃ¡quina hospedeira, use
     # host.docker.internal como Host na connection string.
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -75,8 +73,8 @@ services:
     networks: [painel]
 
   # ==========================================================================
-  # Front (nginx) — serve o SPA e repassa /api para a API
-  # Mesma origem para o navegador, então CORS nem entra na conversa.
+  # Front (nginx) â€” serve o SPA e repassa /api para a API
+  # Mesma origem para o navegador, entÃ£o CORS nem entra na conversa.
   # ==========================================================================
   web:
     build:

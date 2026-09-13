@@ -12,6 +12,7 @@ backend/**/appsettings.Development.local.json
 # O modelo do formato é o keys.example.json, esse sim versionado.
 keys.json
 keys.json.bak
+keys - Copia.json
 **/keys.json
 *.secrets.json
 secrets/
