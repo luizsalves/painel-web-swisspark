@@ -9,13 +9,14 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using PainelWebSwissPark.Api.Authorization;
 using PainelWebSwissPark.Api.Data;
+using PainelWebSwissPark.Api.Data.Repositories;
 using PainelWebSwissPark.Api.Entities;
 using PainelWebSwissPark.Api.Extensions;
 using PainelWebSwissPark.Api.Middleware;
 using PainelWebSwissPark.Api.Options;
 using PainelWebSwissPark.Api.Services.Auth;
 using PainelWebSwissPark.Api.Services.BusinessLogic;
-using PainelWebSwissPark.Api.Services.Erp;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -56,7 +57,10 @@ if (!string.IsNullOrWhiteSpace(arquivoDeChaves))
 }
 
 builder.Services.AddControllers();
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
+});
 builder.Services.AddMemoryCache();
 
 // ==========================================================================
@@ -167,28 +171,8 @@ builder.Services.AddAuthorizationBuilder()
 // Serviços da aplicação
 // ==========================================================================
 builder.Services.AddScoped<IUsuariosService, UsuariosService>();
-builder.Services.AddScoped<IRestaurantesErpService, RestaurantesErpService>();
-builder.Services.AddScoped<IOutraFonteRestaurantesService, OutraFonteRestaurantesService>();
-builder.Services.AddScoped<IRestaurantesService, RestaurantesService>();
-
-builder.Services.Configure<ErpApiOptions>(
-    builder.Configuration.GetSection(ErpApiOptions.SectionName));
-builder.Services.Configure<OutraFonteApiOptions>(
-    builder.Configuration.GetSection(OutraFonteApiOptions.SectionName));
-
-builder.Services.AddHttpClient("ErpApi", (sp, client) =>
-{
-    var options = sp.GetRequiredService<IOptions<ErpApiOptions>>().Value;
-    client.BaseAddress = new Uri(options.BaseUrl);
-    client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
-});
-
-builder.Services.AddHttpClient("OutraFonteApi", (sp, client) =>
-{
-    var options = sp.GetRequiredService<IOptions<OutraFonteApiOptions>>().Value;
-    client.BaseAddress = new Uri(options.BaseUrl);
-    client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
-});
+builder.Services.AddScoped<IFechamentoValidacaoRepository, FechamentoValidacaoRepository>();
+builder.Services.AddScoped<IFechamentoValidacaoService, FechamentoValidacaoService>();
 
 // ==========================================================================
 // Hospedagem atrás de proxy reverso
@@ -229,6 +213,13 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi().AllowAnonymous();
+    app.MapScalarApiReference(options => options.WithTitle("Painel SwissPark — API")).AllowAnonymous();
+
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/openapi/v1.json", "Painel SwissPark — API v1");
+        options.RoutePrefix = "swagger";
+    });
 }
 
 // Antes de qualquer coisa que leia esquema ou IP de origem.

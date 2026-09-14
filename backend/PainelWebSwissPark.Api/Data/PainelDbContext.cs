@@ -23,6 +23,8 @@ public class PainelDbContext(
 
     public DbSet<BiUserAudit> BiUserAudits => Set<BiUserAudit>();
 
+    public DbSet<FechamentoValidacao> FechamentoValidacoes => Set<FechamentoValidacao>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<BiUser>(entity =>
@@ -93,6 +95,30 @@ public class PainelDbContext(
 
             entity.HasIndex(e => e.TargetUserId);
             entity.HasIndex(e => e.PerformedAt);
+        });
+
+        modelBuilder.Entity<FechamentoValidacao>(entity =>
+        {
+            entity.ToTable("bi_fechamento_validacao", _schema);
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Id).HasColumnName("id").ValueGeneratedOnAdd();
+            entity.Property(e => e.CodColigada).HasColumnName("cod_coligada");
+            entity.Property(e => e.CodFilial).HasColumnName("cod_filial");
+            entity.Property(e => e.CodConta).HasColumnName("cod_conta").IsRequired();
+            entity.Property(e => e.AnoMes).HasColumnName("ano_mes").IsRequired();
+            entity.Property(e => e.Status).HasColumnName("status").IsRequired();
+            entity.Property(e => e.Prioridade).HasColumnName("prioridade");
+            entity.Property(e => e.SaldoAnterior).HasColumnName("saldo_anterior").HasColumnType("numeric(18,4)");
+            entity.Property(e => e.SaldoAtual).HasColumnName("saldo_atual").HasColumnType("numeric(18,4)");
+            entity.Property(e => e.DataFechamento).HasColumnName("data_fechamento");
+            entity.Property(e => e.PendenciaTexto).HasColumnName("pendencia_texto");
+            entity.Property(e => e.PendenciaResponsavelId).HasColumnName("pendencia_responsavel_id");
+            entity.Property(e => e.PendenciaRegistradaEm).HasColumnName("pendencia_registrada_em");
+            entity.Property(e => e.RealizadoPor).HasColumnName("realizado_por").IsRequired();
+            entity.Property(e => e.RealizadoEm).HasColumnName("realizado_em").HasDefaultValueSql("now()");
+
+            entity.HasIndex(e => new { e.CodColigada, e.CodFilial, e.CodConta, e.AnoMes, e.RealizadoEm });
         });
     }
 }

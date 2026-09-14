@@ -22,6 +22,14 @@ public sealed record UsuarioAutorizado(
     public bool PodeAcessarModulo(string moduloKey) =>
         IsSuperAdmin || Modulos.Any(modulo => modulo.Key == moduloKey);
 
+    /// <summary>Tem exatamente este perfil neste módulo — ou é superadministrador, que tem todos.</summary>
+    public bool TemPerfilNoModulo(string moduloKey, string perfil) =>
+        IsSuperAdmin || Modulos.Any(modulo => modulo.Key == moduloKey && modulo.Role == perfil);
+
+    /// <summary>Tem qualquer um destes perfis neste módulo — ou é superadministrador, que tem todos.</summary>
+    public bool TemAlgumPerfilNoModulo(string moduloKey, params string[] perfis) =>
+        IsSuperAdmin || Modulos.Any(modulo => modulo.Key == moduloKey && perfis.Contains(modulo.Role));
+
     public bool EhAdministradorDe(string moduloKey) =>
         IsSuperAdmin
         || Modulos.Any(modulo => modulo.Key == moduloKey && modulo.Role == PerfisUsuario.Administrador);

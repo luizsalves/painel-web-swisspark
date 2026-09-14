@@ -35,6 +35,18 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IFechamentoRepository, FechamentoRepository>();
         services.AddScoped<IFechamentosService, FechamentosService>();
 
+        services.AddScoped<IFilialRepository, FilialRepository>();
+        services.AddScoped<IFiliaisService, FiliaisService>();
+
+        services.AddScoped<IEmpresaRepository, EmpresaRepository>();
+        services.AddScoped<IEmpresasService, EmpresasService>();
+
+        services.AddScoped<IContaContabilTotvsRepository, ContaContabilTotvsRepository>();
+        services.AddScoped<IContasContabeisTotvsService, ContasContabeisTotvsService>();
+
+        services.AddScoped<ILancamentosTotvsRepository, LancamentosTotvsRepository>();
+        services.AddScoped<ILancamentosTotvsService, LancamentosTotvsService>();
+
         return services;
     }
 }

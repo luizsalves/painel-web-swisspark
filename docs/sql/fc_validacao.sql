@@ -1,0 +1,188 @@
+CREATE OR REPLACE FUNCTION public.fc_validacao()
+ RETURNS void
+ LANGUAGE plpgsql
+AS $function$
+
+-- PROCEDURE QUE MOSTRA OS LANÇAMENTOS QUE FALTAM NA BASE
+
+
+DECLARE
+    data_mes_anterior DATE;
+    ano_mes_anterior TEXT;
+    primeiro_dia_mes_anterior DATE; 
+    data_execucao  TEXT;
+BEGIN
+    -- Atribui o ultimo dia do mês anterior
+	data_mes_anterior := DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '1 day';
+
+	-- Calcula o primeiro dia do mês anterior
+    primeiro_dia_mes_anterior := DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month');
+    
+    -- Atribui o ano e o mês anterior no formato 'YYYY-MM'
+    ano_mes_anterior := TO_CHAR(CURRENT_DATE - INTERVAL '1 month', 'YYYY-MM');
+   
+    SELECT 
+        "DATAEXECUCAO" || ' ' || "HORAEXECUCAO"
+    INTO 
+        data_execucao
+    FROM 
+        public."FT_RAZAO_DASH_01" A
+    WHERE 
+        A."DATAEXECUCAO" IS NOT NULL
+    LIMIT 1;  
+  
+   
+   
+   
+
+/*
+DROP TABLE IF EXISTS public."TB_CLANCA";
+CREATE TABLE public."TB_CLANCA" AS 
+select distinct  '2025-01-13 14:00' as  "DATA_EXECUCAO", 
+		"DATA" as "DATA_LANCAMENTO", 
+		"IDLANCAMENTO", 
+		"IDPARTIDA" ,
+		"IDBANCODADOS",
+    	"CODCOLIGADA",
+    	"CODFILIAL",
+    	"DEBITO",
+		"CREDITO",
+    	"VALOR",  
+		'CPARTIDA' as "NOME_TABELA_TOTVS"
+from "CLANCA_BACKUP_13012025";
+
+CREATE INDEX idx_id_CLANCA_IDLANCAMENTO ON public."TB_CLANCA" ("IDLANCAMENTO");
+CREATE INDEX idx_id_CLANCA_IDPARTIDA ON public."TB_CLANCA" ("IDPARTIDA");
+
+*/
+
+
+REINDEX TABLE public."TB_CLANCA";
+
+
+INSERT INTO public."TB_CLANCA" ("DATA_EXECUCAO", "DATA_LANCAMENTO", "IDLANCAMENTO", "IDPARTIDA","IDBANCODADOS","CODCOLIGADA","CODFILIAL","DEBITO","CREDITO","VALOR","NOME_TABELA_TOTVS")
+SELECT 
+    data_execucao AS "DATA_EXECUCAO", 
+    "DATA" as "DATA_LANCAMENTO", 
+    "IDLANCAMENTO", 
+    "IDPARTIDA", 
+    "IDBANCODADOS",
+    "CODCOLIGADA",
+    "CODFILIAL", 
+    "DEBITO",
+	"CREDITO",
+    "VALOR",
+    'CLANCA' AS "NOME_TABELA_TOTVS"
+FROM public."CLANCA" AS c
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM public."TB_CLANCA" AS t
+    WHERE t."IDLANCAMENTO" = c."IDLANCAMENTO"
+      AND t."IDPARTIDA" = c."IDPARTIDA"
+);
+
+
+
+
+DROP TABLE IF EXISTS public."TB_CLANCA_VALIDACAO";
+CREATE TABLE public."TB_CLANCA_VALIDACAO" AS 
+SELECT 
+    c."DATA_EXECUCAO", 
+    c."DATA_LANCAMENTO", 
+    c."IDLANCAMENTO", 
+    c."IDPARTIDA", 
+    UPPER(E."NOME") as "EMPRESA",
+    c."IDBANCODADOS",
+    c."CODCOLIGADA",
+    c."CODFILIAL", 
+    c."DEBITO",
+	c."CREDITO",
+    c."VALOR",
+    'CLANCA' AS "NOME_TABELA_TOTVS"
+FROM public."TB_CLANCA" AS c
+LEFT JOIN public."GFILIAL" E ON E."IDBANCODADOS" = c."IDBANCODADOS" 
+							AND E."CODCOLIGADA" = c."CODCOLIGADA" 
+							AND E."CODFILIAL" = c."CODFILIAL"
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM public."CLANCA" AS t
+    WHERE t."IDLANCAMENTO" = c."IDLANCAMENTO"
+      AND t."IDPARTIDA" = c."IDPARTIDA"
+);
+
+
+
+/*
+DROP TABLE IF EXISTS public."TB_FLAN";
+CREATE TABLE public."TB_FLAN" AS
+select '2025-01-13 14:00' as "DATA_EXECUCAO", 
+		"DATAEMISSAO", 
+		"IDLAN", 
+		"NUMERODOCUMENTO"  ,
+		"IDBANCODADOS",
+    	"CODCOLIGADA",
+    	"CODFILIAL",  
+    	"VALORLIQUIDO",
+		'FLAN' as "NOME_TABELA_TOTVS"
+from "FLAN";
+
+CREATE INDEX idx_id_FLAN_IDLAN ON public."TB_FLAN" ("IDLAN");
+CREATE INDEX idx_id_FLAN_NUMERODOCUMENTO ON public."TB_FLAN" ("NUMERODOCUMENTO");
+
+*/
+
+REINDEX TABLE public."TB_FLAN";
+
+INSERT INTO public."TB_FLAN" ("DATA_EXECUCAO", "DATAEMISSAO", "IDLAN", "NUMERODOCUMENTO","IDBANCODADOS","CODCOLIGADA","CODFILIAL","VALORLIQUIDO", "NOME_TABELA_TOTVS")
+SELECT 
+    data_execucao as "DATA_EXECUCAO", 
+    "DATAEMISSAO", 
+    "IDLAN", 
+    "NUMERODOCUMENTO", 
+    "IDBANCODADOS",
+    "CODCOLIGADA",
+    "CODFILIAL",
+    "VALORLIQUIDO",
+    'FLAN' AS "NOME_TABELA_TOTVS"
+FROM public."FLAN" AS f
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM public."TB_FLAN" AS t
+    WHERE t."IDLAN" = f."IDLAN"
+      AND t."NUMERODOCUMENTO" = f."NUMERODOCUMENTO"
+);
+
+
+
+
+DROP TABLE IF EXISTS public."TB_FLAN_VALIDACAO";
+CREATE TABLE public."TB_FLAN_VALIDACAO" AS
+SELECT 
+    f."DATA_EXECUCAO", 
+    f."DATAEMISSAO", 
+    f."IDLAN", 
+    f."NUMERODOCUMENTO",
+    UPPER(E."NOME") as "EMPRESA",
+    f."IDBANCODADOS",
+    f."CODCOLIGADA",
+    f."CODFILIAL",
+    f."VALORLIQUIDO",
+    'FLAN' AS "NOME_TABELA_TOTVS"
+FROM public."TB_FLAN" AS f
+LEFT JOIN public."GFILIAL" E ON E."IDBANCODADOS" = f."IDBANCODADOS" 
+							AND E."CODCOLIGADA" = f."CODCOLIGADA" 
+							AND E."CODFILIAL" = f."CODFILIAL"
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM public."FLAN" AS t
+    WHERE t."IDLAN" = f."IDLAN"
+      AND t."NUMERODOCUMENTO" = f."NUMERODOCUMENTO"
+);
+
+
+
+
+
+END;
+$function$
+;

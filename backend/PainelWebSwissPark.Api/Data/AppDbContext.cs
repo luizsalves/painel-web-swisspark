@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using PainelWebSwissPark.Api.Data.Entities;
+using PainelWebSwissPark.Api.Data.Entities.Totvs;
 
 namespace PainelWebSwissPark.Api.Data;
 
@@ -12,8 +13,26 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Lancamento> Lancamentos => Set<Lancamento>();
     public DbSet<Pendencia> Pendencias => Set<Pendencia>();
 
+    // Tabela nativa do TOTVS RM — só leitura, mapeada 1:1 com o schema real do SQL Server.
+    public DbSet<Gfilial> Gfiliais => Set<Gfilial>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<Gfilial>(entity =>
+        {
+            entity.ToTable("GFILIAL");
+            entity.HasKey(e => new { e.CodColigada, e.CodFilial });
+
+            entity.Property(e => e.CodColigada).HasColumnName("CODCOLIGADA");
+            entity.Property(e => e.CodFilial).HasColumnName("CODFILIAL");
+            entity.Property(e => e.Nome).HasColumnName("NOME");
+            entity.Property(e => e.NomeFantasia).HasColumnName("NOMEFANTASIA");
+            entity.Property(e => e.Cgc).HasColumnName("CGC");
+            entity.Property(e => e.Cidade).HasColumnName("CIDADE");
+            entity.Property(e => e.Estado).HasColumnName("ESTADO");
+            entity.Property(e => e.Ativo).HasColumnName("ATIVO");
+        });
+
         modelBuilder.Entity<ContaContabil>()
             .HasOne(c => c.Empresa)
             .WithMany(e => e.ContasContabeis)

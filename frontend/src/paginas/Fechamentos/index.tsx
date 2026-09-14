@@ -16,17 +16,26 @@ import {
   MessageSquareText,
   MoreVertical,
   RefreshCw,
-  Users,
+  Undo2,
 } from "lucide-react";
 import AppLayout from "../../componentes/layout/AppLayout";
+import AppHeader from "../../componentes/layout/AppHeader";
 import Button from "../../componentes/ui/Button";
 import Modal from "../../componentes/ui/Modal";
 import StatusBadge from "../../componentes/ui/StatusBadge";
-import LoadingSpinner from "../../componentes/ui/LoadingSpinner";
-import api from "../../services/api";
-import { ACCOUNTING_ACCOUNTS, COMPANY_RECORDS } from "../../services/mockApi";
-import type { ReconciliationStatus } from "../../interfaces/Dashboard";
-import type { Restaurante } from "../../interfaces/Restaurante";
+import api, { extrairMensagemDeErro } from "../../services/api";
+import { ACCOUNTING_ACCOUNTS } from "../../services/mockApi";
+import { useAuth } from "../../contexts/AuthContext";
+import { MODULO_CONCILIACAO } from "../../interfaces/Auth";
+import type { Empresa } from "../../interfaces/Empresa";
+import type { ContaContabilTotvs } from "../../interfaces/ContaContabil";
+import type { LancamentoTotvs } from "../../interfaces/LancamentoTotvs";
+import type { FechamentoValidacaoStatus } from "../../interfaces/FechamentoValidacao";
+
+/** A primeira parte de um `id` no formato codColigada-resto. */
+function prefixoColigada(id: string): string {
+  return id.split("-")[0];
+}
 
 type ClosingTab = "entries" | "pendings" | "notes" | "history";
 
@@ -45,19 +54,6 @@ interface HistoryEntry {
   label: string;
   date: string;
 }
-
-const SUPPLIERS = ["ABC", "XYZ", "LMN", "QRS", "TUV"];
-const VALUES = [125000, 240500, 310200, 85700, 98300];
-
-const LEDGER_ENTRIES: LedgerEntry[] = Array.from({ length: 25 }, (_, index) => ({
-  id: `entry-${index + 1}`,
-  date: `${String(2 + (index % 25)).padStart(2, "0")}/01/2026`,
-  history: `Fornecedor ${SUPPLIERS[index % SUPPLIERS.length]} Ltda`,
-  document: index % 4 === 3 ? "REC" : "NF",
-  number: String(12345 + index),
-  value: VALUES[index % VALUES.length] + Math.floor(index / VALUES.length) * 1250,
-  type: index % 4 === 3 ? "Crédito" : "Débito",
-}));
 
 const PENDING_ITEMS = [
   {
@@ -90,8 +86,31 @@ function formatCurrency(value: number) {
   return `R$ ${currencyFormatter.format(value)}`;
 }
 
+function formatarData(valor: string | null): string {
+  if (!valor) return "";
+  return new Date(valor).toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export default function Fechamentos() {
+  const { user } = useAuth();
+  // isSuperAdmin e Administrador (do módulo) têm acesso total. Gerente também
+  // prepara e fecha, além de conferir — só o Analista não confere (não pode
+  // aprovar o que ele mesmo preparou). Espelha ExigePerfilAttribute no backend.
+  const meuPerfilNaConciliacao = user?.modulos.find((m) => m.moduleKey === MODULO_CONCILIACAO)?.role;
+  const podeConferir =
+    Boolean(user?.isSuperAdmin) ||
+    meuPerfilNaConciliacao === "Gerente" ||
+    meuPerfilNaConciliacao === "Administrador";
+  const podePrepararOuFechar = podeConferir || meuPerfilNaConciliacao === "Analista";
+
   const [company, setCompany] = useState("caieiras");
+  const [filialId, setFilialId] = useState("");
   const [accountId, setAccountId] = useState("acc-001");
   const [period, setPeriod] = useState("2026-01");
   const [loadedSelection, setLoadedSelection] = useState({
@@ -100,7 +119,6 @@ export default function Fechamentos() {
     period: "2026-01",
   });
   const [hasPending, setHasPending] = useState(true);
-  const [status, setStatus] = useState<ReconciliationStatus>("Pré-conferido");
   const [activeTab, setActiveTab] = useState<ClosingTab>("entries");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
@@ -115,37 +133,139 @@ export default function Fechamentos() {
     { id: "history-2", label: "Dados do razão carregados", date: "04/02/2026 16:42" },
   ]);
 
-  const [restaurantes, setRestaurantes] = useState<Restaurante[]>([]);
-  const [isLoadingRestaurantes, setIsLoadingRestaurantes] = useState(true);
-  const [erroRestaurantes, setErroRestaurantes] = useState<string | null>(null);
+  const [empresas, setEmpresas] = useState<Empresa[]>([]);
+  const [isLoadingEmpresas, setIsLoadingEmpresas] = useState(true);
+  const [erroEmpresas, setErroEmpresas] = useState<string | null>(null);
 
   useEffect(() => {
     api
-      .get<Restaurante[]>("/restaurantes")
-      .then((resposta) => setRestaurantes(resposta.data))
-      .catch(() => setErroRestaurantes("Não foi possível carregar os restaurantes da API."))
-      .finally(() => setIsLoadingRestaurantes(false));
+      .get<Empresa[]>("/empresas")
+      .then((resposta) => {
+        setEmpresas(resposta.data);
+        const primeira = resposta.data[0];
+        if (primeira) {
+          setCompany(primeira.nome);
+          setFilialId(primeira.id);
+        }
+      })
+      .catch(() => setErroEmpresas("Não foi possível carregar a lista de empresas."))
+      .finally(() => setIsLoadingEmpresas(false));
   }, []);
 
-  const availableAccounts = useMemo(
-    () => ACCOUNTING_ACCOUNTS.filter((account) => account.companyValue === company),
-    [company]
+  // Uma "empresa" é identificada pelo NOME (razão social) — se repete em todas
+  // as filiais dela, inclusive entre bases diferentes. NOMEFANTASIA já varia
+  // por unidade, por isso não serve pra agrupar.
+  const empresasDistintas = useMemo(() => {
+    const nomes = new Set<string>();
+    return empresas.filter((empresa) => {
+      if (nomes.has(empresa.nome)) return false;
+      nomes.add(empresa.nome);
+      return true;
+    });
+  }, [empresas]);
+
+  const filiaisDaEmpresa = useMemo(
+    () => empresas.filter((empresa) => empresa.nome === company),
+    [empresas, company]
   );
 
-  const loadedAccount =
-    ACCOUNTING_ACCOUNTS.find((account) => account.id === loadedSelection.accountId) ??
-    ACCOUNTING_ACCOUNTS[0];
-  const accountIndex = Math.max(
-    0,
-    ACCOUNTING_ACCOUNTS.findIndex((account) => account.id === loadedSelection.accountId)
+  const filialSelecionada = useMemo(
+    () => empresas.find((empresa) => empresa.id === filialId),
+    [empresas, filialId]
   );
-  const ledgerBalance = 1248532.1 + accountIndex * 35420.75;
+
+  const [contas, setContas] = useState<ContaContabilTotvs[]>([]);
+  const [isLoadingContas, setIsLoadingContas] = useState(true);
+  const [erroContas, setErroContas] = useState<string | null>(null);
+
+  useEffect(() => {
+    api
+      .get<ContaContabilTotvs[]>("/contascontabeis")
+      .then((resposta) => setContas(resposta.data))
+      .catch(() => setErroContas("Não foi possível carregar o plano de contas."))
+      .finally(() => setIsLoadingContas(false));
+  }, []);
+
+  // Plano de contas é por coligada — só mostra as contas da mesma base+coligada
+  // da filial selecionada, senão CODCONTA de empresas diferentes se misturam.
+  const contasDaColigada = useMemo(() => {
+    if (!filialSelecionada) return [];
+    const prefixo = prefixoColigada(filialSelecionada.id);
+    return contas.filter((conta) => prefixoColigada(conta.id) === prefixo);
+  }, [contas, filialSelecionada]);
+
+  useEffect(() => {
+    setAccountId((atual) => {
+      if (contasDaColigada.length === 0) return "";
+      return contasDaColigada.some((conta) => conta.codConta === atual) ? atual : contasDaColigada[0].codConta;
+    });
+  }, [contasDaColigada]);
+
+  const [lancamentos, setLancamentos] = useState<LancamentoTotvs[]>([]);
+  const [erroLancamentos, setErroLancamentos] = useState<string | null>(null);
+
+  // A linha-resumo vem com data nula e traz o SALDO_RAZAO já calculado pelo
+  // backend; as demais são os lançamentos de verdade do período.
+  const linhasDetalhe = useMemo(() => lancamentos.filter((l) => l.data !== null), [lancamentos]);
+  const linhaResumo = useMemo(() => lancamentos.find((l) => l.data === null), [lancamentos]);
+
+  const ledgerEntries = useMemo<LedgerEntry[]>(
+    () =>
+      linhasDetalhe.map((l, index) => ({
+        id: `${l.idLancamento ?? "s"}-${l.idPartida ?? "s"}-${index}`,
+        date: l.data ? new Date(l.data).toLocaleDateString("pt-BR") : "",
+        history: l.complemento || l.reduzido || "",
+        document: l.documento ?? "",
+        number: l.idLancamento != null ? String(l.idLancamento) : "",
+        value: l.debitos !== 0 ? Math.abs(l.debitos) : Math.abs(l.creditos),
+        type: l.debitos !== 0 ? "Débito" : "Crédito",
+      })),
+    [linhasDetalhe]
+  );
+
+  const [validacao, setValidacao] = useState<FechamentoValidacaoStatus | null>(null);
+  const [erroValidacao, setErroValidacao] = useState<string | null>(null);
+  const [isProcessandoAcao, setIsProcessandoAcao] = useState(false);
+
+  const statusAtual = validacao?.status ?? "Pendente";
+
+  // Quem reverte uma etapa é sempre quem tem o perfil que a executaria — espelha
+  // a regra do backend (FechamentoValidacaoService.ReverterAsync).
+  const podeReverter =
+    (statusAtual === "Preparado" && podePrepararOuFechar) ||
+    (statusAtual === "Conferido" && podeConferir) ||
+    (statusAtual === "Fechado" && podePrepararOuFechar);
+
+  const responsavelAtual = useMemo(() => {
+    if (!validacao) return null;
+    if (statusAtual === "Fechado" && validacao.fechadoPorNome) {
+      return { nome: validacao.fechadoPorNome, em: formatarData(validacao.fechadoEm) };
+    }
+    if (statusAtual === "Conferido" && validacao.conferidoPorNome) {
+      return { nome: validacao.conferidoPorNome, em: formatarData(validacao.conferidoEm) };
+    }
+    if (statusAtual === "Preparado" && validacao.preparadoPorNome) {
+      return { nome: validacao.preparadoPorNome, em: formatarData(validacao.preparadoEm) };
+    }
+    return null;
+  }, [validacao, statusAtual]);
+
+  const chaveAtual = () =>
+    filialSelecionada && {
+      codColigada: filialSelecionada.codColigada,
+      codFilial: filialSelecionada.codFilial,
+      codConta: accountId,
+      anoMes: period,
+    };
+
+  const ledgerBalance = linhaResumo?.saldoRazao ?? 0;
+  const previousBalance = linhaResumo?.saldoAnterior ?? 0;
   const difference = hasPending ? 9215.65 : 0;
   const compositionBalance = ledgerBalance - difference;
-  const pageCount = Math.ceil(LEDGER_ENTRIES.length / pageSize);
-  const visibleEntries = LEDGER_ENTRIES.slice((page - 1) * pageSize, page * pageSize);
+  const pageCount = Math.ceil(ledgerEntries.length / pageSize);
+  const visibleEntries = ledgerEntries.slice((page - 1) * pageSize, page * pageSize);
   const startEntry = (page - 1) * pageSize + 1;
-  const endEntry = Math.min(page * pageSize, LEDGER_ENTRIES.length);
+  const endEntry = Math.min(page * pageSize, ledgerEntries.length);
 
   const showFeedback = (message: string) => {
     setFeedback(message);
@@ -173,35 +293,124 @@ export default function Fechamentos() {
     const firstAccount = ACCOUNTING_ACCOUNTS.find((account) => account.companyValue === value);
     setCompany(value);
     setAccountId(firstAccount?.id ?? "");
+
+    const primeiraFilial = empresas.find((empresa) => empresa.nome === value);
+    setFilialId(primeiraFilial?.id ?? "");
   };
 
-  const handleLoadData = () => {
+  const handleLoadData = async () => {
+    if (!filialSelecionada || !accountId) return;
+
+    const chave = {
+      codColigada: filialSelecionada.codColigada,
+      codFilial: filialSelecionada.codFilial,
+      anoMes: period,
+      codConta: accountId,
+    };
+
     setIsLoading(true);
-    window.setTimeout(() => {
+    try {
+      const [lancamentosResposta, validacaoResposta] = await Promise.all([
+        api.get<LancamentoTotvs[]>("/lancamentos", { params: chave }),
+        api.get<FechamentoValidacaoStatus>("/fechamento-validacao", { params: chave }),
+      ]);
+
+      setLancamentos(lancamentosResposta.data);
+      setErroLancamentos(null);
+      setValidacao(validacaoResposta.data);
+      setErroValidacao(null);
       setLoadedSelection({ company, accountId, period });
       setPage(1);
-      setIsLoading(false);
       showFeedback("Dados do fechamento carregados.");
       addHistory("Dados do razão atualizados");
-    }, 450);
+    } catch {
+      setLancamentos([]);
+      setErroLancamentos("Não foi possível carregar os lançamentos.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleStatusChange = (nextStatus: ReconciliationStatus, actionLabel: string) => {
-    setStatus(nextStatus);
-    addHistory(`${actionLabel} por Karime`);
-    showFeedback(`Status alterado para ${nextStatus}.`);
+  const recarregarValidacao = async () => {
+    const chave = chaveAtual();
+    if (!chave) return;
+
+    const resposta = await api.get<FechamentoValidacaoStatus>("/fechamento-validacao", { params: chave });
+    setValidacao(resposta.data);
   };
 
-  const handleConfirmClosing = () => {
-    setStatus("Fechado");
+  const executarAcao = async (
+    acao: () => Promise<unknown>,
+    mensagemSucesso: string,
+    mensagemHistorico: string
+  ) => {
+    setIsProcessandoAcao(true);
+    try {
+      await acao();
+      await recarregarValidacao();
+      setErroValidacao(null);
+      showFeedback(mensagemSucesso);
+      addHistory(`${mensagemHistorico} por ${user?.name ?? "usuário"}`);
+    } catch (erro) {
+      setErroValidacao(extrairMensagemDeErro(erro));
+    } finally {
+      setIsProcessandoAcao(false);
+    }
+  };
+
+  const handlePreparar = () => {
+    const chave = chaveAtual();
+    if (!chave) return;
+
+    void executarAcao(
+      () =>
+        api.post("/fechamento-validacao/preparar", {
+          ...chave,
+          saldoAnterior: previousBalance,
+          saldoAtual: ledgerBalance,
+        }),
+      "Fechamento preparado.",
+      "Preparação realizada"
+    );
+  };
+
+  const handleConferir = () => {
+    const chave = chaveAtual();
+    if (!chave) return;
+
+    void executarAcao(
+      () => api.post("/fechamento-validacao/conferir", chave),
+      "Fechamento conferido.",
+      "Conferência realizada"
+    );
+  };
+
+  const handleRealizarFechamento = () => {
+    const chave = chaveAtual();
+    if (!chave) return;
+
+    void executarAcao(
+      () => api.post("/fechamento-validacao/realizar-fechamento", { ...chave, saldoAtual: ledgerBalance }),
+      "Fechamento realizado com sucesso.",
+      "Fechamento realizado"
+    );
     setIsCloseModalOpen(false);
-    addHistory("Fechamento realizado por Karime");
-    showFeedback("Fechamento realizado com sucesso.");
+  };
+
+  const handleReverter = () => {
+    const chave = chaveAtual();
+    if (!chave) return;
+
+    void executarAcao(
+      () => api.post("/fechamento-validacao/reverter", chave),
+      "Status revertido.",
+      "Status revertido"
+    );
   };
 
   const handleExportExcel = () => {
     const header = "Data;Histórico;Documento;Número;Valor;Tipo";
-    const rows = LEDGER_ENTRIES.map((entry) =>
+    const rows = ledgerEntries.map((entry) =>
       [entry.date, entry.history, entry.document, entry.number, currencyFormatter.format(entry.value), entry.type].join(";")
     );
     const blob = new Blob([`﻿${[header, ...rows].join("\n")}`], {
@@ -227,31 +436,65 @@ export default function Fechamentos() {
 
   return (
     <AppLayout>
+      <AppHeader
+        title="Fechamento Mensal"
+        subtitle="Concilie saldos, trate pendências e conclua o período contábil."
+      />
       <main className="sp-closing">
-        <div className="sp-closing__heading">
-          <div>
-            <h1>Fechamento Mensal</h1>
-            <p>Concilie saldos, trate pendências e conclua o período contábil.</p>
+        {feedback && (
+          <div className="sp-closing__heading">
+            <span className="sp-closing__feedback" role="status">{feedback}</span>
           </div>
-          {feedback && <span className="sp-closing__feedback" role="status">{feedback}</span>}
-        </div>
+        )}
 
         <section className="sp-closing__filters" aria-label="Filtros do fechamento">
           <label className="sp-closing__field">
             <span>Empresa</span>
-            <select value={company} onChange={(event) => handleCompanyChange(event.target.value)}>
-              {COMPANY_RECORDS.map((item) => (
-                <option key={item.id} value={item.value}>{item.legalName}</option>
+            <select
+              value={company}
+              onChange={(event) => handleCompanyChange(event.target.value)}
+              disabled={isLoadingEmpresas || !!erroEmpresas}
+            >
+              {isLoadingEmpresas && <option>Carregando empresas...</option>}
+              {erroEmpresas && <option>{erroEmpresas}</option>}
+              {!isLoadingEmpresas && !erroEmpresas && empresasDistintas.map((empresa) => (
+                <option key={empresa.nome} value={empresa.nome}>{empresa.nome}</option>
+              ))}
+            </select>
+          </label>
+
+          <div className="sp-closing__field sp-closing__field--codigo">
+            <span>Cód. Coligada</span>
+            <strong className="sp-closing__readonly">{filialSelecionada?.codColigada ?? "—"}</strong>
+          </div>
+
+          <label className="sp-closing__field sp-closing__field--filial">
+            <span>Filial</span>
+            <select
+              value={filialId}
+              onChange={(event) => setFilialId(event.target.value)}
+              disabled={isLoadingEmpresas || !!erroEmpresas}
+            >
+              {filiaisDaEmpresa.map((empresa) => (
+                <option key={empresa.id} value={empresa.id}>
+                  {empresa.nomeFilial}
+                </option>
               ))}
             </select>
           </label>
 
           <label className="sp-closing__field sp-closing__field--account">
             <span>Conta Contábil</span>
-            <select value={accountId} onChange={(event) => setAccountId(event.target.value)}>
-              {availableAccounts.map((account) => (
-                <option key={account.id} value={account.id}>
-                  {account.code} - {account.description}
+            <select
+              value={accountId}
+              onChange={(event) => setAccountId(event.target.value)}
+              disabled={isLoadingContas || !!erroContas}
+            >
+              {isLoadingContas && <option>Carregando contas...</option>}
+              {erroContas && <option>{erroContas}</option>}
+              {!isLoadingContas && !erroContas && contasDaColigada.map((conta) => (
+                <option key={conta.id} value={conta.codConta}>
+                  {conta.codConta} - {conta.descricao}
                 </option>
               ))}
             </select>
@@ -266,13 +509,24 @@ export default function Fechamentos() {
             className="sp-closing__load"
             icon={<RefreshCw size={18} />}
             isLoading={isLoading}
+            disabled={!filialSelecionada || !accountId}
             onClick={handleLoadData}
           >
             Carregar Dados
           </Button>
         </section>
 
+        {erroLancamentos && (
+          <span className="sp-closing__feedback sp-closing__feedback--error" role="alert">
+            {erroLancamentos}
+          </span>
+        )}
+
         <section className="sp-closing__summary" aria-label="Resumo da conciliação">
+          <div className="sp-closing__metric">
+            <span>Saldo Anterior</span>
+            <strong>{formatCurrency(previousBalance)}</strong>
+          </div>
           <div className="sp-closing__metric">
             <span>Saldo Razão</span>
             <strong>{formatCurrency(ledgerBalance)}</strong>
@@ -294,12 +548,12 @@ export default function Fechamentos() {
           </label>
           <div className="sp-closing__metric">
             <span>Status Atual</span>
-            <StatusBadge label={status} />
+            <StatusBadge label={statusAtual} />
           </div>
           <div className="sp-closing__metric sp-closing__metric--responsible">
             <span>Responsável</span>
-            <strong>{loadedAccount.responsible}</strong>
-            <small>05/02/2026 07:00</small>
+            <strong>{responsavelAtual?.nome ?? "—"}</strong>
+            <small>{responsavelAtual?.em ?? ""}</small>
           </div>
         </section>
 
@@ -360,7 +614,7 @@ export default function Fechamentos() {
                 </div>
 
                 <div className="sp-closing__pagination">
-                  <span>Mostrando {startEntry} a {endEntry} de {LEDGER_ENTRIES.length} lançamentos</span>
+                  <span>Mostrando {startEntry} a {endEntry} de {ledgerEntries.length} lançamentos</span>
                   <div className="sp-closing__page-controls">
                     <button type="button" aria-label="Primeira página" disabled={page === 1} onClick={() => setPage(1)}><ChevronsLeft size={17} /></button>
                     <button type="button" aria-label="Página anterior" disabled={page === 1} onClick={() => setPage((current) => current - 1)}><ChevronLeft size={17} /></button>
@@ -410,44 +664,55 @@ export default function Fechamentos() {
 
           <aside className="sp-closing__actions" aria-label="Ações do fechamento">
             <h2>Ações</h2>
-            <Button icon={<ClipboardCheck size={18} />} onClick={() => handleStatusChange("Preparado", "Preparação realizada")}>Preparar</Button>
-            <Button icon={<Users size={18} />} onClick={() => handleStatusChange("Pré-conferido", "Pré-conferência realizada")}>Pré-conferir</Button>
-            <Button icon={<CircleCheck size={18} />} onClick={() => handleStatusChange("Conferido", "Conferência realizada")}>Conferir</Button>
-            <Button variant="danger" icon={<LockKeyhole size={18} />} onClick={() => setIsCloseModalOpen(true)}>Realizar Fechamento</Button>
+
+            {erroValidacao && (
+              <span className="sp-closing__feedback sp-closing__feedback--error" role="alert">
+                {erroValidacao}
+              </span>
+            )}
+
+            <Button
+              icon={<ClipboardCheck size={18} />}
+              isLoading={isProcessandoAcao}
+              disabled={!podePrepararOuFechar || statusAtual !== "Pendente" || !linhaResumo}
+              title={!podePrepararOuFechar ? "Seu perfil não pode preparar." : undefined}
+              onClick={handlePreparar}
+            >
+              Preparar
+            </Button>
+            <Button
+              icon={<CircleCheck size={18} />}
+              isLoading={isProcessandoAcao}
+              disabled={!podeConferir || statusAtual !== "Preparado"}
+              title={!podeConferir ? "Só Gerente ou Administrador podem conferir." : undefined}
+              onClick={handleConferir}
+            >
+              Conferir
+            </Button>
+            <Button
+              variant="danger"
+              icon={<LockKeyhole size={18} />}
+              disabled={!podePrepararOuFechar || statusAtual !== "Conferido"}
+              title={!podePrepararOuFechar ? "Seu perfil não pode realizar o fechamento." : undefined}
+              onClick={() => setIsCloseModalOpen(true)}
+            >
+              Realizar Fechamento
+            </Button>
+            <Button
+              variant="secondary"
+              icon={<Undo2 size={18} />}
+              isLoading={isProcessandoAcao}
+              disabled={!podeReverter}
+              title={!podeReverter ? "Nada para reverter, ou você não tem o perfil pra isso." : undefined}
+              onClick={handleReverter}
+            >
+              Reverter
+            </Button>
             <div className="sp-closing__actions-divider" />
             <Button variant="secondary" icon={<FileSpreadsheet size={19} />} onClick={handleExportExcel}>Gerar Excel</Button>
             <Button variant="secondary" icon={<FileText size={19} />} onClick={() => window.print()}>Gerar PDF</Button>
           </aside>
         </div>
-
-        <section className="sp-card" aria-label="Teste: restaurantes da API do ERP">
-          <div className="sp-card__header">
-            <h2 className="sp-card__title">Teste — Restaurantes (API do ERP)</h2>
-          </div>
-
-          {isLoadingRestaurantes && (
-            <div className="sp-card__loading">
-              <LoadingSpinner size={26} color="var(--color-green)" />
-            </div>
-          )}
-
-          {erroRestaurantes && <p style={{ color: "var(--color-error)" }}>{erroRestaurantes}</p>}
-
-          {!isLoadingRestaurantes && !erroRestaurantes && (
-            <ul className="sp-pending-list">
-              {restaurantes.map((restaurante) => (
-                <li key={restaurante.id} className="sp-pending-list__item">
-                  <div className="sp-pending-list__info">
-                    <span className="sp-pending-list__code">{restaurante.nome}</span>
-                    <span className="sp-pending-list__description">
-                      {restaurante.pratos.length} {restaurante.pratos.length === 1 ? "prato" : "pratos"}
-                    </span>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
       </main>
 
       <Modal
@@ -461,7 +726,14 @@ export default function Fechamentos() {
         </p>
         <div className="sp-closing__modal-actions">
           <Button variant="secondary" onClick={() => setIsCloseModalOpen(false)}>Cancelar</Button>
-          <Button variant="danger" icon={<LockKeyhole size={17} />} onClick={handleConfirmClosing}>Confirmar fechamento</Button>
+          <Button
+            variant="danger"
+            icon={<LockKeyhole size={17} />}
+            isLoading={isProcessandoAcao}
+            onClick={handleRealizarFechamento}
+          >
+            Confirmar fechamento
+          </Button>
         </div>
       </Modal>
     </AppLayout>

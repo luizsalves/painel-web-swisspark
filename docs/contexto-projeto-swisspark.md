@@ -120,7 +120,7 @@ PainelWebSwissPark.Api/
 
 Existe um `HealthController` no projeto que **não segue** esse padrão completo (porque só devolve um status fixo, sem lógica real nem acesso a dados). Ele **não deve ser usado como modelo** para os demais controllers.
 
-O padrão correto, para qualquer endpoint que busque/processe dados de verdade, é baseado no `RestaurantesController` (exemplo já existente no projeto):
+O padrão correto, para qualquer endpoint que busque/processe dados de verdade, é baseado no `FechamentosController` (exemplo já existente no projeto):
 
 ```csharp
 // 1. Interface — o "contrato"
