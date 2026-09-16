@@ -40,7 +40,7 @@ public class LancamentosTotvsRepository(AppDbContext context) : ILancamentosTotv
                 UPPER(LTRIM(RTRIM(E.[NOME]))) AS [EMPRESA],
                 A.[CODCOLIGADA],
                 COALESCE(CT.[REDUZIDO], '-') AS [REDUZIDO],
-                CASE WHEN A.[DEBITO] IS NOT NULL THEN A.[DEBITO] ELSE A.[CREDITO] END AS [CODCONTA],
+                {3} AS [CODCONTA],
                 A.[CODFILIAL],
                 LTRIM(RTRIM(E.[NOMEFANTASIA])) AS [NOMEFANTASIA],
                 A.[COMPLEMENTO],
@@ -49,44 +49,55 @@ public class LancamentosTotvsRepository(AppDbContext context) : ILancamentosTotv
                 A.[IDPARTIDA] AS [IDPARTIDA],
                 A.[USUARIO],
                 CASE
-                    WHEN A.[DEBITO] IS NOT NULL AND CAST(A.[DEBITO] AS VARCHAR(50)) LIKE '1.%' THEN A.[VALOR]
-                    WHEN A.[DEBITO] IS NOT NULL THEN (-1) * A.[VALOR]
+                    WHEN A.[DEBITO] = {3} AND A.[DEBITO] LIKE '1%' THEN A.[VALOR]
+                    WHEN A.[DEBITO] = {3} THEN (-1) * A.[VALOR]
                     ELSE 0
                 END AS [DEBITOS],
                 CASE
-                    WHEN A.[CREDITO] IS NOT NULL AND CAST(A.[CREDITO] AS VARCHAR(50)) LIKE '1.%' THEN (-1) * A.[VALOR]
-                    WHEN A.[CREDITO] IS NOT NULL THEN A.[VALOR]
+                    WHEN A.[CREDITO] = {3} AND A.[CREDITO] LIKE '1%' THEN (-1) * A.[VALOR]
+                    WHEN A.[CREDITO] = {3} THEN A.[VALOR]
                     ELSE 0
                 END AS [CREDITOS]
-            FROM __SCHEMA__.dbo.[CPARTIDA] A
-            LEFT JOIN __SCHEMA__.dbo.[GFILIAL] E
+            FROM __SCHEMA__.dbo.[CPARTIDA] A WITH (NOLOCK)
+            LEFT JOIN __SCHEMA__.dbo.[GFILIAL] E WITH (NOLOCK)
                 ON E.[CODCOLIGADA] = A.[CODCOLIGADA] AND E.[CODFILIAL] = A.[CODFILIAL]
-            LEFT JOIN __SCHEMA__.dbo.[CCONTA] CT
+            LEFT JOIN __SCHEMA__.dbo.[CCONTA] CT WITH (NOLOCK)
                 ON CT.[CODCOLIGADA] = A.[CODCOLIGADA]
-               AND CT.[CODCONTA] = (CASE WHEN A.[DEBITO] IS NOT NULL THEN A.[DEBITO] ELSE A.[CREDITO] END)
+               AND CT.[CODCONTA] = {3}
             WHERE A.[CODCOLIGADA] = {0}
               AND A.[CODFILIAL] = {1}
               AND CONVERT(char(7), A.[DATA], 126) = {2}
-              AND (CASE WHEN A.[DEBITO] IS NOT NULL THEN A.[DEBITO] ELSE A.[CREDITO] END) = {3}
+              AND (A.[DEBITO] = {3} OR A.[CREDITO] = {3})
         ),
         ANTERIOR AS (
             SELECT
-                CASE WHEN A.[DEBITO] IS NOT NULL THEN A.[DEBITO] ELSE A.[CREDITO] END AS [CODCONTA],
-                SUM(
+                {3} AS [CODCONTA],
+                SUM(X.[VALOR]) AS [ANTERIOR]
+            FROM (
+                SELECT
                     CASE
-                        WHEN A.[DEBITO] IS NOT NULL AND CAST(A.[DEBITO] AS VARCHAR(50)) LIKE '1.%' THEN A.[VALOR]
-                        WHEN A.[DEBITO] IS NOT NULL THEN (-1) * A.[VALOR]
-                        WHEN A.[CREDITO] IS NOT NULL AND CAST(A.[CREDITO] AS VARCHAR(50)) LIKE '1.%' THEN (-1) * A.[VALOR]
-                        WHEN A.[CREDITO] IS NOT NULL THEN A.[VALOR]
-                        ELSE 0
+                        WHEN {3} LIKE '1%' THEN SUM(A.[VALOR])
+                        ELSE -SUM(A.[VALOR])
+                    END AS [VALOR]
+                FROM __SCHEMA__.dbo.[CPARTIDA] A WITH (NOLOCK)
+                WHERE A.[CODCOLIGADA] = {0}
+                  AND A.[CODFILIAL] = {1}
+                  AND A.[DATA] < CONVERT(date, {2} + '-01')
+                  AND A.[DEBITO] = {3}
+
+                UNION ALL
+
+                SELECT
+                    CASE
+                        WHEN {3} LIKE '1%' THEN -SUM(A.[VALOR])
+                        ELSE SUM(A.[VALOR])
                     END
-                ) AS [ANTERIOR]
-            FROM __SCHEMA__.dbo.[CPARTIDA] A
-            WHERE A.[CODCOLIGADA] = {0}
-              AND A.[CODFILIAL] = {1}
-              AND (CASE WHEN A.[DEBITO] IS NOT NULL THEN A.[DEBITO] ELSE A.[CREDITO] END) = {3}
-              AND A.[DATA] < CONVERT(date, {2} + '-01')
-            GROUP BY CASE WHEN A.[DEBITO] IS NOT NULL THEN A.[DEBITO] ELSE A.[CREDITO] END
+                FROM __SCHEMA__.dbo.[CPARTIDA] A WITH (NOLOCK)
+                WHERE A.[CODCOLIGADA] = {0}
+                  AND A.[CODFILIAL] = {1}
+                  AND A.[DATA] < CONVERT(date, {2} + '-01')
+                  AND A.[CREDITO] = {3}
+            ) X
         )
         SELECT * FROM (
             SELECT

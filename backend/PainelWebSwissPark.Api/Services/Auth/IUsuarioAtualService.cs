@@ -34,9 +34,13 @@ public sealed record UsuarioAutorizado(
         IsSuperAdmin
         || Modulos.Any(modulo => modulo.Key == moduloKey && modulo.Role == PerfisUsuario.Administrador);
 
-    /// <summary>Administra pelo menos um módulo. É o que libera a tela de Usuários.</summary>
+    /// <summary>Perfis que enxergam e mexem na área administrativa, além do Administrador.</summary>
+    private static readonly string[] PerfisComAcessoAdministrativo =
+        [PerfisUsuario.Administrador, PerfisUsuario.Gerente];
+
+    /// <summary>Administra (ou gerencia) pelo menos um módulo. É o que libera a tela de Usuários.</summary>
     public bool EhAdministradorDeAlgumModulo =>
-        IsSuperAdmin || Modulos.Any(modulo => modulo.Role == PerfisUsuario.Administrador);
+        IsSuperAdmin || Modulos.Any(modulo => PerfisComAcessoAdministrativo.Contains(modulo.Role));
 
     /// <summary>
     /// Módulos cuja turma esta pessoa pode gerenciar. Para o superadministrador a
@@ -46,7 +50,7 @@ public sealed record UsuarioAutorizado(
     public IReadOnlyList<string> ModulosQueAdministra =>
     [
         .. Modulos
-            .Where(modulo => modulo.Role == PerfisUsuario.Administrador)
+            .Where(modulo => PerfisComAcessoAdministrativo.Contains(modulo.Role))
             .Select(modulo => modulo.Key)
     ];
 }

@@ -217,7 +217,7 @@ export default function Fechamentos() {
         history: l.complemento || l.reduzido || "",
         document: l.documento ?? "",
         number: l.idLancamento != null ? String(l.idLancamento) : "",
-        value: l.debitos !== 0 ? Math.abs(l.debitos) : Math.abs(l.creditos),
+        value: l.debitos !== 0 ? l.debitos : l.creditos,
         type: l.debitos !== 0 ? "Débito" : "Crédito",
       })),
     [linhasDetalhe]
@@ -260,7 +260,10 @@ export default function Fechamentos() {
 
   const ledgerBalance = linhaResumo?.saldoRazao ?? 0;
   const previousBalance = linhaResumo?.saldoAnterior ?? 0;
-  const difference = hasPending ? 9215.65 : 0;
+
+  // Composição do saldo ainda não tem cálculo real no backend (ver roadmap,
+  // Fase 05) — até existir, mostra zerado em vez de um valor inventado.
+  const difference = 0;
   const compositionBalance = ledgerBalance - difference;
   const pageCount = Math.ceil(ledgerEntries.length / pageSize);
   const visibleEntries = ledgerEntries.slice((page - 1) * pageSize, page * pageSize);
@@ -321,7 +324,13 @@ export default function Fechamentos() {
       setErroValidacao(null);
       setLoadedSelection({ company, accountId, period });
       setPage(1);
-      showFeedback("Dados do fechamento carregados.");
+
+      if (lancamentosResposta.data.length === 0) {
+        showFeedback("Nenhum lançamento encontrado para essa combinação.");
+      } else {
+        showFeedback("Dados do fechamento carregados.");
+      }
+
       addHistory("Dados do razão atualizados");
     } catch {
       setLancamentos([]);

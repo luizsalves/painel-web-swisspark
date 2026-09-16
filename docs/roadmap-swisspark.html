@@ -1,4 +1,9 @@
-<title>Roadmap SwissPark</title>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Roadmap SwissPark</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
@@ -367,32 +372,35 @@
     .card { padding: 16px 16px; }
   }
 </style>
+</head>
+<body>
+
 
 <div class="page">
 
   <header class="top">
-    <span class="eyebrow">Painel Web SwissPark · roadmap de implementação</span>
-    <h1>Do login à auditoria completa</h1>
+    <span class="eyebrow">Painel Web SwissPark - roadmap de implementacao</span>
+    <h1>Do login a auditoria completa</h1>
     <p class="lede">
-      Levantamento feito direto do estado atual do código — controllers, páginas e o menu lateral já
-      marcam o que está pronto, o que ainda roda sobre dados de exemplo (<code>mockApi</code>) e o que
-      nem começou. As horas de cada fase são estimativa, assumindo 1 desenvolvedor full-time em dias
-      úteis de 8h — ajuste conforme o time real.
+      Levantamento feito direto do estado atual do codigo  -  controllers, paginas e o menu lateral ja
+      marcam o que esta pronto, o que ainda roda sobre dados de exemplo (<code>mockApi</code>) e o que
+      nem comecou. As horas de cada fase sao estimativa, assumindo 1 desenvolvedor full-time em dias
+      uteis de 8h  -  ajuste conforme o time real.
     </p>
     <div class="summary">
       <div class="bar" aria-hidden="true">
         <span class="seg-done" style="width: 28.5%"></span>
         <span class="seg-progress" style="width: 14.5%"></span>
       </div>
-      <span class="count">2 concluídas · 1 em andamento · 4 não iniciadas</span>
+      <span class="count">2 concluidas - 1 em andamento - 4 nao iniciadas</span>
     </div>
     <div class="summary">
-      <span class="effort">Restante estimado (fases 02–06): <strong>~196h · ~24,5 dias úteis · ~5 semanas</strong></span>
+      <span class="effort">Restante estimado (fases 02-06): <strong>~196h - ~24,5 dias uteis - ~5 semanas</strong></span>
     </div>
     <div class="legend">
-      <span class="dot"><span class="swatch" style="background:var(--done-fg)"></span>Concluída</span>
+      <span class="dot"><span class="swatch" style="background:var(--done-fg)"></span>Concluida</span>
       <span class="dot"><span class="swatch" style="background:var(--progress-fg)"></span>Em andamento</span>
-      <span class="dot"><span class="swatch" style="background:var(--pending-fg)"></span>Não iniciada</span>
+      <span class="dot"><span class="swatch" style="background:var(--pending-fg)"></span>Nao iniciada</span>
     </div>
   </header>
 
@@ -403,20 +411,20 @@
       <div class="rail"><div class="node done">00</div></div>
       <div class="card">
         <div class="card-head">
-          <h2>Fundação: acesso e área administrativa</h2>
-          <div class="meta"><span class="effort">~40h · 5 dias investidos</span><span class="status-pill done">Concluída</span></div>
+          <h2>Fundacao: acesso e area administrativa</h2>
+          <div class="meta"><span class="effort">~40h - 5 dias investidos</span><span class="status-pill done">Concluida</span></div>
         </div>
         <p class="desc">
-          Login próprio (sem Entra ID), autorização por módulo/perfil e o CRUD de usuários rodando
-          contra o Postgres — nada disso depende mais de decisão, só de manutenção.
+          Login proprio (sem Entra ID), autorizacao por modulo/perfil e o CRUD de usuarios rodando
+          contra o Postgres  -  nada disso depende mais de decisao, so de manutencao.
         </p>
         <ul class="items">
-          <li class="done"><span class="mark">✓</span>Login usuário/senha com JWT e troca de senha provisória obrigatória</li>
-          <li class="done"><span class="mark">✓</span>Autorização por módulo e perfil (<code>ExigeModulo</code>, <code>ExigePerfil</code>, políticas)</li>
-          <li class="done"><span class="mark">✓</span>Área administrativa de Usuários: criar, editar, ativar/desativar, redefinir senha — backend + tela</li>
-          <li class="done"><span class="mark">✓</span>Arquitetura Controller → Service → DbContext, com EF Core nas duas bases</li>
+          <li class="done"><span class="mark">v</span>Login usuario/senha com JWT e troca de senha provisoria obrigatoria</li>
+          <li class="done"><span class="mark">v</span>Autorizacao por modulo e perfil (<code>ExigeModulo</code>, <code>ExigePerfil</code>, politicas)</li>
+          <li class="done"><span class="mark">v</span>Area administrativa de Usuarios: criar, editar, ativar/desativar, redefinir senha  -  backend + tela</li>
+          <li class="done"><span class="mark">v</span>Arquitetura Controller -> Service -> DbContext, com EF Core nas duas bases</li>
         </ul>
-        <div class="tags"><span>UsuariosController</span><span>Postgres · leitura/gravação</span><span>ExigePerfilAttribute</span></div>
+        <div class="tags"><span>UsuariosController</span><span>Postgres - leitura/gravacao</span><span>ExigePerfilAttribute</span></div>
       </div>
     </div>
 
@@ -426,18 +434,18 @@
       <div class="card">
         <div class="card-head">
           <h2>Fluxo de fechamento e regras de perfil</h2>
-          <div class="meta"><span class="effort">~56h · 7 dias investidos</span><span class="status-pill done">Concluída</span></div>
+          <div class="meta"><span class="effort">~56h - 7 dias investidos</span><span class="status-pill done">Concluida</span></div>
         </div>
         <p class="desc">
-          O motor de regras de negócio do módulo de Conciliação já existe e está ligado à tela:
-          Preparar → Conferir → Realizar Fechamento → Reverter, cada ação gravando uma linha nova
-          (nunca um update) para manter a trilha de quem fez o quê.
+          O motor de regras de negocio do modulo de Conciliacao ja existe e esta ligado a tela:
+          Preparar -> Conferir -> Realizar Fechamento -> Reverter, cada acao gravando uma linha nova
+          (nunca um update) para manter a trilha de quem fez o que.
         </p>
         <ul class="items">
-          <li class="done"><span class="mark">✓</span>Tela de Fechamento Mensal com seleção Empresa/Conta/Período e indicadores</li>
-          <li class="done"><span class="mark">✓</span>Preparar/Realizar: Analista, Gerente ou Administrador</li>
-          <li class="done"><span class="mark">✓</span>Conferir: só Gerente ou Administrador — Analista não confere o que ele mesmo preparou</li>
-          <li class="done"><span class="mark">✓</span>Reverter etapa a etapa, com regra de quem pode desfazer o quê</li>
+          <li class="done"><span class="mark">v</span>Tela de Fechamento Mensal com selecao Empresa/Conta/Periodo e indicadores</li>
+          <li class="done"><span class="mark">v</span>Preparar/Realizar: Analista, Gerente ou Administrador</li>
+          <li class="done"><span class="mark">v</span>Conferir: so Gerente ou Administrador  -  Analista nao confere o que ele mesmo preparou</li>
+          <li class="done"><span class="mark">v</span>Reverter etapa a etapa, com regra de quem pode desfazer o que</li>
         </ul>
         <div class="tags"><span>FechamentoValidacaoController</span><span>bi_fechamento_validacao</span></div>
       </div>
@@ -448,23 +456,23 @@
       <div class="rail"><div class="node progress">02</div></div>
       <div class="card">
         <div class="card-head">
-          <h2>Tirar Empresas e Contas Contábeis do mock</h2>
-          <div class="meta"><span class="effort">~12h · 1,5 dia restante</span><span class="status-pill progress">Em andamento</span></div>
+          <h2>Tirar Empresas e Contas Contabeis do mock</h2>
+          <div class="meta"><span class="effort">~12h - 1,5 dia restante</span><span class="status-pill progress">Em andamento</span></div>
         </div>
         <p class="desc">
-          O backend já lê as quatro bases TOTVS (<code>corpore</code>, <code>corpore_bsb</code>,
+          O backend ja le as quatro bases TOTVS (<code>corpore</code>, <code>corpore_bsb</code>,
           <code>corpore_mao</code>, <code>corpore_neu</code>) por <code>GET /api/empresas</code> e
-          <code>GET /api/contascontabeis</code>, somente leitura. As telas, porém, ainda mostram
-          <code>COMPANY_RECORDS</code> e <code>ACCOUNTING_ACCOUNTS</code> de <code>mockApi.ts</code> —
-          é o próximo passo mais próximo de terminar.
+          <code>GET /api/contascontabeis</code>, somente leitura. As telas, porem, ainda mostram
+          <code>COMPANY_RECORDS</code> e <code>ACCOUNTING_ACCOUNTS</code> de <code>mockApi.ts</code>  - 
+          e o proximo passo mais proximo de terminar.
         </p>
         <ul class="items">
-          <li class="done"><span class="mark">✓</span>Endpoints reais de Empresas e Contas Contábeis (somente leitura TOTVS)</li>
+          <li class="done"><span class="mark">v</span>Endpoints reais de Empresas e Contas Contabeis (somente leitura TOTVS)</li>
           <li class="pending"><span class="mark"></span>Ligar a tela Empresas ao endpoint real</li>
-          <li class="pending"><span class="mark"></span>Ligar a tela Contas Contábeis ao endpoint real</li>
+          <li class="pending"><span class="mark"></span>Ligar a tela Contas Contabeis ao endpoint real</li>
           <li class="pending"><span class="mark"></span>Trocar o seletor de contas do Fechamento (hoje mock) pela API real</li>
         </ul>
-        <div class="tags"><span>EmpresasController</span><span>ContasContabeisController</span><span>TOTVS · somente leitura</span></div>
+        <div class="tags"><span>EmpresasController</span><span>ContasContabeisController</span><span>TOTVS - somente leitura</span></div>
       </div>
     </div>
 
@@ -474,12 +482,12 @@
       <div class="card">
         <div class="card-head">
           <h2>Dashboard com dado real</h2>
-          <div class="meta"><span class="effort">~20h · 2,5 dias</span><span class="status-pill pending">Não iniciada</span></div>
+          <div class="meta"><span class="effort">~20h - 2,5 dias</span><span class="status-pill pending">Nao iniciada</span></div>
         </div>
         <p class="desc">
           A tela existe mas roda 100% sobre <code>getDashboardSnapshot</code> do <code>mockApi</code>.
           Falta decidir quais indicadores agregados fazem sentido (fechamentos pendentes por empresa,
-          por status, por responsável) e criar o endpoint que os calcula em cima de
+          por status, por responsavel) e criar o endpoint que os calcula em cima de
           <code>bi_fechamento_validacao</code>.
         </p>
         <ul class="items">
@@ -496,19 +504,19 @@
       <div class="rail"><div class="node">04</div></div>
       <div class="card">
         <div class="card-head">
-          <h2>Módulos ainda travados no menu</h2>
-          <div class="meta"><span class="effort">~96h · 12 dias</span><span class="status-pill pending">Não iniciada</span></div>
+          <h2>Modulos ainda travados no menu</h2>
+          <div class="meta"><span class="effort">~96h - 12 dias</span><span class="status-pill pending">Nao iniciada</span></div>
         </div>
         <p class="desc">
-          O próprio <code>AppSidebar.tsx</code> já documenta isso: itens sem <code>disabled</code> têm
-          página pronta, os demais aguardam a próxima etapa. Quatro itens do menu ainda apontam para
-          telas que não existem.
+          O proprio <code>AppSidebar.tsx</code> ja documenta isso: itens sem <code>disabled</code> tem
+          pagina pronta, os demais aguardam a proxima etapa. Quatro itens do menu ainda apontam para
+          telas que nao existem.
         </p>
         <ul class="items">
-          <li class="pending"><span class="mark"></span>Pendências — aba já prevista na tela de Fechamento, mas página de módulo própria não existe <em>(~24h · 3 dias)</em></li>
-          <li class="pending"><span class="mark"></span>Relatórios <em>(~32h · 4 dias)</em></li>
-          <li class="pending"><span class="mark"></span>Configurações — área administrativa <em>(~16h · 2 dias)</em></li>
-          <li class="pending"><span class="mark"></span>Auditoria — reaproveita o histórico já gravado em <code>bi_fechamento_validacao</code> <em>(~24h · 3 dias)</em></li>
+          <li class="pending"><span class="mark"></span>Pendencias  -  aba ja prevista na tela de Fechamento, mas pagina de modulo propria nao existe <em>(~24h - 3 dias)</em></li>
+          <li class="pending"><span class="mark"></span>Relatorios <em>(~32h - 4 dias)</em></li>
+          <li class="pending"><span class="mark"></span>Configuracoes  -  area administrativa <em>(~16h - 2 dias)</em></li>
+          <li class="pending"><span class="mark"></span>Auditoria  -  reaproveita o historico ja gravado em <code>bi_fechamento_validacao</code> <em>(~24h - 3 dias)</em></li>
         </ul>
         <div class="tags"><span>AppSidebar.tsx</span><span>disabled: true</span></div>
       </div>
@@ -519,18 +527,18 @@
       <div class="rail"><div class="node">05</div></div>
       <div class="card">
         <div class="card-head">
-          <h2>Validações de negócio além do fluxo básico</h2>
-          <div class="meta"><span class="effort">~30h · 4 dias</span><span class="status-pill pending">Não iniciada</span></div>
+          <h2>Validacoes de negocio alem do fluxo basico</h2>
+          <div class="meta"><span class="effort">~30h - 4 dias</span><span class="status-pill pending">Nao iniciada</span></div>
         </div>
         <p class="desc">
-          O fluxo Preparar/Conferir/Realizar já valida <em>quem</em> pode agir. Falta o próximo nível:
-          validar o <em>conteúdo</em> do fechamento antes de deixar avançar de etapa.
+          O fluxo Preparar/Conferir/Realizar ja valida <em>quem</em> pode agir. Falta o proximo nivel:
+          validar o <em>conteudo</em> do fechamento antes de deixar avancar de etapa.
         </p>
         <ul class="items">
-          <li class="pending"><span class="mark"></span>Consistência entre Saldo Razão e Composição do Saldo antes de liberar Realizar Fechamento <em>(~10h)</em></li>
-          <li class="pending"><span class="mark"></span>Bloquear edição de período já fechado <em>(~6h)</em></li>
-          <li class="pending"><span class="mark"></span>Regras específicas por tipo/prioridade de conta contábil <em>(~8h)</em></li>
-          <li class="pending"><span class="mark"></span>Observações obrigatórias em determinadas transições de status <em>(~6h)</em></li>
+          <li class="pending"><span class="mark"></span>Consistencia entre Saldo Razao e Composicao do Saldo antes de liberar Realizar Fechamento <em>(~10h)</em></li>
+          <li class="pending"><span class="mark"></span>Bloquear edicao de periodo ja fechado <em>(~6h)</em></li>
+          <li class="pending"><span class="mark"></span>Regras especificas por tipo/prioridade de conta contabil <em>(~8h)</em></li>
+          <li class="pending"><span class="mark"></span>Observacoes obrigatorias em determinadas transicoes de status <em>(~6h)</em></li>
         </ul>
         <div class="tags"><span>FechamentoValidacaoService</span></div>
       </div>
@@ -541,15 +549,15 @@
       <div class="rail"><div class="node">06</div></div>
       <div class="card">
         <div class="card-head">
-          <h2>Qualidade e operação</h2>
-          <div class="meta"><span class="effort">~38h · 5 dias</span><span class="status-pill pending">Não iniciada</span></div>
+          <h2>Qualidade e operacao</h2>
+          <div class="meta"><span class="effort">~38h - 5 dias</span><span class="status-pill pending">Nao iniciada</span></div>
         </div>
         <p class="desc">
-          Fecha o ciclo antes de tratar o painel como pronto para uso contínuo pelo time.
+          Fecha o ciclo antes de tratar o painel como pronto para uso continuo pelo time.
         </p>
         <ul class="items">
-          <li class="pending"><span class="mark"></span>Testes automatizados nos services de regra de negócio (fechamento, usuários) <em>(~20h)</em></li>
-          <li class="pending"><span class="mark"></span>Revisão de segurança (acesso somente leitura ao TOTVS, escopo de tokens) <em>(~8h)</em></li>
+          <li class="pending"><span class="mark"></span>Testes automatizados nos services de regra de negocio (fechamento, usuarios) <em>(~20h)</em></li>
+          <li class="pending"><span class="mark"></span>Revisao de seguranca (acesso somente leitura ao TOTVS, escopo de tokens) <em>(~8h)</em></li>
           <li class="pending"><span class="mark"></span>Ajustar docker-compose e pipeline de deploy <em>(~10h)</em></li>
         </ul>
         <div class="tags"><span>docker-compose</span></div>
@@ -559,12 +567,14 @@
   </div>
 
   <footer class="note">
-    Baseado na inspeção do repositório em <strong>c:\Projetos\SwissPark\painel-web-swisspark</strong> (branch <code>main</code>)
-    em 14/09/2026 — controllers, telas e o próprio <code>AppSidebar.tsx</code> como fonte da verdade sobre o que
-    está pronto. As horas por fase são estimativa de esforço (1 dev full-time, dia útil de 8h), não medição
-    real — com time diferente ou dedicação parcial, o total de ~196h/~24,5 dias muda proporcionalmente.
-    Este arquivo é HTML estático autocontido: pode ser publicado em qualquer servidor
-    (IIS, Nginx, Apache, ou um storage estático) sem precisar de backend.
+    Baseado na inspecao do repositorio em <strong>c:\Projetos\SwissPark\painel-web-swisspark</strong> (branch <code>main</code>)
+    em 14/09/2026  -  controllers, telas e o proprio <code>AppSidebar.tsx</code> como fonte da verdade sobre o que
+    esta pronto. As horas por fase sao estimativa de esforco (1 dev full-time, dia util de 8h), nao medicao
+    real  -  com time diferente ou dedicacao parcial, o total de ~196h/~24,5 dias muda proporcionalmente.
+    Este arquivo e HTML estatico autocontido: pode ser publicado em qualquer servidor
+    (IIS, Nginx, Apache, ou um storage estatico) sem precisar de backend.
   </footer>
 
 </div>
+</body>
+</html>

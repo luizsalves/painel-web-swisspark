@@ -117,11 +117,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [user]
   );
 
-  // Quem administra algum módulo vê a tela de Usuários. Quais usuários ela
-  // mostra é o backend que decide, módulo a módulo.
+  // Quem administra ou gerencia algum módulo vê a tela de Usuários. Quais
+  // usuários ela mostra é o backend que decide, módulo a módulo — espelha
+  // UsuarioAutorizado.EhAdministradorDeAlgumModulo no backend.
   const administraAlgumModulo =
     Boolean(user?.isSuperAdmin) ||
-    Boolean(user?.modulos.some((modulo) => modulo.role === "Administrador"));
+    Boolean(user?.modulos.some((modulo) => modulo.role === "Administrador" || modulo.role === "Gerente"));
 
   const value = useMemo<AuthContextValue>(
     () => ({

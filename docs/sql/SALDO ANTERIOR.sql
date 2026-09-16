@@ -1,0 +1,46 @@
+DECLARE @CODCOLIGADA INT = 18;
+DECLARE @CODFILIAL   INT = 3;
+DECLARE @DATA        DATE = '2026-08-01';
+DECLARE @CODCONTA    VARCHAR(50) = '2.1.1.03.01.0002';
+
+SELECT
+    SUM(VALOR) AS SALDO_ANTERIOR
+FROM
+(
+    -- DÉBITO
+    SELECT
+        CASE
+            WHEN @CODCONTA LIKE '1%'
+                THEN SUM(A.VALOR)
+            ELSE
+                -SUM(A.VALOR)
+        END AS VALOR
+
+    FROM corpore_neu.dbo.CPARTIDA A WITH(NOLOCK)
+
+    WHERE A.CODCOLIGADA = @CODCOLIGADA
+      AND A.CODFILIAL = @CODFILIAL
+      AND A.DATA < @DATA
+      AND A.DEBITO = @CODCONTA
+
+
+    UNION ALL
+
+
+    -- CRÉDITO
+    SELECT
+        CASE
+            WHEN @CODCONTA LIKE '1%'
+                THEN -SUM(A.VALOR)
+            ELSE
+                SUM(A.VALOR)
+        END
+
+    FROM corpore_neu.dbo.CPARTIDA A WITH(NOLOCK)
+
+    WHERE A.CODCOLIGADA = @CODCOLIGADA
+      AND A.CODFILIAL = @CODFILIAL
+      AND A.DATA < @DATA
+      AND A.CREDITO = @CODCONTA
+
+) X;

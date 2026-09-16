@@ -1,0 +1,75 @@
+DECLARE @CODCOLIGADA INT = 18;
+DECLARE @CODFILIAL   INT = 3;
+DECLARE @DATA        DATE = '2026-08-01';
+DECLARE @CODCONTA    VARCHAR(50) = '2.1.1.03.01.0002';
+
+SELECT 
+    CONVERT(char(7), A.[DATA], 126) AS [ANOMES], 
+    A.[DATA], 
+    UPPER(LTRIM(RTRIM(E.[NOME]))) AS [EMPRESA], 
+    A.[CODCOLIGADA], 
+    COALESCE(CT.[REDUZIDO], '-') AS [REDUZIDO], 
+
+    CASE 
+        WHEN A.[DEBITO] IS NOT NULL THEN A.[DEBITO] 
+        ELSE A.[CREDITO] 
+    END AS [CODCONTA], 
+
+    A.[CODFILIAL], 
+    LTRIM(RTRIM(E.[NOMEFANTASIA])) AS [NOMEFANTASIA], 
+    A.[COMPLEMENTO], 
+    A.[DOCUMENTO], 
+    A.[IDLANCAMENTO], 
+    A.[IDPARTIDA], 
+    A.[USUARIO], 
+
+    CASE 
+        WHEN A.[DEBITO] IS NOT NULL 
+             AND A.[DEBITO] LIKE '1%'
+            THEN A.[VALOR] 
+
+        WHEN A.[DEBITO] IS NOT NULL 
+            THEN (-1) * A.[VALOR] 
+
+        ELSE 0 
+    END AS [DEBITOS], 
+
+    CASE 
+        WHEN A.[CREDITO] IS NOT NULL 
+             AND A.[CREDITO] LIKE '1%'
+            THEN (-1) * A.[VALOR] 
+
+        WHEN A.[CREDITO] IS NOT NULL 
+            THEN A.[VALOR] 
+
+        ELSE 0 
+    END AS [CREDITOS] 
+
+FROM __SCHEMA__.dbo.[CPARTIDA] A WITH (NOLOCK) 
+
+LEFT JOIN __SCHEMA__.dbo.[GFILIAL] E WITH (NOLOCK) 
+    ON E.[CODCOLIGADA] = A.[CODCOLIGADA] 
+   AND E.[CODFILIAL] = A.[CODFILIAL] 
+
+LEFT JOIN __SCHEMA__.dbo.[CCONTA] CT WITH (NOLOCK) 
+    ON CT.[CODCOLIGADA] = A.[CODCOLIGADA] 
+   AND CT.[CODCONTA] = 
+        CASE 
+            WHEN A.[DEBITO] IS NOT NULL THEN A.[DEBITO] 
+            ELSE A.[CREDITO] 
+        END
+
+WHERE A.[CODCOLIGADA] = @CODCOLIGADA
+  AND A.[CODFILIAL] = @CODFILIAL
+
+  AND A.[DATA] >= @DATA
+  AND A.[DATA] < DATEADD(MONTH, 1, @DATA)
+
+  AND (
+        A.[DEBITO] = @CODCONTA
+        OR
+        (
+            A.[DEBITO] IS NULL
+            AND A.[CREDITO] = @CODCONTA
+        )
+      );
