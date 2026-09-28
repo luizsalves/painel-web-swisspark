@@ -4,4 +4,6 @@ export interface ContaContabilTotvs {
   codConta: string;
   reduzido: string;
   descricao: string;
+  /** Flag do painel (não existe no TOTVS). Inativa some do combobox de Fechamentos. */
+  ativo: boolean;
 }

@@ -1,5 +1,6 @@
-import type { PriorityLevel, RealizedPriorityDatum, StatusPriorityDatum } from "./Priority";
-
+// "Backlog" aqui é o rótulo mostrado no combobox de status do mock de Contas
+// Contábeis — não tem relação com o DashboardResumo (esse vem de verdade do
+// backend, cruzando Empresas x Contas Contábeis x bi_fechamento_validacao).
 export type ReconciliationStatus =
   | "Backlog"
   | "Preparado"
@@ -8,39 +9,15 @@ export type ReconciliationStatus =
   | "Pendência"
   | "Fechado";
 
-export interface DashboardMetrics {
+/**
+ * Resumo do backlog de conciliação de um período (GET /api/dashboard/resumo):
+ * das combinações de filial ativa x conta contábil ativa esperadas, quantas
+ * estão em cada etapa do fechamento.
+ */
+export interface DashboardResumo {
   backlogTotal: number;
   preparados: number;
-  preConferidos: number;
   conferidos: number;
-  pendencias: number;
   fechados: number;
-}
-
-export interface RecentPending {
-  id: string;
-  accountCode: string;
-  description: string;
-  priority: PriorityLevel;
-}
-
-export type ClosingStatus = "Fechado" | "Conferido" | "Pré-conferido";
-
-export interface RecentClosing {
-  id: string;
-  company: string;
-  accountCode: string;
-  description: string;
-  period: string;
-  status: ClosingStatus;
-  responsible: string;
-  closedAt: string;
-}
-
-export interface DashboardSnapshot {
-  metrics: DashboardMetrics;
-  statusByPriority: StatusPriorityDatum[];
-  realizedByPriority: RealizedPriorityDatum[];
-  recentPendings: RecentPending[];
-  recentClosings: RecentClosing[];
+  pendentes: number;
 }

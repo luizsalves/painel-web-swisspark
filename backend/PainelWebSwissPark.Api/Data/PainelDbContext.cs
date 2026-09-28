@@ -25,6 +25,10 @@ public class PainelDbContext(
 
     public DbSet<FechamentoValidacao> FechamentoValidacoes => Set<FechamentoValidacao>();
 
+    public DbSet<EmpresaConfiguracao> EmpresaConfiguracoes => Set<EmpresaConfiguracao>();
+
+    public DbSet<ContaContabilConfiguracao> ContaContabilConfiguracoes => Set<ContaContabilConfiguracao>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<BiUser>(entity =>
@@ -119,6 +123,30 @@ public class PainelDbContext(
             entity.Property(e => e.RealizadoEm).HasColumnName("realizado_em").HasDefaultValueSql("now()");
 
             entity.HasIndex(e => new { e.CodColigada, e.CodFilial, e.CodConta, e.AnoMes, e.RealizadoEm });
+        });
+
+        modelBuilder.Entity<EmpresaConfiguracao>(entity =>
+        {
+            entity.ToTable("bi_empresa_configuracao", _schema);
+            entity.HasKey(e => new { e.CodColigada, e.CodFilial });
+
+            entity.Property(e => e.CodColigada).HasColumnName("cod_coligada");
+            entity.Property(e => e.CodFilial).HasColumnName("cod_filial");
+            entity.Property(e => e.Ativo).HasColumnName("ativo").HasDefaultValue(true);
+            entity.Property(e => e.AtualizadoPor).HasColumnName("atualizado_por");
+            entity.Property(e => e.AtualizadoEm).HasColumnName("atualizado_em").HasDefaultValueSql("now()");
+        });
+
+        modelBuilder.Entity<ContaContabilConfiguracao>(entity =>
+        {
+            entity.ToTable("bi_conta_contabil_configuracao", _schema);
+            entity.HasKey(e => new { e.CodColigada, e.CodConta });
+
+            entity.Property(e => e.CodColigada).HasColumnName("cod_coligada");
+            entity.Property(e => e.CodConta).HasColumnName("cod_conta");
+            entity.Property(e => e.Ativo).HasColumnName("ativo").HasDefaultValue(true);
+            entity.Property(e => e.AtualizadoPor).HasColumnName("atualizado_por");
+            entity.Property(e => e.AtualizadoEm).HasColumnName("atualizado_em").HasDefaultValueSql("now()");
         });
     }
 }

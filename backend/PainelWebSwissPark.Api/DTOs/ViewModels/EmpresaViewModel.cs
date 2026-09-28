@@ -19,4 +19,7 @@ public class EmpresaViewModel
     public string Cgc { get; set; } = string.Empty;
     public string Cidade { get; set; } = string.Empty;
     public string Estado { get; set; } = string.Empty;
+
+    /// <summary>Flag do painel (não existe em GFILIAL). Desativada some dos comboboxes de Fechamentos.</summary>
+    public bool Ativo { get; set; } = true;
 }

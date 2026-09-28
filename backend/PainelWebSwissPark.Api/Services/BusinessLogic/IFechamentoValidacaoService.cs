@@ -20,4 +20,12 @@ public interface IFechamentoValidacaoService
 
     Task<FechamentoValidacaoViewModel> ReverterAsync(
         ChaveFechamentoRequest request, UsuarioAutorizado autor, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Ranking de usuários por quantidade de ações registradas com o status
+    /// (Preparado, Conferido ou Fechado — "Finalizado" vale como Fechado).
+    /// anoMes (AAAA-MM) opcional; sem ele, conta todos os períodos.
+    /// </summary>
+    Task<List<ProdutividadeUsuarioViewModel>> ObterProdutividadeAsync(
+        string status, string? anoMes, CancellationToken cancellationToken);
 }

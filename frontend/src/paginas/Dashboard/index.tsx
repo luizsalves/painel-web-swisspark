@@ -1,154 +1,184 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import {
-  Archive,
-  ClipboardList,
-  Eye,
-  CheckCircle2,
-  AlertTriangle,
-  CheckCheck,
-  ChevronRight,
-} from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Archive, ClipboardList, CheckCircle2, AlertTriangle, CheckCheck } from "lucide-react";
 import AppLayout from "../../componentes/layout/AppLayout";
 import AppHeader from "../../componentes/layout/AppHeader";
 import KpiCard from "../../componentes/ui/KpiCard";
-import StatusBadge from "../../componentes/ui/StatusBadge";
-import Table from "../../componentes/ui/Table";
 import LoadingSpinner from "../../componentes/ui/LoadingSpinner";
-import StackedBarChart from "../../componentes/charts/StackedBarChart";
-import DonutChart from "../../componentes/charts/DonutChart";
-import { getDashboardSnapshot, PERIOD_OPTIONS, COMPANY_OPTIONS } from "../../services/mockApi";
-import type { TableColumn } from "../../componentes/ui/Table";
-import type { DashboardSnapshot, RecentClosing } from "../../interfaces/Dashboard";
+import WaterfallChart from "../../componentes/charts/WaterfallChart";
+import MetricDonut from "../../componentes/charts/MetricDonut";
+import { extrairMensagemDeErro } from "../../services/api";
+import { obterResumoDashboard, obterUltimoPeriodoComDados } from "../../services/dashboardService";
+import { listarEmpresas } from "../../services/empresasService";
+import type { DashboardResumo } from "../../interfaces/Dashboard";
 
-const FILTER_DELAY_MIN = 300;
-const FILTER_DELAY_MAX = 500;
+const RESUMO_VAZIO: DashboardResumo = {
+  backlogTotal: 0,
+  preparados: 0,
+  conferidos: 0,
+  fechados: 0,
+  pendentes: 0,
+};
 
-function simulateNetworkDelay() {
-  const range = FILTER_DELAY_MAX - FILTER_DELAY_MIN;
-  const ms = FILTER_DELAY_MIN + Math.random() * range;
-  return new Promise((resolve) => setTimeout(resolve, ms));
+function mesAtual(): string {
+  return new Date().toISOString().slice(0, 7);
 }
 
-const closingColumns: TableColumn<RecentClosing>[] = [
-  { key: "company", header: "Empresa", render: (row) => row.company },
-  { key: "accountCode", header: "Conta Contábil", render: (row) => row.accountCode },
-  { key: "description", header: "Descrição", render: (row) => row.description },
-  { key: "period", header: "Período", render: (row) => row.period },
-  {
-    key: "status",
-    header: "Status",
-    render: (row) => <StatusBadge label={row.status} />,
-  },
-  { key: "responsible", header: "Responsável", render: (row) => row.responsible },
-  { key: "closedAt", header: "Data Fechamento", render: (row) => row.closedAt },
-];
-
 export default function Dashboard() {
-  const [period, setPeriod] = useState("01/2026");
-  const [company, setCompany] = useState("todas");
-  const [snapshot, setSnapshot] = useState<DashboardSnapshot>(() =>
-    getDashboardSnapshot("01/2026", "todas")
-  );
-  const [isLoading, setIsLoading] = useState(false);
+  const [anoMes, setAnoMes] = useState(mesAtual());
+  const [empresa, setEmpresa] = useState("");
+  const [nomesDeEmpresas, setNomesDeEmpresas] = useState<string[]>([]);
+  const [resumo, setResumo] = useState<DashboardResumo>(RESUMO_VAZIO);
+  const [isLoading, setIsLoading] = useState(true);
+  const [erro, setErro] = useState<string | null>(null);
 
   useEffect(() => {
-    let isActive = true;
+    // Abre no mês mais recente que já tem fechamento registrado — o mês
+    // calendário atual normalmente ainda está vazio.
+    obterUltimoPeriodoComDados()
+      .then((ultimoPeriodo) => {
+        if (ultimoPeriodo) setAnoMes(ultimoPeriodo);
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    listarEmpresas()
+      .then((lista) => {
+        const nomes = [...new Set(lista.filter((e) => e.ativo).map((e) => e.nome))].sort((a, b) =>
+          a.localeCompare(b, "pt-BR")
+        );
+        setNomesDeEmpresas(nomes);
+      })
+      .catch(() => setNomesDeEmpresas([]));
+  }, []);
+
+  const carregarResumo = useCallback(async () => {
     setIsLoading(true);
+    setErro(null);
 
-    simulateNetworkDelay().then(() => {
-      if (!isActive) return;
-      setSnapshot(getDashboardSnapshot(period, company));
+    try {
+      setResumo(await obterResumoDashboard(anoMes, empresa));
+    } catch (erroCapturado) {
+      setErro(extrairMensagemDeErro(erroCapturado, "Não foi possível carregar o resumo do dashboard."));
+      setResumo(RESUMO_VAZIO);
+    } finally {
       setIsLoading(false);
-    });
+    }
+  }, [anoMes, empresa]);
 
-    return () => {
-      isActive = false;
-    };
-  }, [period, company]);
+  useEffect(() => {
+    void carregarResumo();
+  }, [carregarResumo]);
 
-  const { metrics, statusByPriority, realizedByPriority, recentPendings, recentClosings } =
-    snapshot;
+  const barras = useMemo(
+    () =>
+      [
+        { label: "Backlog", value: resumo.backlogTotal, tipo: "total" },
+        { label: "Finalizado", value: resumo.fechados, tipo: "diminuicao" },
+        { label: "Conferido", value: resumo.conferidos, tipo: "diminuicao" },
+        { label: "Preparado", value: resumo.preparados, tipo: "diminuicao" },
+        { label: "Pendente", value: resumo.pendentes, tipo: "total" },
+      ] as const,
+    [resumo]
+  );
 
   return (
     <AppLayout>
       <AppHeader
         title="Painel de Conciliação"
-        subtitle="Visão geral das conciliações contábeis"
-        period={period}
-        company={company}
-        periodOptions={PERIOD_OPTIONS}
-        companyOptions={COMPANY_OPTIONS}
-        onPeriodChange={setPeriod}
-        onCompanyChange={setCompany}
+        subtitle="Backlog de fechamentos por período, cruzando empresas e contas contábeis ativas"
       />
 
       <main className="sp-dashboard">
+        <section className="sp-dashboard__filters" aria-label="Filtros do dashboard">
+          <label className="sp-dashboard__field">
+            <span>Período (Mês/Ano)</span>
+            <input type="month" value={anoMes} onChange={(event) => setAnoMes(event.target.value)} />
+          </label>
+
+          <label className="sp-dashboard__field">
+            <span>Empresa</span>
+            <select value={empresa} onChange={(event) => setEmpresa(event.target.value)}>
+              <option value="">Todas</option>
+              {nomesDeEmpresas.map((nome) => (
+                <option key={nome} value={nome}>
+                  {nome}
+                </option>
+              ))}
+            </select>
+          </label>
+        </section>
+
+        {erro && (
+          <span className="sp-closing__feedback sp-closing__feedback--error" role="alert">
+            {erro}
+          </span>
+        )}
+
         <section className="sp-dashboard__kpis" aria-label="Indicadores gerais">
-          <KpiCard label="Backlog Total" value={metrics.backlogTotal} icon={<Archive size={20} />} isLoading={isLoading} />
-          <KpiCard label="Preparados" value={metrics.preparados} icon={<ClipboardList size={20} />} isLoading={isLoading} />
-          <KpiCard label="Pré-conferidos" value={metrics.preConferidos} icon={<Eye size={20} />} tone="warning" isLoading={isLoading} />
-          <KpiCard label="Conferidos" value={metrics.conferidos} icon={<CheckCircle2 size={20} />} tone="green" isLoading={isLoading} />
-          <KpiCard label="Pendências" value={metrics.pendencias} icon={<AlertTriangle size={20} />} tone="red" isLoading={isLoading} />
-          <KpiCard label="Fechados" value={metrics.fechados} icon={<CheckCheck size={20} />} tone="green" isLoading={isLoading} />
+          <KpiCard label="Backlog Total" value={resumo.backlogTotal} icon={<Archive size={20} />} isLoading={isLoading} />
+          <KpiCard label="Preparados" value={resumo.preparados} icon={<ClipboardList size={20} />} isLoading={isLoading} />
+          <KpiCard label="Conferidos" value={resumo.conferidos} icon={<CheckCircle2 size={20} />} tone="green" isLoading={isLoading} />
+          <KpiCard label="Pendentes" value={resumo.pendentes} icon={<AlertTriangle size={20} />} tone="red" isLoading={isLoading} />
+          <KpiCard label="Finalizados" value={resumo.fechados} icon={<CheckCheck size={20} />} tone="green" isLoading={isLoading} />
         </section>
 
         <section className="sp-dashboard__charts">
           <div className="sp-card sp-card--chart">
-            <h2 className="sp-card__title">Status por Prioridade</h2>
+            <h2 className="sp-card__title">Backlog de Atividades: Total vs. Realizado</h2>
             {isLoading ? (
               <div className="sp-card__loading">
                 <LoadingSpinner size={26} color="var(--color-green)" />
               </div>
             ) : (
-              <StackedBarChart data={statusByPriority} />
+              <WaterfallChart data={barras} />
             )}
           </div>
 
-          <div className="sp-card sp-card--chart">
-            <h2 className="sp-card__title">% Realizado por Prioridade</h2>
-            {isLoading ? (
-              <div className="sp-card__loading">
-                <LoadingSpinner size={26} color="var(--color-green)" />
-              </div>
-            ) : (
-              <DonutChart data={realizedByPriority} />
-            )}
-          </div>
-        </section>
-
-        <section className="sp-card sp-dashboard__pendings">
-          <div className="sp-card__header">
-            <h2 className="sp-card__title">Pendências Recentes</h2>
-            <a className="sp-card__link" href="#">
-              Ver todas pendências
-              <ChevronRight size={15} />
-            </a>
-          </div>
-
-          <ul className="sp-pending-list">
-            {recentPendings.map((item) => (
-              <li key={item.id} className="sp-pending-list__item">
-                <div className="sp-pending-list__info">
-                  <span className="sp-pending-list__code">{item.accountCode}</span>
-                  <span className="sp-pending-list__description">{item.description}</span>
+          <div className="sp-dashboard__donuts">
+            <div className="sp-card sp-card--chart">
+              <h2 className="sp-card__title">% Finalizado</h2>
+              {isLoading ? (
+                <div className="sp-card__loading">
+                  <LoadingSpinner size={26} color="var(--color-green)" />
                 </div>
-                <StatusBadge label={item.priority} />
-              </li>
-            ))}
-          </ul>
-        </section>
+              ) : (
+                <MetricDonut label="Finalizado" value={resumo.fechados} total={resumo.backlogTotal} />
+              )}
+            </div>
 
-        <section className="sp-card sp-dashboard__closings">
-          <div className="sp-card__header">
-            <h2 className="sp-card__title">Últimos Fechamentos</h2>
-            <Link className="sp-card__link" to="/fechamentos">
-              Ver todos os fechamentos
-              <ChevronRight size={15} />
-            </Link>
+            <div className="sp-card sp-card--chart">
+              <h2 className="sp-card__title">% Conferido</h2>
+              {isLoading ? (
+                <div className="sp-card__loading">
+                  <LoadingSpinner size={26} color="var(--color-green)" />
+                </div>
+              ) : (
+                <MetricDonut
+                  label="Conferido"
+                  value={resumo.conferidos}
+                  total={resumo.backlogTotal}
+                  color="var(--color-green)"
+                />
+              )}
+            </div>
+
+            <div className="sp-card sp-card--chart">
+              <h2 className="sp-card__title">% Preparado</h2>
+              {isLoading ? (
+                <div className="sp-card__loading">
+                  <LoadingSpinner size={26} color="var(--color-green)" />
+                </div>
+              ) : (
+                <MetricDonut
+                  label="Preparado"
+                  value={resumo.preparados}
+                  total={resumo.backlogTotal}
+                  color="var(--color-warning)"
+                />
+              )}
+            </div>
           </div>
-
-          <Table columns={closingColumns} data={recentClosings} getRowId={(row) => row.id} />
         </section>
       </main>
     </AppLayout>

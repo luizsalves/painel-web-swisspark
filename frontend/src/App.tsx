@@ -6,6 +6,7 @@ import Dashboard from "./paginas/Dashboard";
 import Fechamentos from "./paginas/Fechamentos";
 import Empresas from "./paginas/Empresas";
 import ContasContabeis from "./paginas/ContasContabeis";
+import IaPlanning from "./paginas/IaPlanning";
 import Inicio from "./paginas/Inicio";
 import { MODULO_CONCILIACAO } from "./interfaces/Auth";
 import Usuarios from "./paginas/Usuarios";
@@ -47,6 +48,14 @@ function App() {
             element={
               <ProtectedRoute requireModulo={MODULO_CONCILIACAO}>
                 <ContasContabeis />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/ia-planning"
+            element={
+              <ProtectedRoute requireSuperAdmin>
+                <IaPlanning />
               </ProtectedRoute>
             }
           />
