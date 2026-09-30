@@ -14,6 +14,8 @@ keys.json
 keys.json.bak
 keys - Copia.json
 **/keys.json
+keys*.json*
+!keys.example.json
 *.secrets.json
 secrets/
 **/secrets/
@@ -30,3 +32,8 @@ secrets/
 *.user
 .DS_Store
 Thumbs.db
+
+# Logs locais de execucao e deploy
+*.log
+*.stackdump
+*.pem
