@@ -1,4 +1,5 @@
 SELECT DISTINCT
+	'corpore' as banco,
     CODCOLIGADA,
     CODFILIAL,
     LTRIM(RTRIM(NOMEFANTASIA)) AS NOMEFANTASIA,
@@ -8,9 +9,10 @@ SELECT DISTINCT
     LTRIM(RTRIM(CIDADE)) AS CIDADE,
     LTRIM(RTRIM(ESTADO)) AS ESTADO
 FROM corpore.dbo.gfilial
-where ltrim(rtrim(NOME)) = 'AGV Participações Ltda'
+--where ltrim(rtrim(NOME)) = 'AGV Participações Ltda'
 UNION
 SELECT DISTINCT
+'corpore_bsb' as banco,
     CODCOLIGADA,
     CODFILIAL,
     LTRIM(RTRIM(NOMEFANTASIA)) AS NOMEFANTASIA,
@@ -20,9 +22,10 @@ SELECT DISTINCT
     LTRIM(RTRIM(CIDADE)) AS CIDADE,
     LTRIM(RTRIM(ESTADO)) AS ESTADO
 FROM corpore_bsb.dbo.gfilial
-where ltrim(rtrim(NOME)) = 'AGV Participações Ltda'
+--where ltrim(rtrim(NOME)) = 'AGV Participações Ltda'
 UNION
 SELECT DISTINCT
+'corpore_mo' as banco,
     CODCOLIGADA,
     CODFILIAL,
     LTRIM(RTRIM(NOMEFANTASIA)) AS NOMEFANTASIA,
@@ -32,9 +35,10 @@ SELECT DISTINCT
     LTRIM(RTRIM(CIDADE)) AS CIDADE,
     LTRIM(RTRIM(ESTADO)) AS ESTADO
 FROM corpore_mao.dbo.gfilial
-where ltrim(rtrim(NOME)) = 'AGV Participações Ltda'
+--where ltrim(rtrim(NOME)) = 'AGV Participações Ltda'
 UNION
 SELECT DISTINCT
+'corpore_neu' as banco,
     CODCOLIGADA,
     CODFILIAL,
     LTRIM(RTRIM(NOMEFANTASIA)) AS NOMEFANTASIA,
@@ -44,7 +48,7 @@ SELECT DISTINCT
     LTRIM(RTRIM(CIDADE)) AS CIDADE,
     LTRIM(RTRIM(ESTADO)) AS ESTADO
 FROM corpore_neu.dbo.gfilial
-where ltrim(rtrim(CODCOLIGADA)) = '18'
+--where ltrim(rtrim(CODCOLIGADA)) = '18'
  and NOME = 'SWISS PARK CAIEIRAS INCORPORADORA SPE LTDA SCP'
  and CODFILIAL = 2
 

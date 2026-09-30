@@ -7,5 +7,8 @@
 
     "Contabil": "Host=;Port=;Database=;Username=;Password=",
     "Painel": "Host=;Port=;Database=;Username=;Password="
+  },
+  "DeepSeek": {
+    "ApiKey": ""
   }
 }

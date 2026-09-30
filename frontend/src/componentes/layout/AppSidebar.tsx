@@ -1,4 +1,4 @@
-﻿import {
+import {
   LayoutDashboard,
   CalendarCheck2,
   Building2,
@@ -12,9 +12,10 @@
   PanelLeftOpen,
   Moon,
   Sun,
+  Sparkles, Cpu,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { MODULO_CONCILIACAO } from "../../interfaces/Auth";
 
@@ -27,6 +28,8 @@ interface NavItem {
   modulo?: string;
   /** A tela é da área administrativa. */
   requerAdministrador?: boolean;
+  /** A tela é restrita ao superadministrador do sistema — ninguém mais, nem admin de módulo. */
+  somenteSuperAdmin?: boolean;
 }
 
 // Itens sem "disabled" já têm página implementada; os demais aguardam a próxima etapa.
@@ -36,6 +39,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Empresas", icon: Building2, path: "/empresas", modulo: MODULO_CONCILIACAO },
   { label: "Contas Contábeis", icon: BookText, path: "/contas", modulo: MODULO_CONCILIACAO },
   { label: "Usuários", icon: Users, path: "/usuarios", requerAdministrador: true },
+  { label: "CFO Tati • IA", icon: Sparkles, path: "/ia-planning", somenteSuperAdmin: true },
   { label: "Relatórios", icon: BarChart3, disabled: true, modulo: MODULO_CONCILIACAO },
   { label: "Pendências", icon: AlertTriangle, disabled: true, modulo: MODULO_CONCILIACAO },
   { label: "Configurações", icon: Settings, disabled: true, requerAdministrador: true },
@@ -55,12 +59,14 @@ export default function AppSidebar({
   onToggleCollapse,
   onToggleBrandTheme,
 }: AppSidebarProps) {
-  const { podeAcessarModulo, administraAlgumModulo } = useAuth();
+  const { podeAcessarModulo, administraAlgumModulo, user } = useAuth();
+  const isPlanning = useLocation().pathname === "/ia-planning";
 
   // O menu mostra só o que a pessoa pode abrir. Esconder aqui é cosmético — o
-  // que protege de verdade é o [ExigeModulo] de cada endpoint no backend.
+  // que protege de verdade é o [ExigeModulo]/[ExigeSuperAdmin] de cada endpoint no backend.
   const itensVisiveis = NAV_ITEMS.filter((item) => {
     if (item.requerAdministrador && !administraAlgumModulo) return false;
+    if (item.somenteSuperAdmin && !user?.isSuperAdmin) return false;
     if (item.modulo && !podeAcessarModulo(item.modulo)) return false;
     return true;
   });
@@ -104,7 +110,7 @@ export default function AppSidebar({
         <nav className="sp-sidebar__nav" aria-label="Navegação principal">
           <ul>
             {itensVisiveis.map((item) => {
-              const Icon = item.icon;
+              const Icon = isPlanning && item.path === "/ia-planning" ? Cpu : item.icon;
               const content = (
                 <>
                   <Icon size={19} />

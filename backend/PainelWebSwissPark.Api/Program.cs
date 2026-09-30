@@ -1,6 +1,8 @@
 using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using PainelWebSwissPark.Api.AgenteContabil;
+using PainelWebSwissPark.Api.AgenteContabil.Ferramentas;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
@@ -88,7 +90,20 @@ if (string.IsNullOrWhiteSpace(conexaoDoPainel))
         + ondeProcurou);
 }
 
-builder.Services.AddDbContext<PainelDbContext>(options => options.UseNpgsql(conexaoDoPainel));
+// O Postgres é compartilhado (max_connections 100): nome de aplicativo pra
+// identificar as conexões do painel em pg_stat_activity, e pool limitado pra
+// ele sozinho não conseguir lotar o servidor.
+var conexaoDoPainelAjustada = new Npgsql.NpgsqlConnectionStringBuilder(conexaoDoPainel);
+if (string.IsNullOrWhiteSpace(conexaoDoPainelAjustada.ApplicationName))
+{
+    conexaoDoPainelAjustada.ApplicationName = "PainelSwissPark";
+}
+if (!conexaoDoPainel.Contains("Pool Size", StringComparison.OrdinalIgnoreCase))
+{
+    conexaoDoPainelAjustada.MaxPoolSize = 20;
+}
+
+builder.Services.AddDbContext<PainelDbContext>(options => options.UseNpgsql(conexaoDoPainelAjustada.ConnectionString));
 
 // ==========================================================================
 // Bases do TOTVS RM (SQL Server) — de onde vêm os fechamentos
@@ -173,6 +188,26 @@ builder.Services.AddAuthorizationBuilder()
 builder.Services.AddScoped<IUsuariosService, UsuariosService>();
 builder.Services.AddScoped<IFechamentoValidacaoRepository, FechamentoValidacaoRepository>();
 builder.Services.AddScoped<IFechamentoValidacaoService, FechamentoValidacaoService>();
+builder.Services.AddScoped<IEmpresaConfiguracaoRepository, EmpresaConfiguracaoRepository>();
+builder.Services.AddScoped<IContaContabilConfiguracaoRepository, ContaContabilConfiguracaoRepository>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
+
+// ==========================================================================
+// CFO Tati (IA Planning) — API da DeepSeek (compatível com a da OpenAI)
+//
+// A chave mora em DeepSeek:ApiKey no keys.json, junto dos outros segredos do
+// projeto.
+// ==========================================================================
+builder.Services.Configure<DeepSeekOptions>(builder.Configuration.GetSection(DeepSeekOptions.SectionName));
+
+builder.Services.AddScoped<ConsultarSaldo>();
+builder.Services.AddScoped<ConsultarBacklogStatus>();
+builder.Services.AddScoped<ConsultarBacklogPorEmpresa>();
+builder.Services.AddScoped<ConsultarProdutividadeTime>();
+builder.Services.AddScoped<ConsultarFechamento>();
+builder.Services.AddScoped<ConsultarDiferencas>();
+builder.Services.AddScoped<ModelClient>();
+builder.Services.AddScoped<HarnessService>();
 
 // ==========================================================================
 // Hospedagem atrás de proxy reverso

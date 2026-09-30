@@ -12,4 +12,7 @@ public class ContaContabilViewModel
     public string CodConta { get; set; } = string.Empty;
     public string Reduzido { get; set; } = string.Empty;
     public string Descricao { get; set; } = string.Empty;
+
+    /// <summary>Flag do painel (não existe em CCONTA). Desativada some do combobox de Fechamentos.</summary>
+    public bool Ativo { get; set; } = true;
 }

@@ -78,3 +78,16 @@ AS SELECT a."POSICAO",
      LEFT JOIN "FVALIDACAO" b ON b.chave_validacao::text = concat(a."CODFILIAL", a."EMPRESA", a."CODCONTA", a."ANO_MES")
      LEFT JOIN "DPRIORIDADE" c ON c.chave::text = concat(a."EMPRESA", a."ANO_MES")
   ORDER BY a."DATA", a."EMPRESA", a."POSICAO";
+  
+ 
+ 
+ 
+ 
+ 
+ select * 
+ from "FT_COMPOSICAO" a
+ where "CODCONTA" = '1.1.2.04.01.0003'
+  and "ANO_MES"  = '2026-08'
+  and "CODCOLIGADA" = '26'
+  and "IDPARTIDA" = '99003'
+  

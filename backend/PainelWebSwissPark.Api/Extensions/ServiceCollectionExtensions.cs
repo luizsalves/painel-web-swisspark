@@ -47,6 +47,13 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ILancamentosTotvsRepository, LancamentosTotvsRepository>();
         services.AddScoped<ILancamentosTotvsService, LancamentosTotvsService>();
 
+        services.AddScoped<ITotvsConsultaRepository, TotvsConsultaRepository>();
+        services.AddScoped<ITotvsConsultaService, TotvsConsultaService>();
+
+        services.AddScoped<IDiferencasTotvsRepository, DiferencasTotvsRepository>();
+        services.AddScoped<IDiferencasService, DiferencasService>();
+        services.AddHostedService<PreCalculoDiferencasService>();
+
         return services;
     }
 }

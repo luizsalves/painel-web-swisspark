@@ -9,14 +9,17 @@ interface ProtectedRouteProps {
   requireModulo?: string;
   /** A tela é da área administrativa. */
   requireAdministrador?: boolean;
+  /** A tela é restrita ao superadministrador do sistema — ninguém mais, nem admin de módulo. */
+  requireSuperAdmin?: boolean;
 }
 
 export default function ProtectedRoute({
   children,
   requireModulo,
   requireAdministrador,
+  requireSuperAdmin,
 }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading, precisaTrocarSenha, podeAcessarModulo, administraAlgumModulo } =
+  const { isAuthenticated, isLoading, precisaTrocarSenha, podeAcessarModulo, administraAlgumModulo, user } =
     useAuth();
 
   if (isLoading) {
@@ -44,6 +47,10 @@ export default function ProtectedRoute({
   }
 
   if (requireAdministrador && !administraAlgumModulo) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (requireSuperAdmin && !user?.isSuperAdmin) {
     return <Navigate to="/" replace />;
   }
 

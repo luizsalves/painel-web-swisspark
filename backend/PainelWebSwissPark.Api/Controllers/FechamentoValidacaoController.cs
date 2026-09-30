@@ -29,6 +29,18 @@ public class FechamentoValidacaoController(
         return Ok(status);
     }
 
+    /// <summary>
+    /// GET /api/fechamento-validacao/produtividade?status=Fechado&amp;anoMes=2026-08 —
+    /// quantas contas cada usuário preparou/conferiu/fechou, maior primeiro.
+    /// status: Preparado, Conferido ou Fechado (Finalizado = Fechado). anoMes opcional.
+    /// </summary>
+    [HttpGet("produtividade")]
+    public async Task<IActionResult> GetProdutividade(
+        [FromQuery] string status, [FromQuery] string? anoMes, CancellationToken cancellationToken)
+    {
+        return Ok(await service.ObterProdutividadeAsync(status, anoMes, cancellationToken));
+    }
+
     /// <summary>Analista, Gerente ou Administrador podem preparar.</summary>
     [HttpPost("preparar")]
     [ExigePerfil(Modulos.Conciliacao, PerfisUsuario.Analista, PerfisUsuario.Gerente, PerfisUsuario.Administrador)]

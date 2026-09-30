@@ -26,31 +26,41 @@ public class EmpresaRepository(AppDbContext context) : IEmpresaRepository
     // bases — o DISTINCT do UNION já colapsa as linhas repetidas sozinho, sem
     // precisar marcar de qual banco veio cada uma.
     private const string Sql = """
+        SELECT *
+        FROM (
         SELECT DISTINCT CODCOLIGADA, CODFILIAL,
             LTRIM(RTRIM(NOMEFANTASIA)) AS NOMEFANTASIA, LTRIM(RTRIM(NOME)) AS NOME,
             LTRIM(RTRIM(CGC)) AS CGC, LTRIM(RTRIM(CIDADE)) AS CIDADE, LTRIM(RTRIM(ESTADO)) AS ESTADO
         FROM corpore.dbo.GFILIAL
+        WHERE ATIVO = 1
         UNION
         SELECT DISTINCT CODCOLIGADA, CODFILIAL,
             LTRIM(RTRIM(NOMEFANTASIA)) AS NOMEFANTASIA, LTRIM(RTRIM(NOME)) AS NOME,
             LTRIM(RTRIM(CGC)) AS CGC, LTRIM(RTRIM(CIDADE)) AS CIDADE, LTRIM(RTRIM(ESTADO)) AS ESTADO
         FROM corpore_bsb.dbo.GFILIAL
+        WHERE ATIVO = 1
         UNION
         SELECT DISTINCT CODCOLIGADA, CODFILIAL,
             LTRIM(RTRIM(NOMEFANTASIA)) AS NOMEFANTASIA, LTRIM(RTRIM(NOME)) AS NOME,
             LTRIM(RTRIM(CGC)) AS CGC, LTRIM(RTRIM(CIDADE)) AS CIDADE, LTRIM(RTRIM(ESTADO)) AS ESTADO
         FROM corpore_mao.dbo.GFILIAL
+        WHERE ATIVO = 1
         UNION
         SELECT DISTINCT CODCOLIGADA, CODFILIAL,
             LTRIM(RTRIM(NOMEFANTASIA)) AS NOMEFANTASIA, LTRIM(RTRIM(NOME)) AS NOME,
             LTRIM(RTRIM(CGC)) AS CGC, LTRIM(RTRIM(CIDADE)) AS CIDADE, LTRIM(RTRIM(ESTADO)) AS ESTADO
         FROM corpore_neu.dbo.GFILIAL
+        WHERE ATIVO = 1
+        ) X ORDER BY X.NOME ASC
         """;
 
     public async Task<List<GfilialUniao>> ListarTodasColigadasAsync(CancellationToken cancellationToken)
     {
-        return await context.Database.SqlQueryRaw<GfilialUniao>(Sql)
-            .OrderBy(f => f.NomeFantasia)
-            .ToListAsync(cancellationToken);
+        // Sem .OrderBy() aqui: compor LINQ em cima de SqlQueryRaw faz o EF Core
+        // envolver o texto inteiro como subconsulta, e aí o "ORDER BY X.NOME ASC"
+        // que já existe dentro do SQL bruto vira um ORDER BY dentro de subconsulta
+        // sem TOP/OFFSET — o SQL Server rejeita isso (erro 1033). A ordenação por
+        // Nome já é feita no próprio texto do SQL, não precisa duplicar.
+        return await context.Database.SqlQueryRaw<GfilialUniao>(Sql).ToListAsync(cancellationToken);
     }
 }

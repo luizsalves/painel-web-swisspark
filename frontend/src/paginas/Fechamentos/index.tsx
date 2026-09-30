@@ -23,8 +23,11 @@ import AppHeader from "../../componentes/layout/AppHeader";
 import Button from "../../componentes/ui/Button";
 import Modal from "../../componentes/ui/Modal";
 import StatusBadge from "../../componentes/ui/StatusBadge";
+import SearchableSelect from "../../componentes/ui/SearchableSelect";
+import type { SearchableSelectOption } from "../../componentes/ui/SearchableSelect";
 import api, { extrairMensagemDeErro } from "../../services/api";
-import { ACCOUNTING_ACCOUNTS } from "../../services/mockApi";
+import { listarEmpresas } from "../../services/empresasService";
+import { listarContasContabeis } from "../../services/contasContabeisService";
 import { useAuth } from "../../contexts/AuthContext";
 import { MODULO_CONCILIACAO } from "../../interfaces/Auth";
 import type { Empresa } from "../../interfaces/Empresa";
@@ -32,19 +35,13 @@ import type { ContaContabilTotvs } from "../../interfaces/ContaContabil";
 import type { LancamentoTotvs } from "../../interfaces/LancamentoTotvs";
 import type { FechamentoValidacaoStatus } from "../../interfaces/FechamentoValidacao";
 
-/** A primeira parte de um `id` no formato codColigada-resto. */
-function prefixoColigada(id: string): string {
-  return id.split("-")[0];
-}
-
 type ClosingTab = "entries" | "pendings" | "notes" | "history";
 
 interface LedgerEntry {
   id: string;
   date: string;
+  idPartida: string;
   history: string;
-  document: string;
-  number: string;
   value: number;
   type: "Débito" | "Crédito";
 }
@@ -84,6 +81,15 @@ const currencyFormatter = new Intl.NumberFormat("pt-BR", {
 
 function formatCurrency(value: number) {
   return `R$ ${currencyFormatter.format(value)}`;
+}
+
+/** Uma linha por código de conta — o mesmo CODCONTA pode se repetir entre coligadas. */
+function dedupeContasPorCodigo(lista: ContaContabilTotvs[]): ContaContabilTotvs[] {
+  const porCodigo = new Map<string, ContaContabilTotvs>();
+  for (const conta of lista) {
+    if (!porCodigo.has(conta.codConta)) porCodigo.set(conta.codConta, conta);
+  }
+  return [...porCodigo.values()].sort((a, b) => a.codConta.localeCompare(b.codConta));
 }
 
 function formatarData(valor: string | null): string {
@@ -138,11 +144,13 @@ export default function Fechamentos() {
   const [erroEmpresas, setErroEmpresas] = useState<string | null>(null);
 
   useEffect(() => {
-    api
-      .get<Empresa[]>("/empresas")
-      .then((resposta) => {
-        setEmpresas(resposta.data);
-        const primeira = resposta.data[0];
+    listarEmpresas()
+      .then((lista) => {
+        // Empresa/filial desativada na tela de Empresas não aparece em nenhum
+        // combobox aqui.
+        const ativas = lista.filter((empresa) => empresa.ativo);
+        setEmpresas(ativas);
+        const primeira = ativas[0];
         if (primeira) {
           setCompany(primeira.nome);
           setFilialId(primeira.id);
@@ -152,21 +160,72 @@ export default function Fechamentos() {
       .finally(() => setIsLoadingEmpresas(false));
   }, []);
 
+  const [contas, setContas] = useState<ContaContabilTotvs[]>([]);
+  const [isLoadingContas, setIsLoadingContas] = useState(true);
+  const [erroContas, setErroContas] = useState<string | null>(null);
+
+  useEffect(() => {
+    listarContasContabeis()
+      // Conta desativada na tela de Contas Contábeis não aparece aqui.
+      .then((lista) => setContas(lista.filter((conta) => conta.ativo)))
+      .catch(() => setErroContas("Não foi possível carregar o plano de contas."))
+      .finally(() => setIsLoadingContas(false));
+  }, []);
+
+  // Lista de contas sem repetir código — usada como plano de contas inteiro
+  // quando não há empresa/filial nenhuma escolhida ainda.
+  const contasDistintas = useMemo(() => dedupeContasPorCodigo(contas), [contas]);
+
+  // Coligadas que têm a conta selecionada no plano de contas — é o que permite
+  // o caminho inverso (escolher a conta primeiro e ver quem tem ela). "" = Todas
+  // não restringe nada.
+  const coligadasComConta = useMemo(() => {
+    if (!accountId) return null;
+    const linhas = contas.filter((conta) => conta.codConta === accountId);
+    // CODCOLIGADA 0 no TOTVS é o cadastro global/compartilhado (não é uma
+    // empresa de verdade) — vale pra todas, então não restringe nada.
+    if (linhas.some((conta) => conta.codColigada === 0)) return null;
+    return new Set(linhas.map((conta) => conta.codColigada));
+  }, [contas, accountId]);
+
+  const empresasFiltradasPorConta = useMemo(
+    () => (coligadasComConta ? empresas.filter((empresa) => coligadasComConta.has(empresa.codColigada)) : empresas),
+    [empresas, coligadasComConta]
+  );
+
   // Uma "empresa" é identificada pelo NOME (razão social) — se repete em todas
   // as filiais dela, inclusive entre bases diferentes. NOMEFANTASIA já varia
   // por unidade, por isso não serve pra agrupar.
   const empresasDistintas = useMemo(() => {
     const nomes = new Set<string>();
-    return empresas.filter((empresa) => {
+    return empresasFiltradasPorConta.filter((empresa) => {
       if (nomes.has(empresa.nome)) return false;
       nomes.add(empresa.nome);
       return true;
     });
-  }, [empresas]);
+  }, [empresasFiltradasPorConta]);
 
+  const opcoesEmpresa = useMemo<SearchableSelectOption[]>(
+    () => [{ value: "", label: "Todas" }, ...empresasDistintas.map((empresa) => ({ value: empresa.nome, label: empresa.nome }))],
+    [empresasDistintas]
+  );
+
+  // "" = Todas: mostra as filiais de todas as empresas (já filtradas pela conta,
+  // se houver uma escolhida) em vez de restringir a uma só.
   const filiaisDaEmpresa = useMemo(
-    () => empresas.filter((empresa) => empresa.nome === company),
-    [empresas, company]
+    () => (company ? empresasFiltradasPorConta.filter((empresa) => empresa.nome === company) : empresasFiltradasPorConta),
+    [empresasFiltradasPorConta, company]
+  );
+
+  const opcoesFilial = useMemo<SearchableSelectOption[]>(
+    () => [
+      { value: "", label: "Todas" },
+      ...filiaisDaEmpresa.map((empresa) => ({
+        value: empresa.id,
+        label: `${empresa.codColigada} - ${empresa.codFilial} - ${empresa.nomeFantasia}`,
+      })),
+    ],
+    [filiaisDaEmpresa]
   );
 
   const filialSelecionada = useMemo(
@@ -174,32 +233,42 @@ export default function Fechamentos() {
     [empresas, filialId]
   );
 
-  const [contas, setContas] = useState<ContaContabilTotvs[]>([]);
-  const [isLoadingContas, setIsLoadingContas] = useState(true);
-  const [erroContas, setErroContas] = useState<string | null>(null);
-
-  useEffect(() => {
-    api
-      .get<ContaContabilTotvs[]>("/contascontabeis")
-      .then((resposta) => setContas(resposta.data))
-      .catch(() => setErroContas("Não foi possível carregar o plano de contas."))
-      .finally(() => setIsLoadingContas(false));
-  }, []);
-
-  // Plano de contas é por coligada — só mostra as contas da mesma base+coligada
-  // da filial selecionada, senão CODCONTA de empresas diferentes se misturam.
+  // Plano de contas é por coligada — com uma filial específica escolhida, só
+  // mostra as contas daquela coligada; só com empresa (filial "Todas"), mostra
+  // as contas de todas as coligadas daquela empresa; sem nenhuma das duas,
+  // mostra o plano de contas inteiro. Contas da coligada 0 (cadastro global)
+  // entram sempre, porque valem pra qualquer empresa/filial.
   const contasDaColigada = useMemo(() => {
-    if (!filialSelecionada) return [];
-    const prefixo = prefixoColigada(filialSelecionada.id);
-    return contas.filter((conta) => prefixoColigada(conta.id) === prefixo);
-  }, [contas, filialSelecionada]);
+    if (filialSelecionada) {
+      return dedupeContasPorCodigo(
+        contas.filter((conta) => conta.codColigada === filialSelecionada.codColigada || conta.codColigada === 0)
+      );
+    }
+    if (company) {
+      const coligadasDaEmpresa = new Set(
+        empresas.filter((empresa) => empresa.nome === company).map((empresa) => empresa.codColigada)
+      );
+      return dedupeContasPorCodigo(
+        contas.filter((conta) => coligadasDaEmpresa.has(conta.codColigada) || conta.codColigada === 0)
+      );
+    }
+    return contasDistintas;
+  }, [contas, contasDistintas, filialSelecionada, company, empresas]);
 
   useEffect(() => {
     setAccountId((atual) => {
-      if (contasDaColigada.length === 0) return "";
-      return contasDaColigada.some((conta) => conta.codConta === atual) ? atual : contasDaColigada[0].codConta;
+      if (!atual) return atual; // "Todas" continua "Todas" — não força uma conta específica
+      return contasDaColigada.some((conta) => conta.codConta === atual) ? atual : (contasDaColigada[0]?.codConta ?? "");
     });
   }, [contasDaColigada]);
+
+  const opcoesConta = useMemo<SearchableSelectOption[]>(
+    () => [
+      { value: "", label: "Todas" },
+      ...contasDaColigada.map((conta) => ({ value: conta.codConta, label: `${conta.codConta} - ${conta.descricao}` })),
+    ],
+    [contasDaColigada]
+  );
 
   const [lancamentos, setLancamentos] = useState<LancamentoTotvs[]>([]);
   const [erroLancamentos, setErroLancamentos] = useState<string | null>(null);
@@ -214,14 +283,49 @@ export default function Fechamentos() {
       linhasDetalhe.map((l, index) => ({
         id: `${l.idLancamento ?? "s"}-${l.idPartida ?? "s"}-${index}`,
         date: l.data ? new Date(l.data).toLocaleDateString("pt-BR") : "",
+        idPartida: l.idPartida != null ? String(l.idPartida) : "",
         history: l.complemento || l.reduzido || "",
-        document: l.documento ?? "",
-        number: l.idLancamento != null ? String(l.idLancamento) : "",
         value: l.debitos !== 0 ? l.debitos : l.creditos,
         type: l.debitos !== 0 ? "Débito" : "Crédito",
       })),
     [linhasDetalhe]
   );
+
+  const [filtroData, setFiltroData] = useState("");
+  const [filtroIdPartida, setFiltroIdPartida] = useState("");
+  const [filtroHistorico, setFiltroHistorico] = useState("");
+  const [filtroValor, setFiltroValor] = useState("");
+
+  const filtrosAtivos = Boolean(
+    filtroData.trim() || filtroIdPartida.trim() || filtroHistorico.trim() || filtroValor.trim()
+  );
+
+  const filteredEntries = useMemo(
+    () =>
+      ledgerEntries.filter((entry) => {
+        if (filtroData.trim() && !entry.date.includes(filtroData.trim())) return false;
+        if (filtroIdPartida.trim() && !entry.idPartida.includes(filtroIdPartida.trim())) return false;
+        if (
+          filtroHistorico.trim() &&
+          !entry.history.toLowerCase().includes(filtroHistorico.trim().toLowerCase())
+        )
+          return false;
+        if (filtroValor.trim() && !currencyFormatter.format(entry.value).includes(filtroValor.trim())) return false;
+        return true;
+      }),
+    [ledgerEntries, filtroData, filtroIdPartida, filtroHistorico, filtroValor]
+  );
+
+  const handleLimparFiltros = () => {
+    setFiltroData("");
+    setFiltroIdPartida("");
+    setFiltroHistorico("");
+    setFiltroValor("");
+  };
+
+  useEffect(() => {
+    setPage(1);
+  }, [filtroData, filtroIdPartida, filtroHistorico, filtroValor]);
 
   const [validacao, setValidacao] = useState<FechamentoValidacaoStatus | null>(null);
   const [erroValidacao, setErroValidacao] = useState<string | null>(null);
@@ -258,17 +362,30 @@ export default function Fechamentos() {
       anoMes: period,
     };
 
+  // Balanço "oficial" do backend — é o valor usado nas ações de Preparar/Fechar,
+  // que sempre precisam considerar o período inteiro, nunca um subconjunto filtrado.
   const ledgerBalance = linhaResumo?.saldoRazao ?? 0;
   const previousBalance = linhaResumo?.saldoAnterior ?? 0;
+
+  // Soma débito/crédito só dos lançamentos que passam pelos filtros da tabela.
+  const somaFiltrada = useMemo(
+    () =>
+      filteredEntries.reduce((acc, entry) => acc + (entry.type === "Débito" ? entry.value : -entry.value), 0),
+    [filteredEntries]
+  );
+
+  // Com filtro ativo, Saldo Razão e Composição do Saldo exibidos passam a
+  // refletir apenas os lançamentos filtrados (saldo anterior + soma filtrada).
+  const saldoRazaoExibido = filtrosAtivos ? previousBalance + somaFiltrada : ledgerBalance;
 
   // Composição do saldo ainda não tem cálculo real no backend (ver roadmap,
   // Fase 05) — até existir, mostra zerado em vez de um valor inventado.
   const difference = 0;
-  const compositionBalance = ledgerBalance - difference;
-  const pageCount = Math.ceil(ledgerEntries.length / pageSize);
-  const visibleEntries = ledgerEntries.slice((page - 1) * pageSize, page * pageSize);
+  const compositionBalance = saldoRazaoExibido - difference;
+  const pageCount = Math.ceil(filteredEntries.length / pageSize);
+  const visibleEntries = filteredEntries.slice((page - 1) * pageSize, page * pageSize);
   const startEntry = (page - 1) * pageSize + 1;
-  const endEntry = Math.min(page * pageSize, ledgerEntries.length);
+  const endEntry = Math.min(page * pageSize, filteredEntries.length);
 
   const showFeedback = (message: string) => {
     setFeedback(message);
@@ -293,12 +410,50 @@ export default function Fechamentos() {
   };
 
   const handleCompanyChange = (value: string) => {
-    const firstAccount = ACCOUNTING_ACCOUNTS.find((account) => account.companyValue === value);
     setCompany(value);
-    setAccountId(firstAccount?.id ?? "");
 
-    const primeiraFilial = empresas.find((empresa) => empresa.nome === value);
+    if (!value) {
+      setFilialId("");
+      return;
+    }
+
+    // Respeita a conta já escolhida (se houver): pula pra primeira filial dessa
+    // empresa que realmente tem essa conta, não só a primeira filial qualquer.
+    const primeiraFilial = empresasFiltradasPorConta.find((empresa) => empresa.nome === value);
     setFilialId(primeiraFilial?.id ?? "");
+  };
+
+  const handleFilialChange = (value: string) => {
+    setFilialId(value);
+
+    // A lista de filiais pode vir de mais de uma empresa (quando Empresa está
+    // em "Todas" ou quando a conta escolhida aparece em várias empresas) — ao
+    // escolher uma filial específica, a Empresa acompanha pra ficar coerente.
+    const empresaDaFilial = value ? empresas.find((empresa) => empresa.id === value) : undefined;
+    if (empresaDaFilial) setCompany(empresaDaFilial.nome);
+  };
+
+  const handleAccountChange = (value: string) => {
+    setAccountId(value);
+    if (!value) return; // "Todas": só solta a restrição, sem forçar mais nada
+
+    const linhasDaConta = contas.filter((conta) => conta.codConta === value);
+    // Conta da coligada 0 (cadastro global) vale pra qualquer empresa — não
+    // faz sentido pular pra uma "primeira empresa" específica.
+    if (linhasDaConta.some((conta) => conta.codColigada === 0)) return;
+
+    const coligadasDaConta = new Set(linhasDaConta.map((conta) => conta.codColigada));
+    if (coligadasDaConta.size === 0) return;
+
+    // Se a filial atual já tem essa conta, não mexe em Empresa/Filial — só troca
+    // a conta mesmo. Senão, pula pra primeira empresa/filial que tem essa conta,
+    // que é como a tela responde "em quais empresas essa conta está".
+    const filialAtualJaTemConta = filialSelecionada ? coligadasDaConta.has(filialSelecionada.codColigada) : false;
+    if (filialAtualJaTemConta) return;
+
+    const primeiraFilialComConta = empresas.find((empresa) => coligadasDaConta.has(empresa.codColigada));
+    setCompany(primeiraFilialComConta?.nome ?? "");
+    setFilialId(primeiraFilialComConta?.id ?? "");
   };
 
   const handleLoadData = async () => {
@@ -418,9 +573,9 @@ export default function Fechamentos() {
   };
 
   const handleExportExcel = () => {
-    const header = "Data;Histórico;Documento;Número;Valor;Tipo";
-    const rows = ledgerEntries.map((entry) =>
-      [entry.date, entry.history, entry.document, entry.number, currencyFormatter.format(entry.value), entry.type].join(";")
+    const header = "Data;IdPartida;Histórico;Valor;Tipo";
+    const rows = filteredEntries.map((entry) =>
+      [entry.date, entry.idPartida, entry.history, currencyFormatter.format(entry.value), entry.type].join(";")
     );
     const blob = new Blob([`﻿${[header, ...rows].join("\n")}`], {
       type: "text/csv;charset=utf-8",
@@ -459,17 +614,14 @@ export default function Fechamentos() {
         <section className="sp-closing__filters" aria-label="Filtros do fechamento">
           <label className="sp-closing__field">
             <span>Empresa</span>
-            <select
+            <SearchableSelect
               value={company}
-              onChange={(event) => handleCompanyChange(event.target.value)}
+              options={opcoesEmpresa}
+              onChange={handleCompanyChange}
               disabled={isLoadingEmpresas || !!erroEmpresas}
-            >
-              {isLoadingEmpresas && <option>Carregando empresas...</option>}
-              {erroEmpresas && <option>{erroEmpresas}</option>}
-              {!isLoadingEmpresas && !erroEmpresas && empresasDistintas.map((empresa) => (
-                <option key={empresa.nome} value={empresa.nome}>{empresa.nome}</option>
-              ))}
-            </select>
+              placeholder={isLoadingEmpresas ? "Carregando empresas..." : erroEmpresas ?? undefined}
+              ariaLabel="Empresa"
+            />
           </label>
 
           <div className="sp-closing__field sp-closing__field--codigo">
@@ -478,35 +630,26 @@ export default function Fechamentos() {
           </div>
 
           <label className="sp-closing__field sp-closing__field--filial">
-            <span>Filial</span>
-            <select
+            <span>Coligada - Filial - Nome Fantasia</span>
+            <SearchableSelect
               value={filialId}
-              onChange={(event) => setFilialId(event.target.value)}
+              options={opcoesFilial}
+              onChange={handleFilialChange}
               disabled={isLoadingEmpresas || !!erroEmpresas}
-            >
-              {filiaisDaEmpresa.map((empresa) => (
-                <option key={empresa.id} value={empresa.id}>
-                  {empresa.nomeFilial}
-                </option>
-              ))}
-            </select>
+              ariaLabel="Coligada - Filial - Nome Fantasia"
+            />
           </label>
 
           <label className="sp-closing__field sp-closing__field--account">
             <span>Conta Contábil</span>
-            <select
+            <SearchableSelect
               value={accountId}
-              onChange={(event) => setAccountId(event.target.value)}
+              options={opcoesConta}
+              onChange={handleAccountChange}
               disabled={isLoadingContas || !!erroContas}
-            >
-              {isLoadingContas && <option>Carregando contas...</option>}
-              {erroContas && <option>{erroContas}</option>}
-              {!isLoadingContas && !erroContas && contasDaColigada.map((conta) => (
-                <option key={conta.id} value={conta.codConta}>
-                  {conta.codConta} - {conta.descricao}
-                </option>
-              ))}
-            </select>
+              placeholder={isLoadingContas ? "Carregando contas..." : erroContas ?? undefined}
+              ariaLabel="Conta Contábil"
+            />
           </label>
 
           <label className="sp-closing__field">
@@ -519,6 +662,7 @@ export default function Fechamentos() {
             icon={<RefreshCw size={18} />}
             isLoading={isLoading}
             disabled={!filialSelecionada || !accountId}
+            title={!filialSelecionada || !accountId ? "Escolha uma filial e uma conta específicas (não \"Todas\") para carregar." : undefined}
             onClick={handleLoadData}
           >
             Carregar Dados
@@ -538,7 +682,7 @@ export default function Fechamentos() {
           </div>
           <div className="sp-closing__metric">
             <span>Saldo Razão</span>
-            <strong>{formatCurrency(ledgerBalance)}</strong>
+            <strong>{formatCurrency(saldoRazaoExibido)}</strong>
           </div>
           <div className="sp-closing__metric">
             <span>Composição do Saldo</span>
@@ -589,29 +733,71 @@ export default function Fechamentos() {
 
             {activeTab === "entries" && (
               <div className="sp-closing__table-card">
+                <div className="sp-closing__table-filters" aria-label="Filtros dos lançamentos">
+                  <label className="sp-closing__field">
+                    <span>Data</span>
+                    <input
+                      type="text"
+                      placeholder="dd/mm/aaaa"
+                      value={filtroData}
+                      onChange={(event) => setFiltroData(event.target.value)}
+                    />
+                  </label>
+                  <label className="sp-closing__field">
+                    <span>IdPartida</span>
+                    <input
+                      type="text"
+                      placeholder="Filtrar por IdPartida"
+                      value={filtroIdPartida}
+                      onChange={(event) => setFiltroIdPartida(event.target.value)}
+                    />
+                  </label>
+                  <label className="sp-closing__field">
+                    <span>Histórico</span>
+                    <input
+                      type="text"
+                      placeholder="Filtrar por histórico"
+                      value={filtroHistorico}
+                      onChange={(event) => setFiltroHistorico(event.target.value)}
+                    />
+                  </label>
+                  <label className="sp-closing__field">
+                    <span>Valor</span>
+                    <input
+                      type="text"
+                      placeholder="Filtrar por valor"
+                      value={filtroValor}
+                      onChange={(event) => setFiltroValor(event.target.value)}
+                    />
+                  </label>
+                  {filtrosAtivos && (
+                    <button type="button" className="sp-closing__clear-filters" onClick={handleLimparFiltros}>
+                      Limpar filtros
+                    </button>
+                  )}
+                </div>
                 <div className="sp-closing__table-wrap">
                   <table className="sp-closing__table">
                     <thead>
                       <tr>
-                        <th>Data</th><th>Histórico</th><th>Documento</th><th>Número</th><th>Valor (R$)</th><th>Tipo</th><th aria-label="Ações" />
+                        <th>Data</th><th>IdPartida</th><th>Histórico</th><th>Valor (R$)</th><th>Tipo</th><th aria-label="Ações" />
                       </tr>
                     </thead>
                     <tbody>
                       {visibleEntries.map((entry) => (
                         <tr key={entry.id}>
                           <td>{entry.date}</td>
+                          <td>{entry.idPartida}</td>
                           <td>{entry.history}</td>
-                          <td>{entry.document}</td>
-                          <td>{entry.number}</td>
                           <td>{currencyFormatter.format(entry.value)}</td>
                           <td>{entry.type}</td>
                           <td className="sp-closing__row-action">
-                            <button type="button" aria-label={`Ações do lançamento ${entry.number}`} onClick={() => setOpenEntryMenu(openEntryMenu === entry.id ? null : entry.id)}>
+                            <button type="button" aria-label={`Ações da partida ${entry.idPartida}`} onClick={() => setOpenEntryMenu(openEntryMenu === entry.id ? null : entry.id)}>
                               <MoreVertical size={18} />
                             </button>
                             {openEntryMenu === entry.id && (
                               <div className="sp-closing__row-menu">
-                                <button type="button" onClick={() => { setOpenEntryMenu(null); showFeedback(`Lançamento ${entry.number} selecionado.`); }}>Ver detalhes</button>
+                                <button type="button" onClick={() => { setOpenEntryMenu(null); showFeedback(`Partida ${entry.idPartida} selecionada.`); }}>Ver detalhes</button>
                                 <button type="button" onClick={() => { setOpenEntryMenu(null); setHasPending(true); showFeedback("Lançamento marcado com pendência."); }}>Marcar pendência</button>
                               </div>
                             )}
@@ -623,7 +809,7 @@ export default function Fechamentos() {
                 </div>
 
                 <div className="sp-closing__pagination">
-                  <span>Mostrando {startEntry} a {endEntry} de {ledgerEntries.length} lançamentos</span>
+                  <span>Mostrando {startEntry} a {endEntry} de {filteredEntries.length} lançamentos</span>
                   <div className="sp-closing__page-controls">
                     <button type="button" aria-label="Primeira página" disabled={page === 1} onClick={() => setPage(1)}><ChevronsLeft size={17} /></button>
                     <button type="button" aria-label="Página anterior" disabled={page === 1} onClick={() => setPage((current) => current - 1)}><ChevronLeft size={17} /></button>

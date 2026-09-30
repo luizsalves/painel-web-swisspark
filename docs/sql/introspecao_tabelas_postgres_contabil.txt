@@ -1,0 +1,1277 @@
+Uso de paginação está desabilitado.
+Estilo de borda é 2.
+============================================================
+TABELA: CPARTIDA
+============================================================
+--- 1. COLUNAS ---
++------------------+----------------------+-------------------+--------------------------+-------------------+---------------+-------------+----------------+
+| ordinal_position |     column_name      |     data_type     | character_maximum_length | numeric_precision | numeric_scale | is_nullable | column_default |
++------------------+----------------------+-------------------+--------------------------+-------------------+---------------+-------------+----------------+
+|                1 | IDBANCODADOS         | smallint          |                          |                16 |             0 | NO          |                |
+|                2 | CODCOLIGADA          | smallint          |                          |                16 |             0 | NO          |                |
+|                3 | IDPARTIDA            | integer           |                          |                32 |             0 | NO          |                |
+|                4 | CODLOTE              | integer           |                          |                32 |             0 | NO          |                |
+|                5 | IDLANCAMENTO         | integer           |                          |                32 |             0 | NO          |                |
+|                6 | LCTREF               | integer           |                          |                32 |             0 | NO          |                |
+|                7 | CODLOTEORIGEM        | integer           |                          |                32 |             0 | YES         |                |
+|                8 | CODFILIAL            | smallint          |                          |                16 |             0 | NO          |                |
+|                9 | CODCCUSTO            | character varying |                       25 |                   |               | YES         |                |
+|               10 | DOCUMENTO            | character varying |                       20 |                   |               | YES         |                |
+|               11 | DATA                 | date              |                          |                   |               | NO          |                |
+|               12 | CODCOLDEBITO         | smallint          |                          |                16 |             0 | NO          |                |
+|               13 | DEBITO               | character varying |                       40 |                   |               | YES         |                |
+|               14 | CODCOLCREDITO        | smallint          |                          |                16 |             0 | NO          |                |
+|               15 | CREDITO              | character varying |                       40 |                   |               | YES         |                |
+|               16 | CODCOLPARTIDA        | smallint          |                          |                16 |             0 | NO          |                |
+|               17 | PARTIDA              | character varying |                       40 |                   |               | YES         |                |
+|               18 | VALOR                | numeric           |                          |                15 |             2 | NO          |                |
+|               19 | VALOR2               | numeric           |                          |                15 |             4 | NO          |                |
+|               20 | CODHISTP             | character varying |                       10 |                   |               | YES         |                |
+|               21 | COMPLEMENTO          | character varying |                      250 |                   |               | YES         |                |
+|               22 | DATAINCLU            | date              |                          |                   |               | YES         |                |
+|               23 | DATAINTEGRACAO       | date              |                          |                   |               | YES         |                |
+|               24 | INTEGRAAPLICACAO     | character varying |                        3 |                   |               | YES         |                |
+|               25 | VALORDEBITOANTERIOR  | numeric           |                          |                15 |             4 | YES         |                |
+|               26 | VALORCREDITOANTERIOR | numeric           |                          |                15 |             4 | YES         |                |
++------------------+----------------------+-------------------+--------------------------+-------------------+---------------+-------------+----------------+
+(26 registros)
+
+--- 2. CONSTRAINTS ---
++--------------------------+-------------+-----------------------------------------------------------------------------------------------------------------------------------------------+
+|     constraint_name      |    tipo     |                                                                   definicao                                                                   |
++--------------------------+-------------+-----------------------------------------------------------------------------------------------------------------------------------------------+
+| FK_CPARTIDA_GCCUSTO      | FOREIGN KEY | FOREIGN KEY ("IDBANCODADOS", "CODCOLIGADA", "CODCCUSTO") REFERENCES "GCCUSTO"("IDBANCODADOS", "CODCOLIGADA", "CODCCUSTO") NOT VALID           |
+| FK_CPARTIDA_GCOLIGADA    | FOREIGN KEY | FOREIGN KEY ("IDBANCODADOS", "CODCOLIGADA") REFERENCES "GCOLIGADA"("IDBANCODADOS", "CODCOLIGADA") NOT VALID                                   |
+| FK_CPARTIDA_CLOTE        | FOREIGN KEY | FOREIGN KEY ("IDBANCODADOS", "CODCOLIGADA", "CODLOTE") REFERENCES "CLOTE"("IDBANCODADOS", "CODCOLIGADA", "CODLOTE") NOT VALID                 |
+| FK_CPARTIDA_GFILIAL      | FOREIGN KEY | FOREIGN KEY ("IDBANCODADOS", "CODCOLIGADA", "CODFILIAL") REFERENCES "GFILIAL"("IDBANCODADOS", "CODCOLIGADA", "CODFILIAL") NOT VALID           |
+| FK_CPARTIDA_DEBITO       | FOREIGN KEY | FOREIGN KEY ("IDBANCODADOS", "CODCOLDEBITO", "DEBITO") REFERENCES "CCONTA"("IDBANCODADOS", "CODCOLIGADA", "CODCONTA") NOT VALID               |
+| FK_CPARTIDA_CREDITO      | FOREIGN KEY | FOREIGN KEY ("IDBANCODADOS", "CODCOLCREDITO", "CREDITO") REFERENCES "CCONTA"("IDBANCODADOS", "CODCOLIGADA", "CODCONTA") NOT VALID             |
+| FK_CPARTIDA_PARTIDA      | FOREIGN KEY | FOREIGN KEY ("IDBANCODADOS", "CODCOLPARTIDA", "PARTIDA") REFERENCES "CCONTA"("IDBANCODADOS", "CODCOLIGADA", "CODCONTA") NOT VALID             |
+| FK_CPARTIDA_CHISTP       | FOREIGN KEY | FOREIGN KEY ("IDBANCODADOS", "CODCOLIGADA", "CODHISTP") REFERENCES "CHISTP"("IDBANCODADOS", "CODCOLIGADA", "CODHISTP") NOT VALID              |
+| FK_CPARTIDA_IDLANCAMENTO | FOREIGN KEY | FOREIGN KEY ("IDBANCODADOS", "CODCOLIGADA", "IDLANCAMENTO") REFERENCES "CLANCAMENTO"("IDBANCODADOS", "CODCOLIGADA", "IDLANCAMENTO") NOT VALID |
+| CPARTIDA_pkey            | PRIMARY KEY | PRIMARY KEY ("IDBANCODADOS", "CODCOLIGADA", "IDPARTIDA")                                                                                      |
++--------------------------+-------------+-----------------------------------------------------------------------------------------------------------------------------------------------+
+(10 registros)
+
+--- 3. INDEXES ---
++------------------------------+------------------------------------------------------------------------------------------------------------------------------+
+|          indexname           |                                                           indexdef                                                           |
++------------------------------+------------------------------------------------------------------------------------------------------------------------------+
+| fki_FK_CPARTIDA_GCCUSTO      | CREATE INDEX "fki_FK_CPARTIDA_GCCUSTO" ON public."CPARTIDA" USING btree ("IDBANCODADOS", "CODCOLIGADA", "CODCCUSTO")         |
+| fki_FK_CPARTIDA_IDLANCAMENTO | CREATE INDEX "fki_FK_CPARTIDA_IDLANCAMENTO" ON public."CPARTIDA" USING btree ("IDBANCODADOS", "CODCOLIGADA", "IDLANCAMENTO") |
+| fki_FK_CPARTIDA__CHISTP      | CREATE INDEX "fki_FK_CPARTIDA__CHISTP" ON public."CPARTIDA" USING btree ("IDBANCODADOS", "CODCOLIGADA", "CODHISTP")          |
+| fki_FK_CPARTIDA_PARTIDA      | CREATE INDEX "fki_FK_CPARTIDA_PARTIDA" ON public."CPARTIDA" USING btree ("IDBANCODADOS", "CODCOLPARTIDA", "PARTIDA")         |
+| fki_FK_CPARTIDA_CREDITO      | CREATE INDEX "fki_FK_CPARTIDA_CREDITO" ON public."CPARTIDA" USING btree ("IDBANCODADOS", "CODCOLCREDITO", "CREDITO")         |
+| fki_FK_CPARTIDA_DEBITO       | CREATE INDEX "fki_FK_CPARTIDA_DEBITO" ON public."CPARTIDA" USING btree ("IDBANCODADOS", "CODCOLDEBITO", "DEBITO")            |
+| fki_FK_CPARTIDA_GCUSTO       | CREATE INDEX "fki_FK_CPARTIDA_GCUSTO" ON public."CPARTIDA" USING btree ("IDBANCODADOS", "CODCOLIGADA", "CODCCUSTO")          |
+| fki_FK_CPARTIDA_GFILIAL      | CREATE INDEX "fki_FK_CPARTIDA_GFILIAL" ON public."CPARTIDA" USING btree ("IDBANCODADOS", "CODCOLIGADA", "CODFILIAL")         |
+| fki_FK_CPARTIDA_CLANCAMENTO  | CREATE INDEX "fki_FK_CPARTIDA_CLANCAMENTO" ON public."CPARTIDA" USING btree ("IDBANCODADOS", "CODCOLIGADA", "IDLANCAMENTO")  |
+| fki_FK_CPARTIDA_CLOTE        | CREATE INDEX "fki_FK_CPARTIDA_CLOTE" ON public."CPARTIDA" USING btree ("IDBANCODADOS", "CODCOLIGADA", "CODLOTE")             |
+| fki_FK_CPARTIDA_GCOLIGADA    | CREATE INDEX "fki_FK_CPARTIDA_GCOLIGADA" ON public."CPARTIDA" USING btree ("IDBANCODADOS", "CODCOLIGADA")                    |
+| CPARTIDA_pkey                | CREATE UNIQUE INDEX "CPARTIDA_pkey" ON public."CPARTIDA" USING btree ("IDBANCODADOS", "CODCOLIGADA", "IDPARTIDA")            |
++------------------------------+------------------------------------------------------------------------------------------------------------------------------+
+(12 registros)
+
+--- 4. TRIGGERS ---
++--------------+--------------------+
+| trigger_name | trigger_definition |
++--------------+--------------------+
++--------------+--------------------+
+(0 registro)
+
+--- 5. TABELAS REFERENCIADAS (FK saindo) ---
++--------------------------+---------------+-------------------+------------------+-------------------+
+|     constraint_name      |  column_name  | referenced_schema | referenced_table | referenced_column |
++--------------------------+---------------+-------------------+------------------+-------------------+
+| FK_CPARTIDA_GCOLIGADA    | IDBANCODADOS  | public            | GCOLIGADA        | IDBANCODADOS      |
+| FK_CPARTIDA_GCOLIGADA    | CODCOLIGADA   | public            | GCOLIGADA        | IDBANCODADOS      |
+| FK_CPARTIDA_GCOLIGADA    | IDBANCODADOS  | public            | GCOLIGADA        | CODCOLIGADA       |
+| FK_CPARTIDA_GCOLIGADA    | CODCOLIGADA   | public            | GCOLIGADA        | CODCOLIGADA       |
+| FK_CPARTIDA_CLOTE        | IDBANCODADOS  | public            | CLOTE            | IDBANCODADOS      |
+| FK_CPARTIDA_CLOTE        | CODCOLIGADA   | public            | CLOTE            | IDBANCODADOS      |
+| FK_CPARTIDA_CLOTE        | CODLOTE       | public            | CLOTE            | IDBANCODADOS      |
+| FK_CPARTIDA_CLOTE        | IDBANCODADOS  | public            | CLOTE            | CODCOLIGADA       |
+| FK_CPARTIDA_CLOTE        | CODCOLIGADA   | public            | CLOTE            | CODCOLIGADA       |
+| FK_CPARTIDA_CLOTE        | CODLOTE       | public            | CLOTE            | CODCOLIGADA       |
+| FK_CPARTIDA_CLOTE        | IDBANCODADOS  | public            | CLOTE            | CODLOTE           |
+| FK_CPARTIDA_CLOTE        | CODCOLIGADA   | public            | CLOTE            | CODLOTE           |
+| FK_CPARTIDA_CLOTE        | CODLOTE       | public            | CLOTE            | CODLOTE           |
+| FK_CPARTIDA_GFILIAL      | IDBANCODADOS  | public            | GFILIAL          | IDBANCODADOS      |
+| FK_CPARTIDA_GFILIAL      | CODCOLIGADA   | public            | GFILIAL          | IDBANCODADOS      |
+| FK_CPARTIDA_GFILIAL      | CODFILIAL     | public            | GFILIAL          | IDBANCODADOS      |
+| FK_CPARTIDA_GFILIAL      | IDBANCODADOS  | public            | GFILIAL          | CODCOLIGADA       |
+| FK_CPARTIDA_GFILIAL      | CODCOLIGADA   | public            | GFILIAL          | CODCOLIGADA       |
+| FK_CPARTIDA_GFILIAL      | CODFILIAL     | public            | GFILIAL          | CODCOLIGADA       |
+| FK_CPARTIDA_GFILIAL      | IDBANCODADOS  | public            | GFILIAL          | CODFILIAL         |
+| FK_CPARTIDA_GFILIAL      | CODCOLIGADA   | public            | GFILIAL          | CODFILIAL         |
+| FK_CPARTIDA_GFILIAL      | CODFILIAL     | public            | GFILIAL          | CODFILIAL         |
+| FK_CPARTIDA_DEBITO       | IDBANCODADOS  | public            | CCONTA           | IDBANCODADOS      |
+| FK_CPARTIDA_DEBITO       | CODCOLDEBITO  | public            | CCONTA           | IDBANCODADOS      |
+| FK_CPARTIDA_DEBITO       | DEBITO        | public            | CCONTA           | IDBANCODADOS      |
+| FK_CPARTIDA_DEBITO       | IDBANCODADOS  | public            | CCONTA           | CODCOLIGADA       |
+| FK_CPARTIDA_DEBITO       | CODCOLDEBITO  | public            | CCONTA           | CODCOLIGADA       |
+| FK_CPARTIDA_DEBITO       | DEBITO        | public            | CCONTA           | CODCOLIGADA       |
+| FK_CPARTIDA_DEBITO       | IDBANCODADOS  | public            | CCONTA           | CODCONTA          |
+| FK_CPARTIDA_DEBITO       | CODCOLDEBITO  | public            | CCONTA           | CODCONTA          |
+| FK_CPARTIDA_DEBITO       | DEBITO        | public            | CCONTA           | CODCONTA          |
+| FK_CPARTIDA_CREDITO      | IDBANCODADOS  | public            | CCONTA           | IDBANCODADOS      |
+| FK_CPARTIDA_CREDITO      | CODCOLCREDITO | public            | CCONTA           | IDBANCODADOS      |
+| FK_CPARTIDA_CREDITO      | CREDITO       | public            | CCONTA           | IDBANCODADOS      |
+| FK_CPARTIDA_CREDITO      | IDBANCODADOS  | public            | CCONTA           | CODCOLIGADA       |
+| FK_CPARTIDA_CREDITO      | CODCOLCREDITO | public            | CCONTA           | CODCOLIGADA       |
+| FK_CPARTIDA_CREDITO      | CREDITO       | public            | CCONTA           | CODCOLIGADA       |
+| FK_CPARTIDA_CREDITO      | IDBANCODADOS  | public            | CCONTA           | CODCONTA          |
+| FK_CPARTIDA_CREDITO      | CODCOLCREDITO | public            | CCONTA           | CODCONTA          |
+| FK_CPARTIDA_CREDITO      | CREDITO       | public            | CCONTA           | CODCONTA          |
+| FK_CPARTIDA_PARTIDA      | IDBANCODADOS  | public            | CCONTA           | IDBANCODADOS      |
+| FK_CPARTIDA_PARTIDA      | CODCOLPARTIDA | public            | CCONTA           | IDBANCODADOS      |
+| FK_CPARTIDA_PARTIDA      | PARTIDA       | public            | CCONTA           | IDBANCODADOS      |
+| FK_CPARTIDA_PARTIDA      | IDBANCODADOS  | public            | CCONTA           | CODCOLIGADA       |
+| FK_CPARTIDA_PARTIDA      | CODCOLPARTIDA | public            | CCONTA           | CODCOLIGADA       |
+| FK_CPARTIDA_PARTIDA      | PARTIDA       | public            | CCONTA           | CODCOLIGADA       |
+| FK_CPARTIDA_PARTIDA      | IDBANCODADOS  | public            | CCONTA           | CODCONTA          |
+| FK_CPARTIDA_PARTIDA      | CODCOLPARTIDA | public            | CCONTA           | CODCONTA          |
+| FK_CPARTIDA_PARTIDA      | PARTIDA       | public            | CCONTA           | CODCONTA          |
+| FK_CPARTIDA_CHISTP       | IDBANCODADOS  | public            | CHISTP           | IDBANCODADOS      |
+| FK_CPARTIDA_CHISTP       | CODCOLIGADA   | public            | CHISTP           | IDBANCODADOS      |
+| FK_CPARTIDA_CHISTP       | CODHISTP      | public            | CHISTP           | IDBANCODADOS      |
+| FK_CPARTIDA_CHISTP       | IDBANCODADOS  | public            | CHISTP           | CODCOLIGADA       |
+| FK_CPARTIDA_CHISTP       | CODCOLIGADA   | public            | CHISTP           | CODCOLIGADA       |
+| FK_CPARTIDA_CHISTP       | CODHISTP      | public            | CHISTP           | CODCOLIGADA       |
+| FK_CPARTIDA_CHISTP       | IDBANCODADOS  | public            | CHISTP           | CODHISTP          |
+| FK_CPARTIDA_CHISTP       | CODCOLIGADA   | public            | CHISTP           | CODHISTP          |
+| FK_CPARTIDA_CHISTP       | CODHISTP      | public            | CHISTP           | CODHISTP          |
+| FK_CPARTIDA_IDLANCAMENTO | IDBANCODADOS  | public            | CLANCAMENTO      | IDBANCODADOS      |
+| FK_CPARTIDA_IDLANCAMENTO | CODCOLIGADA   | public            | CLANCAMENTO      | IDBANCODADOS      |
+| FK_CPARTIDA_IDLANCAMENTO | IDLANCAMENTO  | public            | CLANCAMENTO      | IDBANCODADOS      |
+| FK_CPARTIDA_IDLANCAMENTO | IDBANCODADOS  | public            | CLANCAMENTO      | CODCOLIGADA       |
+| FK_CPARTIDA_IDLANCAMENTO | CODCOLIGADA   | public            | CLANCAMENTO      | CODCOLIGADA       |
+| FK_CPARTIDA_IDLANCAMENTO | IDLANCAMENTO  | public            | CLANCAMENTO      | CODCOLIGADA       |
+| FK_CPARTIDA_IDLANCAMENTO | IDBANCODADOS  | public            | CLANCAMENTO      | IDLANCAMENTO      |
+| FK_CPARTIDA_IDLANCAMENTO | CODCOLIGADA   | public            | CLANCAMENTO      | IDLANCAMENTO      |
+| FK_CPARTIDA_IDLANCAMENTO | IDLANCAMENTO  | public            | CLANCAMENTO      | IDLANCAMENTO      |
+| FK_CPARTIDA_GCCUSTO      | IDBANCODADOS  | public            | GCCUSTO          | IDBANCODADOS      |
+| FK_CPARTIDA_GCCUSTO      | CODCOLIGADA   | public            | GCCUSTO          | IDBANCODADOS      |
+| FK_CPARTIDA_GCCUSTO      | CODCCUSTO     | public            | GCCUSTO          | IDBANCODADOS      |
+| FK_CPARTIDA_GCCUSTO      | IDBANCODADOS  | public            | GCCUSTO          | CODCOLIGADA       |
+| FK_CPARTIDA_GCCUSTO      | CODCOLIGADA   | public            | GCCUSTO          | CODCOLIGADA       |
+| FK_CPARTIDA_GCCUSTO      | CODCCUSTO     | public            | GCCUSTO          | CODCOLIGADA       |
+| FK_CPARTIDA_GCCUSTO      | IDBANCODADOS  | public            | GCCUSTO          | CODCCUSTO         |
+| FK_CPARTIDA_GCCUSTO      | CODCOLIGADA   | public            | GCCUSTO          | CODCCUSTO         |
+| FK_CPARTIDA_GCCUSTO      | CODCCUSTO     | public            | GCCUSTO          | CODCCUSTO         |
++--------------------------+---------------+-------------------+------------------+-------------------+
+(76 registros)
+
+--- 6. QUEM REFERENCIA ESSA TABELA (FK entrando) ---
++--------------+------------+-------------+-----------------+-------------------+
+| table_schema | table_name | column_name | constraint_name | referenced_column |
++--------------+------------+-------------+-----------------+-------------------+
++--------------+------------+-------------+-----------------+-------------------+
+(0 registro)
+
+--- 7. SEQUENCIAS ---
++-------------+----------------+
+| column_name | column_default |
++-------------+----------------+
++-------------+----------------+
+(0 registro)
+
+============================================================
+TABELA: FCFO
+============================================================
+--- 1. COLUNAS ---
++------------------+-------------------------+-------------------+--------------------------+-------------------+---------------+-------------+----------------+
+| ordinal_position |       column_name       |     data_type     | character_maximum_length | numeric_precision | numeric_scale | is_nullable | column_default |
++------------------+-------------------------+-------------------+--------------------------+-------------------+---------------+-------------+----------------+
+|                1 | IDBANCODADOS            | smallint          |                          |                16 |             0 | NO          |                |
+|                2 | CODCOLIGADA             | smallint          |                          |                16 |             0 | NO          |                |
+|                3 | CODCFO                  | character varying |                       25 |                   |               | NO          |                |
+|                4 | NOME                    | character varying |                      250 |                   |               | YES         |                |
+|                5 | CGCCFO                  | character varying |                       20 |                   |               | YES         |                |
+|                6 | PAGREC                  | smallint          |                          |                16 |             0 | NO          |                |
+|                7 | ATIVO                   | smallint          |                          |                16 |             0 | NO          |                |
+|                8 | PESSOAFISOUJUR          | character varying |                        1 |                   |               | NO          |                |
+|                9 | CI_ORGAO                | character varying |                       15 |                   |               | YES         |                |
+|               10 | IDCFO                   | integer           |                          |                32 |             0 | NO          |                |
+|               11 | RAMOATIV                | integer           |                          |                32 |             0 | NO          |                |
+|               12 | TIPOCONTRIBUINTEINSS    | smallint          |                          |                16 |             0 | NO          |                |
+|               13 | NACIONALIDADE           | smallint          |                          |                16 |             0 | NO          |                |
+|               14 | CALCULAAVP              | smallint          |                          |                16 |             0 | NO          |                |
+|               15 | ENTIDADEEXECUTORAPAA    | smallint          |                          |                16 |             0 | NO          |                |
+|               16 | APOSENTADOOUPENSIONISTA | integer           |                          |                32 |             0 | NO          |                |
+|               17 | SOCIOCOOPERADO          | smallint          |                          |                16 |             0 | NO          |                |
+|               18 | INSCRESTADUAL           | character varying |                       20 |                   |               | YES         |                |
+|               19 | INSCRMUNICIPAL          | character varying |                       20 |                   |               | YES         |                |
++------------------+-------------------------+-------------------+--------------------------+-------------------+---------------+-------------+----------------+
+(19 registros)
+
+--- 2. CONSTRAINTS ---
++-------------------+-------------+-------------------------------------------------------------------------------------------------------------+
+|  constraint_name  |    tipo     |                                                  definicao                                                  |
++-------------------+-------------+-------------------------------------------------------------------------------------------------------------+
+| FK_FCFO_GCOLIGADA | FOREIGN KEY | FOREIGN KEY ("IDBANCODADOS", "CODCOLIGADA") REFERENCES "GCOLIGADA"("IDBANCODADOS", "CODCOLIGADA") NOT VALID |
+| FCFO_pkey         | PRIMARY KEY | PRIMARY KEY ("IDBANCODADOS", "CODCOLIGADA", "CODCFO")                                                       |
++-------------------+-------------+-------------------------------------------------------------------------------------------------------------+
+(2 registros)
+
+--- 3. INDEXES ---
++-----------------------+--------------------------------------------------------------------------------------------------------+
+|       indexname       |                                                indexdef                                                |
++-----------------------+--------------------------------------------------------------------------------------------------------+
+| fki_FK_FCFO_GCOLIGADA | CREATE INDEX "fki_FK_FCFO_GCOLIGADA" ON public."FCFO" USING btree ("IDBANCODADOS", "CODCOLIGADA")      |
+| FCFO_pkey             | CREATE UNIQUE INDEX "FCFO_pkey" ON public."FCFO" USING btree ("IDBANCODADOS", "CODCOLIGADA", "CODCFO") |
++-----------------------+--------------------------------------------------------------------------------------------------------+
+(2 registros)
+
+--- 4. TRIGGERS ---
++--------------+--------------------+
+| trigger_name | trigger_definition |
++--------------+--------------------+
++--------------+--------------------+
+(0 registro)
+
+--- 5. TABELAS REFERENCIADAS (FK saindo) ---
++-------------------+--------------+-------------------+------------------+-------------------+
+|  constraint_name  | column_name  | referenced_schema | referenced_table | referenced_column |
++-------------------+--------------+-------------------+------------------+-------------------+
+| FK_FCFO_GCOLIGADA | IDBANCODADOS | public            | GCOLIGADA        | IDBANCODADOS      |
+| FK_FCFO_GCOLIGADA | CODCOLIGADA  | public            | GCOLIGADA        | IDBANCODADOS      |
+| FK_FCFO_GCOLIGADA | IDBANCODADOS | public            | GCOLIGADA        | CODCOLIGADA       |
+| FK_FCFO_GCOLIGADA | CODCOLIGADA  | public            | GCOLIGADA        | CODCOLIGADA       |
++-------------------+--------------+-------------------+------------------+-------------------+
+(4 registros)
+
+--- 6. QUEM REFERENCIA ESSA TABELA (FK entrando) ---
++--------------+------------+--------------+-----------------+-------------------+
+| table_schema | table_name | column_name  | constraint_name | referenced_column |
++--------------+------------+--------------+-----------------+-------------------+
+| public       | FLAN       | IDBANCODADOS | FK_FLAN_FCFO    | IDBANCODADOS      |
+| public       | FLAN       | IDBANCODADOS | FK_FLAN_FCFO    | CODCOLIGADA       |
+| public       | FLAN       | IDBANCODADOS | FK_FLAN_FCFO    | CODCFO            |
+| public       | FLAN       | CODCOLCFO    | FK_FLAN_FCFO    | IDBANCODADOS      |
+| public       | FLAN       | CODCOLCFO    | FK_FLAN_FCFO    | CODCOLIGADA       |
+| public       | FLAN       | CODCOLCFO    | FK_FLAN_FCFO    | CODCFO            |
+| public       | FLAN       | CODCFO       | FK_FLAN_FCFO    | IDBANCODADOS      |
+| public       | FLAN       | CODCFO       | FK_FLAN_FCFO    | CODCOLIGADA       |
+| public       | FLAN       | CODCFO       | FK_FLAN_FCFO    | CODCFO            |
+| public       | XVENDA     | IDBANCODADOS | FK_XVENDA_FCFO  | IDBANCODADOS      |
+| public       | XVENDA     | IDBANCODADOS | FK_XVENDA_FCFO  | CODCOLIGADA       |
+| public       | XVENDA     | IDBANCODADOS | FK_XVENDA_FCFO  | CODCFO            |
+| public       | XVENDA     | CODCOLCFO    | FK_XVENDA_FCFO  | IDBANCODADOS      |
+| public       | XVENDA     | CODCOLCFO    | FK_XVENDA_FCFO  | CODCOLIGADA       |
+| public       | XVENDA     | CODCOLCFO    | FK_XVENDA_FCFO  | CODCFO            |
+| public       | XVENDA     | CODCFO       | FK_XVENDA_FCFO  | IDBANCODADOS      |
+| public       | XVENDA     | CODCFO       | FK_XVENDA_FCFO  | CODCOLIGADA       |
+| public       | XVENDA     | CODCFO       | FK_XVENDA_FCFO  | CODCFO            |
+| public       | TMOV       | IDBANCODADOS | FK_TMOV_FCFO    | IDBANCODADOS      |
+| public       | TMOV       | IDBANCODADOS | FK_TMOV_FCFO    | CODCOLIGADA       |
+| public       | TMOV       | IDBANCODADOS | FK_TMOV_FCFO    | CODCFO            |
+| public       | TMOV       | CODCOLCFO    | FK_TMOV_FCFO    | IDBANCODADOS      |
+| public       | TMOV       | CODCOLCFO    | FK_TMOV_FCFO    | CODCOLIGADA       |
+| public       | TMOV       | CODCOLCFO    | FK_TMOV_FCFO    | CODCFO            |
+| public       | TMOV       | CODCFO       | FK_TMOV_FCFO    | IDBANCODADOS      |
+| public       | TMOV       | CODCFO       | FK_TMOV_FCFO    | CODCOLIGADA       |
+| public       | TMOV       | CODCFO       | FK_TMOV_FCFO    | CODCFO            |
++--------------+------------+--------------+-----------------+-------------------+
+(27 registros)
+
+--- 7. SEQUENCIAS ---
++-------------+----------------+
+| column_name | column_default |
++-------------+----------------+
++-------------+----------------+
+(0 registro)
+
+============================================================
+TABELA: FLAN
+============================================================
+--- 1. COLUNAS ---
++------------------+------------------+-------------------+--------------------------+-------------------+---------------+-------------+----------------+
+| ordinal_position |   column_name    |     data_type     | character_maximum_length | numeric_precision | numeric_scale | is_nullable | column_default |
++------------------+------------------+-------------------+--------------------------+-------------------+---------------+-------------+----------------+
+|                1 | IDBANCODADOS     | smallint          |                          |                16 |             0 | NO          |                |
+|                2 | CODCOLIGADA      | smallint          |                          |                16 |             0 | NO          |                |
+|                3 | IDLAN            | integer           |                          |                32 |             0 | NO          |                |
+|                4 | NUMERODOCUMENTO  | character varying |                       40 |                   |               | NO          |                |
+|                5 | PAGREC           | smallint          |                          |                16 |             0 | NO          |                |
+|                6 | STATUSLAN        | smallint          |                          |                16 |             0 | NO          |                |
+|                7 | CODCCUSTO        | character varying |                       25 |                   |               | YES         |                |
+|                8 | HISTORICO        | character varying |                      255 |                   |               | YES         |                |
+|                9 | DATAVENCIMENTO   | date              |                          |                   |               | YES         |                |
+|               10 | DATAEMISSAO      | date              |                          |                   |               | NO          |                |
+|               11 | DATABAIXA        | date              |                          |                   |               | YES         |                |
+|               12 | DATACANCELAMENTO | date              |                          |                   |               | YES         |                |
+|               13 | VALORORIGINAL    | numeric           |                          |                15 |             4 | NO          |                |
+|               14 | VALORBAIXADO     | numeric           |                          |                15 |             4 | NO          |                |
+|               15 | VALORCAP         | numeric           |                          |                15 |             4 | YES         |                |
+|               16 | VALORJUROS       | numeric           |                          |                15 |             4 | NO          |                |
+|               17 | VALORDESCONTO    | numeric           |                          |                15 |             4 | NO          |                |
+|               18 | VALOROP1         | numeric           |                          |                15 |             4 | NO          |                |
+|               19 | VALOROP2         | numeric           |                          |                15 |             4 | NO          |                |
+|               20 | VALOROP3         | numeric           |                          |                15 |             4 | NO          |                |
+|               21 | VALOROP4         | numeric           |                          |                15 |             4 | NO          |                |
+|               22 | VALORMULTA       | numeric           |                          |                15 |             4 | NO          |                |
+|               23 | CODCOLCFO        | smallint          |                          |                16 |             0 | YES         |                |
+|               24 | CODCFO           | character varying |                       25 |                   |               | YES         |                |
+|               25 | CODCOLCXA        | smallint          |                          |                16 |             0 | YES         |                |
+|               26 | CODCXA           | character varying |                       10 |                   |               | YES         |                |
+|               27 | CODTDO           | character varying |                       10 |                   |               | NO          |                |
+|               28 | CODFILIAL        | smallint          |                          |                16 |             0 | YES         |                |
+|               29 | SEGUNDONUMERO    | character varying |                       20 |                   |               | YES         |                |
+|               30 | IDBORDERO        | integer           |                          |                32 |             0 | YES         |                |
+|               31 | TRBRF            | numeric           |                          |                15 |             4 | YES         |                |
+|               32 | VALORLIQUIDO     | numeric           |                          |                15 |             4 | YES         |                |
+|               33 | CODTB1FLX        | character varying |                       25 |                   |               | YES         |                |
+|               34 | IDMOV            | integer           |                          |                32 |             0 | YES         |                |
+|               35 | DATAPAG          | date              |                          |                   |               | YES         |                |
++------------------+------------------+-------------------+--------------------------+-------------------+---------------+-------------+----------------+
+(35 registros)
+
+--- 2. CONSTRAINTS ---
++-------------------+-------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|  constraint_name  |    tipo     |                                                                                     definicao                                                                                      |
++-------------------+-------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| FK_FLAN_FBORDERO  | FOREIGN KEY | FOREIGN KEY ("IDBANCODADOS", "CODCOLIGADA", "IDBORDERO", "CODCOLCXA", "CODCXA") REFERENCES "FBORDERO"("IDBANCODADOS", "CODCOLIGADA", "IDBORDERO", "CODCOLCXA", "CODCXA") NOT VALID |
+| FK_FLAN_GCOLIGADA | FOREIGN KEY | FOREIGN KEY ("IDBANCODADOS", "CODCOLIGADA") REFERENCES "GCOLIGADA"("IDBANCODADOS", "CODCOLIGADA") NOT VALID                                                                        |
+| FK_FLAN_GCCUSTO   | FOREIGN KEY | FOREIGN KEY ("IDBANCODADOS", "CODCOLIGADA", "CODCCUSTO") REFERENCES "GCCUSTO"("IDBANCODADOS", "CODCOLIGADA", "CODCCUSTO") NOT VALID                                                |
+| FK_FLAN_FCFO      | FOREIGN KEY | FOREIGN KEY ("IDBANCODADOS", "CODCOLCFO", "CODCFO") REFERENCES "FCFO"("IDBANCODADOS", "CODCOLIGADA", "CODCFO") NOT VALID                                                           |
+| FK_FLAN_FCXA      | FOREIGN KEY | FOREIGN KEY ("IDBANCODADOS", "CODCOLCXA", "CODCXA") REFERENCES "FCXA"("IDBANCODADOS", "CODCOLIGADA", "CODCXA") NOT VALID                                                           |
+| FK_FLAN_FTDO      | FOREIGN KEY | FOREIGN KEY ("IDBANCODADOS", "CODCOLIGADA", "CODTDO") REFERENCES "FTDO"("IDBANCODADOS", "CODCOLIGADA", "CODTDO") NOT VALID                                                         |
+| FK_FLAN_CODFILIAL | FOREIGN KEY | FOREIGN KEY ("IDBANCODADOS", "CODCOLIGADA", "CODFILIAL") REFERENCES "GFILIAL"("IDBANCODADOS", "CODCOLIGADA", "CODFILIAL") NOT VALID                                                |
+| FK_FLAN_FTB1      | FOREIGN KEY | FOREIGN KEY ("IDBANCODADOS", "CODCOLIGADA", "CODTB1FLX") REFERENCES "FTB1"("IDBANCODADOS", "CODCOLIGADA", "CODTB1FLX") NOT VALID                                                   |
+| FLAN_pkey         | PRIMARY KEY | PRIMARY KEY ("IDBANCODADOS", "CODCOLIGADA", "IDLAN")                                                                                                                               |
++-------------------+-------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+(9 registros)
+
+--- 3. INDEXES ---
++-------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+
+|           indexname           |                                                               indexdef                                                               |
++-------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+
+| idx_id_lanca_datacancelamento | CREATE INDEX idx_id_lanca_datacancelamento ON public."FLAN" USING btree ("DATACANCELAMENTO")                                         |
+| idx_id_lanca_databaixa        | CREATE INDEX idx_id_lanca_databaixa ON public."FLAN" USING btree ("DATABAIXA")                                                       |
+| idx_id_lanca_numerodocumento  | CREATE INDEX idx_id_lanca_numerodocumento ON public."FLAN" USING btree ("NUMERODOCUMENTO")                                           |
+| idx_id_lanca_codcfo           | CREATE INDEX idx_id_lanca_codcfo ON public."FLAN" USING btree ("CODCFO")                                                             |
+| fki_FK_FLAN_FBORDERO          | CREATE INDEX "fki_FK_FLAN_FBORDERO" ON public."FLAN" USING btree ("IDBANCODADOS", "CODCOLIGADA", "IDBORDERO", "CODCOLCXA", "CODCXA") |
+| fki_FK_FLAN_FTB1              | CREATE INDEX "fki_FK_FLAN_FTB1" ON public."FLAN" USING btree ("IDBANCODADOS", "CODCOLIGADA", "CODTB1FLX")                            |
+| fki_FK_FLAN_CODFILIAL         | CREATE INDEX "fki_FK_FLAN_CODFILIAL" ON public."FLAN" USING btree ("IDBANCODADOS", "CODCOLIGADA", "CODFILIAL")                       |
+| fki_FK_FLAN_FTDO              | CREATE INDEX "fki_FK_FLAN_FTDO" ON public."FLAN" USING btree ("IDBANCODADOS", "CODCOLIGADA", "CODTDO")                               |
+| fki_FK_FLAN_FCXA              | CREATE INDEX "fki_FK_FLAN_FCXA" ON public."FLAN" USING btree ("IDBANCODADOS", "CODCOLCXA", "CODCXA")                                 |
+| fki_FK_FLAN_FCFO              | CREATE INDEX "fki_FK_FLAN_FCFO" ON public."FLAN" USING btree ("IDBANCODADOS", "CODCOLCFO", "CODCFO")                                 |
+| fki_FK_FLAN_GCCUSTO           | CREATE INDEX "fki_FK_FLAN_GCCUSTO" ON public."FLAN" USING btree ("IDBANCODADOS", "CODCOLIGADA", "CODCCUSTO")                         |
+| fki_FK_FLAN_GCOLIGADA         | CREATE INDEX "fki_FK_FLAN_GCOLIGADA" ON public."FLAN" USING btree ("IDBANCODADOS", "CODCOLIGADA")                                    |
+| FLAN_pkey                     | CREATE UNIQUE INDEX "FLAN_pkey" ON public."FLAN" USING btree ("IDBANCODADOS", "CODCOLIGADA", "IDLAN")                                |
++-------------------------------+--------------------------------------------------------------------------------------------------------------------------------------+
+(13 registros)
+
+--- 4. TRIGGERS ---
++--------------+--------------------+
+| trigger_name | trigger_definition |
++--------------+--------------------+
++--------------+--------------------+
+(0 registro)
+
+--- 5. TABELAS REFERENCIADAS (FK saindo) ---
++-------------------+--------------+-------------------+------------------+-------------------+
+|  constraint_name  | column_name  | referenced_schema | referenced_table | referenced_column |
++-------------------+--------------+-------------------+------------------+-------------------+
+| FK_FLAN_GCOLIGADA | IDBANCODADOS | public            | GCOLIGADA        | IDBANCODADOS      |
+| FK_FLAN_GCOLIGADA | CODCOLIGADA  | public            | GCOLIGADA        | IDBANCODADOS      |
+| FK_FLAN_GCOLIGADA | IDBANCODADOS | public            | GCOLIGADA        | CODCOLIGADA       |
+| FK_FLAN_GCOLIGADA | CODCOLIGADA  | public            | GCOLIGADA        | CODCOLIGADA       |
+| FK_FLAN_GCCUSTO   | IDBANCODADOS | public            | GCCUSTO          | IDBANCODADOS      |
+| FK_FLAN_GCCUSTO   | CODCOLIGADA  | public            | GCCUSTO          | IDBANCODADOS      |
+| FK_FLAN_GCCUSTO   | CODCCUSTO    | public            | GCCUSTO          | IDBANCODADOS      |
+| FK_FLAN_GCCUSTO   | IDBANCODADOS | public            | GCCUSTO          | CODCOLIGADA       |
+| FK_FLAN_GCCUSTO   | CODCOLIGADA  | public            | GCCUSTO          | CODCOLIGADA       |
+| FK_FLAN_GCCUSTO   | CODCCUSTO    | public            | GCCUSTO          | CODCOLIGADA       |
+| FK_FLAN_GCCUSTO   | IDBANCODADOS | public            | GCCUSTO          | CODCCUSTO         |
+| FK_FLAN_GCCUSTO   | CODCOLIGADA  | public            | GCCUSTO          | CODCCUSTO         |
+| FK_FLAN_GCCUSTO   | CODCCUSTO    | public            | GCCUSTO          | CODCCUSTO         |
+| FK_FLAN_FCFO      | IDBANCODADOS | public            | FCFO             | IDBANCODADOS      |
+| FK_FLAN_FCFO      | CODCOLCFO    | public            | FCFO             | IDBANCODADOS      |
+| FK_FLAN_FCFO      | CODCFO       | public            | FCFO             | IDBANCODADOS      |
+| FK_FLAN_FCFO      | IDBANCODADOS | public            | FCFO             | CODCOLIGADA       |
+| FK_FLAN_FCFO      | CODCOLCFO    | public            | FCFO             | CODCOLIGADA       |
+| FK_FLAN_FCFO      | CODCFO       | public            | FCFO             | CODCOLIGADA       |
+| FK_FLAN_FCFO      | IDBANCODADOS | public            | FCFO             | CODCFO            |
+| FK_FLAN_FCFO      | CODCOLCFO    | public            | FCFO             | CODCFO            |
+| FK_FLAN_FCFO      | CODCFO       | public            | FCFO             | CODCFO            |
+| FK_FLAN_FCXA      | IDBANCODADOS | public            | FCXA             | IDBANCODADOS      |
+| FK_FLAN_FCXA      | CODCOLCXA    | public            | FCXA             | IDBANCODADOS      |
+| FK_FLAN_FCXA      | CODCXA       | public            | FCXA             | IDBANCODADOS      |
+| FK_FLAN_FCXA      | IDBANCODADOS | public            | FCXA             | CODCOLIGADA       |
+| FK_FLAN_FCXA      | CODCOLCXA    | public            | FCXA             | CODCOLIGADA       |
+| FK_FLAN_FCXA      | CODCXA       | public            | FCXA             | CODCOLIGADA       |
+| FK_FLAN_FCXA      | IDBANCODADOS | public            | FCXA             | CODCXA            |
+| FK_FLAN_FCXA      | CODCOLCXA    | public            | FCXA             | CODCXA            |
+| FK_FLAN_FCXA      | CODCXA       | public            | FCXA             | CODCXA            |
+| FK_FLAN_FTDO      | IDBANCODADOS | public            | FTDO             | IDBANCODADOS      |
+| FK_FLAN_FTDO      | CODCOLIGADA  | public            | FTDO             | IDBANCODADOS      |
+| FK_FLAN_FTDO      | CODTDO       | public            | FTDO             | IDBANCODADOS      |
+| FK_FLAN_FTDO      | IDBANCODADOS | public            | FTDO             | CODCOLIGADA       |
+| FK_FLAN_FTDO      | CODCOLIGADA  | public            | FTDO             | CODCOLIGADA       |
+| FK_FLAN_FTDO      | CODTDO       | public            | FTDO             | CODCOLIGADA       |
+| FK_FLAN_FTDO      | IDBANCODADOS | public            | FTDO             | CODTDO            |
+| FK_FLAN_FTDO      | CODCOLIGADA  | public            | FTDO             | CODTDO            |
+| FK_FLAN_FTDO      | CODTDO       | public            | FTDO             | CODTDO            |
+| FK_FLAN_CODFILIAL | IDBANCODADOS | public            | GFILIAL          | IDBANCODADOS      |
+| FK_FLAN_CODFILIAL | CODCOLIGADA  | public            | GFILIAL          | IDBANCODADOS      |
+| FK_FLAN_CODFILIAL | CODFILIAL    | public            | GFILIAL          | IDBANCODADOS      |
+| FK_FLAN_CODFILIAL | IDBANCODADOS | public            | GFILIAL          | CODCOLIGADA       |
+| FK_FLAN_CODFILIAL | CODCOLIGADA  | public            | GFILIAL          | CODCOLIGADA       |
+| FK_FLAN_CODFILIAL | CODFILIAL    | public            | GFILIAL          | CODCOLIGADA       |
+| FK_FLAN_CODFILIAL | IDBANCODADOS | public            | GFILIAL          | CODFILIAL         |
+| FK_FLAN_CODFILIAL | CODCOLIGADA  | public            | GFILIAL          | CODFILIAL         |
+| FK_FLAN_CODFILIAL | CODFILIAL    | public            | GFILIAL          | CODFILIAL         |
+| FK_FLAN_FTB1      | IDBANCODADOS | public            | FTB1             | IDBANCODADOS      |
+| FK_FLAN_FTB1      | CODCOLIGADA  | public            | FTB1             | IDBANCODADOS      |
+| FK_FLAN_FTB1      | CODTB1FLX    | public            | FTB1             | IDBANCODADOS      |
+| FK_FLAN_FTB1      | IDBANCODADOS | public            | FTB1             | CODCOLIGADA       |
+| FK_FLAN_FTB1      | CODCOLIGADA  | public            | FTB1             | CODCOLIGADA       |
+| FK_FLAN_FTB1      | CODTB1FLX    | public            | FTB1             | CODCOLIGADA       |
+| FK_FLAN_FTB1      | IDBANCODADOS | public            | FTB1             | CODTB1FLX         |
+| FK_FLAN_FTB1      | CODCOLIGADA  | public            | FTB1             | CODTB1FLX         |
+| FK_FLAN_FTB1      | CODTB1FLX    | public            | FTB1             | CODTB1FLX         |
+| FK_FLAN_FBORDERO  | IDBANCODADOS | public            | FBORDERO         | IDBANCODADOS      |
+| FK_FLAN_FBORDERO  | CODCOLIGADA  | public            | FBORDERO         | IDBANCODADOS      |
+| FK_FLAN_FBORDERO  | IDBORDERO    | public            | FBORDERO         | IDBANCODADOS      |
+| FK_FLAN_FBORDERO  | CODCOLCXA    | public            | FBORDERO         | IDBANCODADOS      |
+| FK_FLAN_FBORDERO  | CODCXA       | public            | FBORDERO         | IDBANCODADOS      |
+| FK_FLAN_FBORDERO  | IDBANCODADOS | public            | FBORDERO         | CODCOLIGADA       |
+| FK_FLAN_FBORDERO  | CODCOLIGADA  | public            | FBORDERO         | CODCOLIGADA       |
+| FK_FLAN_FBORDERO  | IDBORDERO    | public            | FBORDERO         | CODCOLIGADA       |
+| FK_FLAN_FBORDERO  | CODCOLCXA    | public            | FBORDERO         | CODCOLIGADA       |
+| FK_FLAN_FBORDERO  | CODCXA       | public            | FBORDERO         | CODCOLIGADA       |
+| FK_FLAN_FBORDERO  | IDBANCODADOS | public            | FBORDERO         | CODCOLCXA         |
+| FK_FLAN_FBORDERO  | CODCOLIGADA  | public            | FBORDERO         | CODCOLCXA         |
+| FK_FLAN_FBORDERO  | IDBORDERO    | public            | FBORDERO         | CODCOLCXA         |
+| FK_FLAN_FBORDERO  | CODCOLCXA    | public            | FBORDERO         | CODCOLCXA         |
+| FK_FLAN_FBORDERO  | CODCXA       | public            | FBORDERO         | CODCOLCXA         |
+| FK_FLAN_FBORDERO  | IDBANCODADOS | public            | FBORDERO         | CODCXA            |
+| FK_FLAN_FBORDERO  | CODCOLIGADA  | public            | FBORDERO         | CODCXA            |
+| FK_FLAN_FBORDERO  | IDBORDERO    | public            | FBORDERO         | CODCXA            |
+| FK_FLAN_FBORDERO  | CODCOLCXA    | public            | FBORDERO         | CODCXA            |
+| FK_FLAN_FBORDERO  | CODCXA       | public            | FBORDERO         | CODCXA            |
+| FK_FLAN_FBORDERO  | IDBANCODADOS | public            | FBORDERO         | IDBORDERO         |
+| FK_FLAN_FBORDERO  | CODCOLIGADA  | public            | FBORDERO         | IDBORDERO         |
+| FK_FLAN_FBORDERO  | IDBORDERO    | public            | FBORDERO         | IDBORDERO         |
+| FK_FLAN_FBORDERO  | CODCOLCXA    | public            | FBORDERO         | IDBORDERO         |
+| FK_FLAN_FBORDERO  | CODCXA       | public            | FBORDERO         | IDBORDERO         |
++-------------------+--------------+-------------------+------------------+-------------------+
+(83 registros)
+
+--- 6. QUEM REFERENCIA ESSA TABELA (FK entrando) ---
++--------------+----------------+--------------+------------------------+-------------------+
+| table_schema |   table_name   | column_name  |    constraint_name     | referenced_column |
++--------------+----------------+--------------+------------------------+-------------------+
+| public       | FLANINTEGRACAO | IDBANCODADOS | FK_FLANINTEGRACAO_FLAN | IDBANCODADOS      |
+| public       | FLANINTEGRACAO | IDBANCODADOS | FK_FLANINTEGRACAO_FLAN | CODCOLIGADA       |
+| public       | FLANINTEGRACAO | IDBANCODADOS | FK_FLANINTEGRACAO_FLAN | IDLAN             |
+| public       | FLANINTEGRACAO | CODCOLIGADA  | FK_FLANINTEGRACAO_FLAN | IDBANCODADOS      |
+| public       | FLANINTEGRACAO | CODCOLIGADA  | FK_FLANINTEGRACAO_FLAN | CODCOLIGADA       |
+| public       | FLANINTEGRACAO | CODCOLIGADA  | FK_FLANINTEGRACAO_FLAN | IDLAN             |
+| public       | FLANINTEGRACAO | IDLAN        | FK_FLANINTEGRACAO_FLAN | IDBANCODADOS      |
+| public       | FLANINTEGRACAO | IDLAN        | FK_FLANINTEGRACAO_FLAN | CODCOLIGADA       |
+| public       | FLANINTEGRACAO | IDLAN        | FK_FLANINTEGRACAO_FLAN | IDLAN             |
+| public       | FTRBLAN        | IDBANCODADOS | FK_FTRBLAN_FLAN        | IDBANCODADOS      |
+| public       | FTRBLAN        | IDBANCODADOS | FK_FTRBLAN_FLAN        | CODCOLIGADA       |
+| public       | FTRBLAN        | IDBANCODADOS | FK_FTRBLAN_FLAN        | IDLAN             |
+| public       | FTRBLAN        | CODCOLIGADA  | FK_FTRBLAN_FLAN        | IDBANCODADOS      |
+| public       | FTRBLAN        | CODCOLIGADA  | FK_FTRBLAN_FLAN        | CODCOLIGADA       |
+| public       | FTRBLAN        | CODCOLIGADA  | FK_FTRBLAN_FLAN        | IDLAN             |
+| public       | FTRBLAN        | IDLAN        | FK_FTRBLAN_FLAN        | IDBANCODADOS      |
+| public       | FTRBLAN        | IDLAN        | FK_FTRBLAN_FLAN        | CODCOLIGADA       |
+| public       | FTRBLAN        | IDLAN        | FK_FTRBLAN_FLAN        | IDLAN             |
+| public       | XVENDAPARCELA  | IDBANCODADOS | FK_XVENDAPARCELA_FLAN  | IDBANCODADOS      |
+| public       | XVENDAPARCELA  | IDBANCODADOS | FK_XVENDAPARCELA_FLAN  | CODCOLIGADA       |
+| public       | XVENDAPARCELA  | IDBANCODADOS | FK_XVENDAPARCELA_FLAN  | IDLAN             |
+| public       | XVENDAPARCELA  | CODCOLLAN    | FK_XVENDAPARCELA_FLAN  | IDBANCODADOS      |
+| public       | XVENDAPARCELA  | CODCOLLAN    | FK_XVENDAPARCELA_FLAN  | CODCOLIGADA       |
+| public       | XVENDAPARCELA  | CODCOLLAN    | FK_XVENDAPARCELA_FLAN  | IDLAN             |
+| public       | XVENDAPARCELA  | IDLAN        | FK_XVENDAPARCELA_FLAN  | IDBANCODADOS      |
+| public       | XVENDAPARCELA  | IDLAN        | FK_XVENDAPARCELA_FLAN  | CODCOLIGADA       |
+| public       | XVENDAPARCELA  | IDLAN        | FK_XVENDAPARCELA_FLAN  | IDLAN             |
+| public       | FLANBAIXA      | IDBANCODADOS | FK_FLANBAIXA_FLAN      | IDBANCODADOS      |
+| public       | FLANBAIXA      | IDBANCODADOS | FK_FLANBAIXA_FLAN      | CODCOLIGADA       |
+| public       | FLANBAIXA      | IDBANCODADOS | FK_FLANBAIXA_FLAN      | IDLAN             |
+| public       | FLANBAIXA      | CODCOLIGADA  | FK_FLANBAIXA_FLAN      | IDBANCODADOS      |
+| public       | FLANBAIXA      | CODCOLIGADA  | FK_FLANBAIXA_FLAN      | CODCOLIGADA       |
+| public       | FLANBAIXA      | CODCOLIGADA  | FK_FLANBAIXA_FLAN      | IDLAN             |
+| public       | FLANBAIXA      | IDLAN        | FK_FLANBAIXA_FLAN      | IDBANCODADOS      |
+| public       | FLANBAIXA      | IDLAN        | FK_FLANBAIXA_FLAN      | CODCOLIGADA       |
+| public       | FLANBAIXA      | IDLAN        | FK_FLANBAIXA_FLAN      | IDLAN             |
+| public       | FRELLAN        | IDBANCODADOS | FK_FRELLAN_FLAN        | IDBANCODADOS      |
+| public       | FRELLAN        | IDBANCODADOS | FK_FRELLAN_FLAN        | CODCOLIGADA       |
+| public       | FRELLAN        | IDBANCODADOS | FK_FRELLAN_FLAN        | IDLAN             |
+| public       | FRELLAN        | CODCOLIGADA  | FK_FRELLAN_FLAN        | IDBANCODADOS      |
+| public       | FRELLAN        | CODCOLIGADA  | FK_FRELLAN_FLAN        | CODCOLIGADA       |
+| public       | FRELLAN        | CODCOLIGADA  | FK_FRELLAN_FLAN        | IDLAN             |
+| public       | FRELLAN        | IDLAN        | FK_FRELLAN_FLAN        | IDBANCODADOS      |
+| public       | FRELLAN        | IDLAN        | FK_FRELLAN_FLAN        | CODCOLIGADA       |
+| public       | FRELLAN        | IDLAN        | FK_FRELLAN_FLAN        | IDLAN             |
++--------------+----------------+--------------+------------------------+-------------------+
+(45 registros)
+
+--- 7. SEQUENCIAS ---
++-------------+----------------+
+| column_name | column_default |
++-------------+----------------+
++-------------+----------------+
+(0 registro)
+
+============================================================
+TABELA: FLANBAIXA
+============================================================
+--- 1. COLUNAS ---
++------------------+------------------------------+-------------------+--------------------------+-------------------+---------------+-------------+----------------+
+| ordinal_position |         column_name          |     data_type     | character_maximum_length | numeric_precision | numeric_scale | is_nullable | column_default |
++------------------+------------------------------+-------------------+--------------------------+-------------------+---------------+-------------+----------------+
+|                1 | IDBANCODADOS                 | smallint          |                          |                16 |             0 | NO          |                |
+|                2 | CODCOLIGADA                  | smallint          |                          |                16 |             0 | NO          |                |
+|                3 | IDLAN                        | integer           |                          |                32 |             0 | NO          |                |
+|                4 | IDBAIXA                      | integer           |                          |                32 |             0 | NO          |                |
+|                5 | IDFORMAPAGTO                 | integer           |                          |                32 |             0 | YES         |                |
+|                6 | CODCOLCXA                    | smallint          |                          |                16 |             0 | NO          |                |
+|                7 | CODCXA                       | character varying |                       10 |                   |               | YES         |                |
+|                8 | IDTRANSACAO                  | integer           |                          |                32 |             0 | NO          |                |
+|                9 | DATABAIXA                    | date              |                          |                   |               | YES         |                |
+|               10 | DATACANCELBAIXA              | date              |                          |                   |               | YES         |                |
+|               11 | DATACONTABILIZBX             | date              |                          |                   |               | YES         |                |
+|               12 | NUMCONTABILBX                | character varying |                       20 |                   |               | YES         |                |
+|               13 | VALORBAIXA                   | numeric           |                          |                15 |             4 | NO          |                |
+|               14 | VALORORIGINAL                | numeric           |                          |                15 |             4 | NO          |                |
+|               15 | VALORDESCONTO                | numeric           |                          |                15 |             4 | NO          |                |
+|               16 | VALORJUROS                   | numeric           |                          |                15 |             4 | NO          |                |
+|               17 | VALORMULTA                   | numeric           |                          |                15 |             4 | NO          |                |
+|               18 | VALORCAP                     | numeric           |                          |                15 |             4 | NO          |                |
+|               19 | VALOROP1                     | numeric           |                          |                15 |             4 | NO          |                |
+|               20 | VALOROP2                     | numeric           |                          |                15 |             4 | NO          |                |
+|               21 | VALOROP3                     | numeric           |                          |                15 |             4 | NO          |                |
+|               22 | VALOROP4                     | numeric           |                          |                15 |             4 | NO          |                |
+|               23 | VALORINSS                    | numeric           |                          |                15 |             4 | NO          |                |
+|               24 | VALORIRRF                    | numeric           |                          |                15 |             4 | NO          |                |
+|               25 | VALORNOTACREDITOADIANTAMENTO | numeric           |                          |                15 |             4 | NO          |                |
+|               26 | VALORVINCULADO               | numeric           |                          |                15 |             4 | NO          |                |
+|               27 | VALORRETENCOES               | numeric           |                          |                15 |             4 | NO          |                |
+|               28 | TIPOBAIXA                    | integer           |                          |                32 |             0 | NO          |                |
+|               29 | STATUS                       | integer           |                          |                32 |             0 | NO          |                |
+|               30 | MODELOCONTABILIZACAO         | smallint          |                          |                16 |             0 | NO          |                |
+|               31 | DIFBAIXAPARCIAL              | numeric           |                          |                15 |             4 | NO          |                |
+|               32 | TIPORETORNOBANCARIO          | integer           |                          |                32 |             0 | NO          |                |
+|               33 | DATAVENCIMENTOLANCAMENTO     | date              |                          |                   |               | YES         |                |
+|               34 | STATUSEXPORTACAO             | smallint          |                          |                16 |             0 | NO          |                |
+|               35 | CODFILIAL                    | smallint          |                          |                16 |             0 | YES         |                |
+|               36 | CODCCUSTO                    | character varying |                       25 |                   |               | YES         |                |
+|               37 | VALORDESCONTOPONTUAL         | numeric           |                          |                15 |             4 | NO          |                |
+|               38 | CODTB1FLX                    | character varying |                       25 |                   |               | YES         |                |
++------------------+------------------------------+-------------------+--------------------------+-------------------+---------------+-------------+----------------+
+(38 registros)
+
+--- 2. CONSTRAINTS ---
++--------------------------+-------------+-----------------------------------------------------------------------------------------------------------------------------------------------+
+|     constraint_name      |    tipo     |                                                                   definicao                                                                   |
++--------------------------+-------------+-----------------------------------------------------------------------------------------------------------------------------------------------+
+| FK_FLANBAIXA_FCXA        | FOREIGN KEY | FOREIGN KEY ("IDBANCODADOS", "CODCOLCXA", "CODCXA") REFERENCES "FCXA"("IDBANCODADOS", "CODCOLIGADA", "CODCXA") NOT VALID                      |
+| FK_FLANBAIXA_FLAN        | FOREIGN KEY | FOREIGN KEY ("IDBANCODADOS", "CODCOLIGADA", "IDLAN") REFERENCES "FLAN"("IDBANCODADOS", "CODCOLIGADA", "IDLAN") NOT VALID                      |
+| FK_FLANBAIXA_FTB1        | FOREIGN KEY | FOREIGN KEY ("IDBANCODADOS", "CODCOLIGADA", "CODTB1FLX") REFERENCES "FTB1"("IDBANCODADOS", "CODCOLIGADA", "CODTB1FLX") NOT VALID              |
+| FK_FLANBAIXA_GCUSTO      | FOREIGN KEY | FOREIGN KEY ("IDBANCODADOS", "CODCOLIGADA", "CODCCUSTO") REFERENCES "GCCUSTO"("IDBANCODADOS", "CODCOLIGADA", "CODCCUSTO") NOT VALID           |
+| FK_FLANBAIXA_GFILIAL     | FOREIGN KEY | FOREIGN KEY ("IDBANCODADOS", "CODCOLIGADA", "CODFILIAL") REFERENCES "GFILIAL"("IDBANCODADOS", "CODCOLIGADA", "CODFILIAL") NOT VALID           |
+| FK_FLANBAIXA_TFORMAPAGTO | FOREIGN KEY | FOREIGN KEY ("IDBANCODADOS", "CODCOLIGADA", "IDFORMAPAGTO") REFERENCES "TFORMAPAGTO"("IDBANCODADOS", "CODCOLIGADA", "IDFORMAPAGTO") NOT VALID |
+| FK_FLANBAIXA_GCOLIGADA   | FOREIGN KEY | FOREIGN KEY ("IDBANCODADOS", "CODCOLIGADA") REFERENCES "GCOLIGADA"("IDBANCODADOS", "CODCOLIGADA") NOT VALID                                   |
+| FLANBAIXA_pkey           | PRIMARY KEY | PRIMARY KEY ("IDBANCODADOS", "CODCOLIGADA", "IDLAN", "IDBAIXA")                                                                               |
++--------------------------+-------------+-----------------------------------------------------------------------------------------------------------------------------------------------+
+(8 registros)
+
+--- 3. INDEXES ---
++------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
+|          indexname           |                                                           indexdef                                                            |
++------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
+| fki_FK_FLANBAIXA_GCOLIGADA   | CREATE INDEX "fki_FK_FLANBAIXA_GCOLIGADA" ON public."FLANBAIXA" USING btree ("IDBANCODADOS", "CODCOLIGADA")                   |
+| fki_FK_FLANBAIXA_TFORMAPAGTO | CREATE INDEX "fki_FK_FLANBAIXA_TFORMAPAGTO" ON public."FLANBAIXA" USING btree ("IDBANCODADOS", "CODCOLIGADA", "IDFORMAPAGTO") |
+| fki_FK_FLANBAIXA_GFILIAL     | CREATE INDEX "fki_FK_FLANBAIXA_GFILIAL" ON public."FLANBAIXA" USING btree ("IDBANCODADOS", "CODCOLIGADA", "CODFILIAL")        |
+| fki_FK_FLANBAIXA_GCUSTO      | CREATE INDEX "fki_FK_FLANBAIXA_GCUSTO" ON public."FLANBAIXA" USING btree ("IDBANCODADOS", "CODCOLIGADA", "CODCCUSTO")         |
+| fki_FK_FLANBAIXA_FTB1        | CREATE INDEX "fki_FK_FLANBAIXA_FTB1" ON public."FLANBAIXA" USING btree ("IDBANCODADOS", "CODCOLIGADA", "CODTB1FLX")           |
+| fki_FK_FLANBAIXA_FLAN        | CREATE INDEX "fki_FK_FLANBAIXA_FLAN" ON public."FLANBAIXA" USING btree ("IDBANCODADOS", "CODCOLIGADA", "IDLAN")               |
+| fki_FK_FLANBAIXA_FCXA        | CREATE INDEX "fki_FK_FLANBAIXA_FCXA" ON public."FLANBAIXA" USING btree ("IDBANCODADOS", "CODCOLIGADA", "CODCXA")              |
+| FLANBAIXA_pkey               | CREATE UNIQUE INDEX "FLANBAIXA_pkey" ON public."FLANBAIXA" USING btree ("IDBANCODADOS", "CODCOLIGADA", "IDLAN", "IDBAIXA")    |
++------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
+(8 registros)
+
+--- 4. TRIGGERS ---
++--------------+--------------------+
+| trigger_name | trigger_definition |
++--------------+--------------------+
++--------------+--------------------+
+(0 registro)
+
+--- 5. TABELAS REFERENCIADAS (FK saindo) ---
++--------------------------+--------------+-------------------+------------------+-------------------+
+|     constraint_name      | column_name  | referenced_schema | referenced_table | referenced_column |
++--------------------------+--------------+-------------------+------------------+-------------------+
+| FK_FLANBAIXA_FLAN        | IDBANCODADOS | public            | FLAN             | IDBANCODADOS      |
+| FK_FLANBAIXA_FLAN        | CODCOLIGADA  | public            | FLAN             | IDBANCODADOS      |
+| FK_FLANBAIXA_FLAN        | IDLAN        | public            | FLAN             | IDBANCODADOS      |
+| FK_FLANBAIXA_FLAN        | IDBANCODADOS | public            | FLAN             | CODCOLIGADA       |
+| FK_FLANBAIXA_FLAN        | CODCOLIGADA  | public            | FLAN             | CODCOLIGADA       |
+| FK_FLANBAIXA_FLAN        | IDLAN        | public            | FLAN             | CODCOLIGADA       |
+| FK_FLANBAIXA_FLAN        | IDBANCODADOS | public            | FLAN             | IDLAN             |
+| FK_FLANBAIXA_FLAN        | CODCOLIGADA  | public            | FLAN             | IDLAN             |
+| FK_FLANBAIXA_FLAN        | IDLAN        | public            | FLAN             | IDLAN             |
+| FK_FLANBAIXA_FTB1        | IDBANCODADOS | public            | FTB1             | IDBANCODADOS      |
+| FK_FLANBAIXA_FTB1        | CODCOLIGADA  | public            | FTB1             | IDBANCODADOS      |
+| FK_FLANBAIXA_FTB1        | CODTB1FLX    | public            | FTB1             | IDBANCODADOS      |
+| FK_FLANBAIXA_FTB1        | IDBANCODADOS | public            | FTB1             | CODCOLIGADA       |
+| FK_FLANBAIXA_FTB1        | CODCOLIGADA  | public            | FTB1             | CODCOLIGADA       |
+| FK_FLANBAIXA_FTB1        | CODTB1FLX    | public            | FTB1             | CODCOLIGADA       |
+| FK_FLANBAIXA_FTB1        | IDBANCODADOS | public            | FTB1             | CODTB1FLX         |
+| FK_FLANBAIXA_FTB1        | CODCOLIGADA  | public            | FTB1             | CODTB1FLX         |
+| FK_FLANBAIXA_FTB1        | CODTB1FLX    | public            | FTB1             | CODTB1FLX         |
+| FK_FLANBAIXA_GCUSTO      | IDBANCODADOS | public            | GCCUSTO          | IDBANCODADOS      |
+| FK_FLANBAIXA_GCUSTO      | CODCOLIGADA  | public            | GCCUSTO          | IDBANCODADOS      |
+| FK_FLANBAIXA_GCUSTO      | CODCCUSTO    | public            | GCCUSTO          | IDBANCODADOS      |
+| FK_FLANBAIXA_GCUSTO      | IDBANCODADOS | public            | GCCUSTO          | CODCOLIGADA       |
+| FK_FLANBAIXA_GCUSTO      | CODCOLIGADA  | public            | GCCUSTO          | CODCOLIGADA       |
+| FK_FLANBAIXA_GCUSTO      | CODCCUSTO    | public            | GCCUSTO          | CODCOLIGADA       |
+| FK_FLANBAIXA_GCUSTO      | IDBANCODADOS | public            | GCCUSTO          | CODCCUSTO         |
+| FK_FLANBAIXA_GCUSTO      | CODCOLIGADA  | public            | GCCUSTO          | CODCCUSTO         |
+| FK_FLANBAIXA_GCUSTO      | CODCCUSTO    | public            | GCCUSTO          | CODCCUSTO         |
+| FK_FLANBAIXA_GFILIAL     | IDBANCODADOS | public            | GFILIAL          | IDBANCODADOS      |
+| FK_FLANBAIXA_GFILIAL     | CODCOLIGADA  | public            | GFILIAL          | IDBANCODADOS      |
+| FK_FLANBAIXA_GFILIAL     | CODFILIAL    | public            | GFILIAL          | IDBANCODADOS      |
+| FK_FLANBAIXA_GFILIAL     | IDBANCODADOS | public            | GFILIAL          | CODCOLIGADA       |
+| FK_FLANBAIXA_GFILIAL     | CODCOLIGADA  | public            | GFILIAL          | CODCOLIGADA       |
+| FK_FLANBAIXA_GFILIAL     | CODFILIAL    | public            | GFILIAL          | CODCOLIGADA       |
+| FK_FLANBAIXA_GFILIAL     | IDBANCODADOS | public            | GFILIAL          | CODFILIAL         |
+| FK_FLANBAIXA_GFILIAL     | CODCOLIGADA  | public            | GFILIAL          | CODFILIAL         |
+| FK_FLANBAIXA_GFILIAL     | CODFILIAL    | public            | GFILIAL          | CODFILIAL         |
+| FK_FLANBAIXA_TFORMAPAGTO | IDBANCODADOS | public            | TFORMAPAGTO      | IDBANCODADOS      |
+| FK_FLANBAIXA_TFORMAPAGTO | CODCOLIGADA  | public            | TFORMAPAGTO      | IDBANCODADOS      |
+| FK_FLANBAIXA_TFORMAPAGTO | IDFORMAPAGTO | public            | TFORMAPAGTO      | IDBANCODADOS      |
+| FK_FLANBAIXA_TFORMAPAGTO | IDBANCODADOS | public            | TFORMAPAGTO      | CODCOLIGADA       |
+| FK_FLANBAIXA_TFORMAPAGTO | CODCOLIGADA  | public            | TFORMAPAGTO      | CODCOLIGADA       |
+| FK_FLANBAIXA_TFORMAPAGTO | IDFORMAPAGTO | public            | TFORMAPAGTO      | CODCOLIGADA       |
+| FK_FLANBAIXA_TFORMAPAGTO | IDBANCODADOS | public            | TFORMAPAGTO      | IDFORMAPAGTO      |
+| FK_FLANBAIXA_TFORMAPAGTO | CODCOLIGADA  | public            | TFORMAPAGTO      | IDFORMAPAGTO      |
+| FK_FLANBAIXA_TFORMAPAGTO | IDFORMAPAGTO | public            | TFORMAPAGTO      | IDFORMAPAGTO      |
+| FK_FLANBAIXA_GCOLIGADA   | IDBANCODADOS | public            | GCOLIGADA        | IDBANCODADOS      |
+| FK_FLANBAIXA_GCOLIGADA   | CODCOLIGADA  | public            | GCOLIGADA        | IDBANCODADOS      |
+| FK_FLANBAIXA_GCOLIGADA   | IDBANCODADOS | public            | GCOLIGADA        | CODCOLIGADA       |
+| FK_FLANBAIXA_GCOLIGADA   | CODCOLIGADA  | public            | GCOLIGADA        | CODCOLIGADA       |
+| FK_FLANBAIXA_FCXA        | IDBANCODADOS | public            | FCXA             | IDBANCODADOS      |
+| FK_FLANBAIXA_FCXA        | CODCOLCXA    | public            | FCXA             | IDBANCODADOS      |
+| FK_FLANBAIXA_FCXA        | CODCXA       | public            | FCXA             | IDBANCODADOS      |
+| FK_FLANBAIXA_FCXA        | IDBANCODADOS | public            | FCXA             | CODCOLIGADA       |
+| FK_FLANBAIXA_FCXA        | CODCOLCXA    | public            | FCXA             | CODCOLIGADA       |
+| FK_FLANBAIXA_FCXA        | CODCXA       | public            | FCXA             | CODCOLIGADA       |
+| FK_FLANBAIXA_FCXA        | IDBANCODADOS | public            | FCXA             | CODCXA            |
+| FK_FLANBAIXA_FCXA        | CODCOLCXA    | public            | FCXA             | CODCXA            |
+| FK_FLANBAIXA_FCXA        | CODCXA       | public            | FCXA             | CODCXA            |
++--------------------------+--------------+-------------------+------------------+-------------------+
+(58 registros)
+
+--- 6. QUEM REFERENCIA ESSA TABELA (FK entrando) ---
++--------------+---------------------+--------------+----------------------------------+-------------------+
+| table_schema |     table_name      | column_name  |         constraint_name          | referenced_column |
++--------------+---------------------+--------------+----------------------------------+-------------------+
+| public       | FLANBAIXAINTEGRACAO | IDBANCODADOS | FK_FLANBAIXAINTEGRACAO_FLANBAIXA | IDBANCODADOS      |
+| public       | FLANBAIXAINTEGRACAO | IDBANCODADOS | FK_FLANBAIXAINTEGRACAO_FLANBAIXA | CODCOLIGADA       |
+| public       | FLANBAIXAINTEGRACAO | IDBANCODADOS | FK_FLANBAIXAINTEGRACAO_FLANBAIXA | IDLAN             |
+| public       | FLANBAIXAINTEGRACAO | IDBANCODADOS | FK_FLANBAIXAINTEGRACAO_FLANBAIXA | IDBAIXA           |
+| public       | FLANBAIXAINTEGRACAO | CODCOLIGADA  | FK_FLANBAIXAINTEGRACAO_FLANBAIXA | IDBANCODADOS      |
+| public       | FLANBAIXAINTEGRACAO | CODCOLIGADA  | FK_FLANBAIXAINTEGRACAO_FLANBAIXA | CODCOLIGADA       |
+| public       | FLANBAIXAINTEGRACAO | CODCOLIGADA  | FK_FLANBAIXAINTEGRACAO_FLANBAIXA | IDLAN             |
+| public       | FLANBAIXAINTEGRACAO | CODCOLIGADA  | FK_FLANBAIXAINTEGRACAO_FLANBAIXA | IDBAIXA           |
+| public       | FLANBAIXAINTEGRACAO | IDLAN        | FK_FLANBAIXAINTEGRACAO_FLANBAIXA | IDBANCODADOS      |
+| public       | FLANBAIXAINTEGRACAO | IDLAN        | FK_FLANBAIXAINTEGRACAO_FLANBAIXA | CODCOLIGADA       |
+| public       | FLANBAIXAINTEGRACAO | IDLAN        | FK_FLANBAIXAINTEGRACAO_FLANBAIXA | IDLAN             |
+| public       | FLANBAIXAINTEGRACAO | IDLAN        | FK_FLANBAIXAINTEGRACAO_FLANBAIXA | IDBAIXA           |
+| public       | FLANBAIXAINTEGRACAO | IDBAIXA      | FK_FLANBAIXAINTEGRACAO_FLANBAIXA | IDBANCODADOS      |
+| public       | FLANBAIXAINTEGRACAO | IDBAIXA      | FK_FLANBAIXAINTEGRACAO_FLANBAIXA | CODCOLIGADA       |
+| public       | FLANBAIXAINTEGRACAO | IDBAIXA      | FK_FLANBAIXAINTEGRACAO_FLANBAIXA | IDLAN             |
+| public       | FLANBAIXAINTEGRACAO | IDBAIXA      | FK_FLANBAIXAINTEGRACAO_FLANBAIXA | IDBAIXA           |
+| public       | FRELLAN             | IDBANCODADOS | FK_FRELLAN_FLANBAIXA             | IDBANCODADOS      |
+| public       | FRELLAN             | IDBANCODADOS | FK_FRELLAN_FLANBAIXA             | CODCOLIGADA       |
+| public       | FRELLAN             | IDBANCODADOS | FK_FRELLAN_FLANBAIXA             | IDLAN             |
+| public       | FRELLAN             | IDBANCODADOS | FK_FRELLAN_FLANBAIXA             | IDBAIXA           |
+| public       | FRELLAN             | CODCOLIGADA  | FK_FRELLAN_FLANBAIXA             | IDBANCODADOS      |
+| public       | FRELLAN             | CODCOLIGADA  | FK_FRELLAN_FLANBAIXA             | CODCOLIGADA       |
+| public       | FRELLAN             | CODCOLIGADA  | FK_FRELLAN_FLANBAIXA             | IDLAN             |
+| public       | FRELLAN             | CODCOLIGADA  | FK_FRELLAN_FLANBAIXA             | IDBAIXA           |
+| public       | FRELLAN             | IDLAN        | FK_FRELLAN_FLANBAIXA             | IDBANCODADOS      |
+| public       | FRELLAN             | IDLAN        | FK_FRELLAN_FLANBAIXA             | CODCOLIGADA       |
+| public       | FRELLAN             | IDLAN        | FK_FRELLAN_FLANBAIXA             | IDLAN             |
+| public       | FRELLAN             | IDLAN        | FK_FRELLAN_FLANBAIXA             | IDBAIXA           |
+| public       | FRELLAN             | IDBAIXA      | FK_FRELLAN_FLANBAIXA             | IDBANCODADOS      |
+| public       | FRELLAN             | IDBAIXA      | FK_FRELLAN_FLANBAIXA             | CODCOLIGADA       |
+| public       | FRELLAN             | IDBAIXA      | FK_FRELLAN_FLANBAIXA             | IDLAN             |
+| public       | FRELLAN             | IDBAIXA      | FK_FRELLAN_FLANBAIXA             | IDBAIXA           |
++--------------+---------------------+--------------+----------------------------------+-------------------+
+(32 registros)
+
+--- 7. SEQUENCIAS ---
++-------------+----------------+
+| column_name | column_default |
++-------------+----------------+
++-------------+----------------+
+(0 registro)
+
+============================================================
+TABELA: FRELLAN
+============================================================
+--- 1. COLUNAS ---
++------------------+--------------+-----------+--------------------------+-------------------+---------------+-------------+----------------+
+| ordinal_position | column_name  | data_type | character_maximum_length | numeric_precision | numeric_scale | is_nullable | column_default |
++------------------+--------------+-----------+--------------------------+-------------------+---------------+-------------+----------------+
+|                1 | IDBANCODADOS | smallint  |                          |                16 |             0 | NO          |                |
+|                2 | CODCOLIGADA  | smallint  |                          |                16 |             0 | NO          |                |
+|                3 | IDLAN        | integer   |                          |                32 |             0 | NO          |                |
+|                4 | IDLANREL     | integer   |                          |                32 |             0 | NO          |                |
+|                5 | TIPOREL      | smallint  |                          |                16 |             0 | NO          |                |
+|                6 | IDBAIXA      | integer   |                          |                32 |             0 | YES         |                |
+|                7 | IDBAIXAREL   | integer   |                          |                32 |             0 | YES         |                |
+|                8 | VALORVINCULO | numeric   |                          |                15 |             4 | YES         |                |
++------------------+--------------+-----------+--------------------------+-------------------+---------------+-------------+----------------+
+(8 registros)
+
+--- 2. CONSTRAINTS ---
++----------------------+-------------+-----------------------------------------------------------------------------------------------------------------------------------------------------+
+|   constraint_name    |    tipo     |                                                                      definicao                                                                      |
++----------------------+-------------+-----------------------------------------------------------------------------------------------------------------------------------------------------+
+| FK_FRELLAN_GCOLIGADA | FOREIGN KEY | FOREIGN KEY ("IDBANCODADOS", "CODCOLIGADA") REFERENCES "GCOLIGADA"("IDBANCODADOS", "CODCOLIGADA") NOT VALID                                         |
+| FK_FRELLAN_FLAN      | FOREIGN KEY | FOREIGN KEY ("IDBANCODADOS", "CODCOLIGADA", "IDLAN") REFERENCES "FLAN"("IDBANCODADOS", "CODCOLIGADA", "IDLAN") NOT VALID                            |
+| FK_FRELLAN_FLANBAIXA | FOREIGN KEY | FOREIGN KEY ("IDBANCODADOS", "CODCOLIGADA", "IDLAN", "IDBAIXA") REFERENCES "FLANBAIXA"("IDBANCODADOS", "CODCOLIGADA", "IDLAN", "IDBAIXA") NOT VALID |
+| FRELLAN_pkey         | PRIMARY KEY | PRIMARY KEY ("IDBANCODADOS", "CODCOLIGADA", "IDLAN", "IDLANREL", "TIPOREL")                                                                         |
++----------------------+-------------+-----------------------------------------------------------------------------------------------------------------------------------------------------+
+(4 registros)
+
+--- 3. INDEXES ---
++--------------------------+------------------------------------------------------------------------------------------------------------------------------------+
+|        indexname         |                                                              indexdef                                                              |
++--------------------------+------------------------------------------------------------------------------------------------------------------------------------+
+| fki_FK_FRELLAN_FLANBAIXA | CREATE INDEX "fki_FK_FRELLAN_FLANBAIXA" ON public."FRELLAN" USING btree ("IDBANCODADOS", "CODCOLIGADA", "IDLAN", "IDBAIXA")        |
+| fki_FK_FRELLAN_FLAN      | CREATE INDEX "fki_FK_FRELLAN_FLAN" ON public."FRELLAN" USING btree ("IDBANCODADOS", "CODCOLIGADA", "IDLAN")                        |
+| fki_FK_FRELLAN_GCOLIGADA | CREATE INDEX "fki_FK_FRELLAN_GCOLIGADA" ON public."FRELLAN" USING btree ("IDBANCODADOS", "CODCOLIGADA")                            |
+| FRELLAN_pkey             | CREATE UNIQUE INDEX "FRELLAN_pkey" ON public."FRELLAN" USING btree ("IDBANCODADOS", "CODCOLIGADA", "IDLAN", "IDLANREL", "TIPOREL") |
++--------------------------+------------------------------------------------------------------------------------------------------------------------------------+
+(4 registros)
+
+--- 4. TRIGGERS ---
++--------------+--------------------+
+| trigger_name | trigger_definition |
++--------------+--------------------+
++--------------+--------------------+
+(0 registro)
+
+--- 5. TABELAS REFERENCIADAS (FK saindo) ---
++----------------------+--------------+-------------------+------------------+-------------------+
+|   constraint_name    | column_name  | referenced_schema | referenced_table | referenced_column |
++----------------------+--------------+-------------------+------------------+-------------------+
+| FK_FRELLAN_GCOLIGADA | IDBANCODADOS | public            | GCOLIGADA        | IDBANCODADOS      |
+| FK_FRELLAN_GCOLIGADA | CODCOLIGADA  | public            | GCOLIGADA        | IDBANCODADOS      |
+| FK_FRELLAN_GCOLIGADA | IDBANCODADOS | public            | GCOLIGADA        | CODCOLIGADA       |
+| FK_FRELLAN_GCOLIGADA | CODCOLIGADA  | public            | GCOLIGADA        | CODCOLIGADA       |
+| FK_FRELLAN_FLAN      | IDBANCODADOS | public            | FLAN             | IDBANCODADOS      |
+| FK_FRELLAN_FLAN      | CODCOLIGADA  | public            | FLAN             | IDBANCODADOS      |
+| FK_FRELLAN_FLAN      | IDLAN        | public            | FLAN             | IDBANCODADOS      |
+| FK_FRELLAN_FLAN      | IDBANCODADOS | public            | FLAN             | CODCOLIGADA       |
+| FK_FRELLAN_FLAN      | CODCOLIGADA  | public            | FLAN             | CODCOLIGADA       |
+| FK_FRELLAN_FLAN      | IDLAN        | public            | FLAN             | CODCOLIGADA       |
+| FK_FRELLAN_FLAN      | IDBANCODADOS | public            | FLAN             | IDLAN             |
+| FK_FRELLAN_FLAN      | CODCOLIGADA  | public            | FLAN             | IDLAN             |
+| FK_FRELLAN_FLAN      | IDLAN        | public            | FLAN             | IDLAN             |
+| FK_FRELLAN_FLANBAIXA | IDBANCODADOS | public            | FLANBAIXA        | IDBANCODADOS      |
+| FK_FRELLAN_FLANBAIXA | CODCOLIGADA  | public            | FLANBAIXA        | IDBANCODADOS      |
+| FK_FRELLAN_FLANBAIXA | IDLAN        | public            | FLANBAIXA        | IDBANCODADOS      |
+| FK_FRELLAN_FLANBAIXA | IDBAIXA      | public            | FLANBAIXA        | IDBANCODADOS      |
+| FK_FRELLAN_FLANBAIXA | IDBANCODADOS | public            | FLANBAIXA        | CODCOLIGADA       |
+| FK_FRELLAN_FLANBAIXA | CODCOLIGADA  | public            | FLANBAIXA        | CODCOLIGADA       |
+| FK_FRELLAN_FLANBAIXA | IDLAN        | public            | FLANBAIXA        | CODCOLIGADA       |
+| FK_FRELLAN_FLANBAIXA | IDBAIXA      | public            | FLANBAIXA        | CODCOLIGADA       |
+| FK_FRELLAN_FLANBAIXA | IDBANCODADOS | public            | FLANBAIXA        | IDLAN             |
+| FK_FRELLAN_FLANBAIXA | CODCOLIGADA  | public            | FLANBAIXA        | IDLAN             |
+| FK_FRELLAN_FLANBAIXA | IDLAN        | public            | FLANBAIXA        | IDLAN             |
+| FK_FRELLAN_FLANBAIXA | IDBAIXA      | public            | FLANBAIXA        | IDLAN             |
+| FK_FRELLAN_FLANBAIXA | IDBANCODADOS | public            | FLANBAIXA        | IDBAIXA           |
+| FK_FRELLAN_FLANBAIXA | CODCOLIGADA  | public            | FLANBAIXA        | IDBAIXA           |
+| FK_FRELLAN_FLANBAIXA | IDLAN        | public            | FLANBAIXA        | IDBAIXA           |
+| FK_FRELLAN_FLANBAIXA | IDBAIXA      | public            | FLANBAIXA        | IDBAIXA           |
++----------------------+--------------+-------------------+------------------+-------------------+
+(29 registros)
+
+--- 6. QUEM REFERENCIA ESSA TABELA (FK entrando) ---
++--------------+------------+-------------+-----------------+-------------------+
+| table_schema | table_name | column_name | constraint_name | referenced_column |
++--------------+------------+-------------+-----------------+-------------------+
++--------------+------------+-------------+-----------------+-------------------+
+(0 registro)
+
+--- 7. SEQUENCIAS ---
++-------------+----------------+
+| column_name | column_default |
++-------------+----------------+
++-------------+----------------+
+(0 registro)
+
+============================================================
+TABELA: FTDO
+============================================================
+--- 1. COLUNAS ---
++------------------+--------------+-------------------+--------------------------+-------------------+---------------+-------------+----------------+
+| ordinal_position | column_name  |     data_type     | character_maximum_length | numeric_precision | numeric_scale | is_nullable | column_default |
++------------------+--------------+-------------------+--------------------------+-------------------+---------------+-------------+----------------+
+|                1 | IDBANCODADOS | smallint          |                          |                16 |             0 | NO          |                |
+|                2 | CODCOLIGADA  | smallint          |                          |                16 |             0 | NO          |                |
+|                3 | CODTDO       | character varying |                       10 |                   |               | NO          |                |
+|                4 | DESCRICAO    | character varying |                       40 |                   |               | YES         |                |
+|                5 | CALCULAAVP   | smallint          |                          |                16 |             0 | NO          |                |
++------------------+--------------+-------------------+--------------------------+-------------------+---------------+-------------+----------------+
+(5 registros)
+
+--- 2. CONSTRAINTS ---
++-------------------+-------------+-------------------------------------------------------------------------------------------------------------+
+|  constraint_name  |    tipo     |                                                  definicao                                                  |
++-------------------+-------------+-------------------------------------------------------------------------------------------------------------+
+| FK_FTDO_GCOLIGADA | FOREIGN KEY | FOREIGN KEY ("IDBANCODADOS", "CODCOLIGADA") REFERENCES "GCOLIGADA"("IDBANCODADOS", "CODCOLIGADA") NOT VALID |
+| FTDO_pkey         | PRIMARY KEY | PRIMARY KEY ("IDBANCODADOS", "CODCOLIGADA", "CODTDO")                                                       |
++-------------------+-------------+-------------------------------------------------------------------------------------------------------------+
+(2 registros)
+
+--- 3. INDEXES ---
++-----------------------+--------------------------------------------------------------------------------------------------------+
+|       indexname       |                                                indexdef                                                |
++-----------------------+--------------------------------------------------------------------------------------------------------+
+| fki_FK_FTDO_GCOLIGADA | CREATE INDEX "fki_FK_FTDO_GCOLIGADA" ON public."FTDO" USING btree ("IDBANCODADOS", "CODCOLIGADA")      |
+| FTDO_pkey             | CREATE UNIQUE INDEX "FTDO_pkey" ON public."FTDO" USING btree ("IDBANCODADOS", "CODCOLIGADA", "CODTDO") |
++-----------------------+--------------------------------------------------------------------------------------------------------+
+(2 registros)
+
+--- 4. TRIGGERS ---
++--------------+--------------------+
+| trigger_name | trigger_definition |
++--------------+--------------------+
++--------------+--------------------+
+(0 registro)
+
+--- 5. TABELAS REFERENCIADAS (FK saindo) ---
++-------------------+--------------+-------------------+------------------+-------------------+
+|  constraint_name  | column_name  | referenced_schema | referenced_table | referenced_column |
++-------------------+--------------+-------------------+------------------+-------------------+
+| FK_FTDO_GCOLIGADA | IDBANCODADOS | public            | GCOLIGADA        | IDBANCODADOS      |
+| FK_FTDO_GCOLIGADA | CODCOLIGADA  | public            | GCOLIGADA        | IDBANCODADOS      |
+| FK_FTDO_GCOLIGADA | IDBANCODADOS | public            | GCOLIGADA        | CODCOLIGADA       |
+| FK_FTDO_GCOLIGADA | CODCOLIGADA  | public            | GCOLIGADA        | CODCOLIGADA       |
++-------------------+--------------+-------------------+------------------+-------------------+
+(4 registros)
+
+--- 6. QUEM REFERENCIA ESSA TABELA (FK entrando) ---
++--------------+------------+--------------+-----------------+-------------------+
+| table_schema | table_name | column_name  | constraint_name | referenced_column |
++--------------+------------+--------------+-----------------+-------------------+
+| public       | FLAN       | IDBANCODADOS | FK_FLAN_FTDO    | IDBANCODADOS      |
+| public       | FLAN       | IDBANCODADOS | FK_FLAN_FTDO    | CODCOLIGADA       |
+| public       | FLAN       | IDBANCODADOS | FK_FLAN_FTDO    | CODTDO            |
+| public       | FLAN       | CODCOLIGADA  | FK_FLAN_FTDO    | IDBANCODADOS      |
+| public       | FLAN       | CODCOLIGADA  | FK_FLAN_FTDO    | CODCOLIGADA       |
+| public       | FLAN       | CODCOLIGADA  | FK_FLAN_FTDO    | CODTDO            |
+| public       | FLAN       | CODTDO       | FK_FLAN_FTDO    | IDBANCODADOS      |
+| public       | FLAN       | CODTDO       | FK_FLAN_FTDO    | CODCOLIGADA       |
+| public       | FLAN       | CODTDO       | FK_FLAN_FTDO    | CODTDO            |
++--------------+------------+--------------+-----------------+-------------------+
+(9 registros)
+
+--- 7. SEQUENCIAS ---
++-------------+----------------+
+| column_name | column_default |
++-------------+----------------+
++-------------+----------------+
+(0 registro)
+
+============================================================
+TABELA: GCUSTO
+============================================================
+--- 1. COLUNAS ---
++------------------+-------------+-----------+--------------------------+-------------------+---------------+-------------+----------------+
+| ordinal_position | column_name | data_type | character_maximum_length | numeric_precision | numeric_scale | is_nullable | column_default |
++------------------+-------------+-----------+--------------------------+-------------------+---------------+-------------+----------------+
++------------------+-------------+-----------+--------------------------+-------------------+---------------+-------------+----------------+
+(0 registro)
+
+--- 2. CONSTRAINTS ---
++-----------------+------+-----------+
+| constraint_name | tipo | definicao |
++-----------------+------+-----------+
++-----------------+------+-----------+
+(0 registro)
+
+--- 3. INDEXES ---
++-----------+----------+
+| indexname | indexdef |
++-----------+----------+
++-----------+----------+
+(0 registro)
+
+--- 4. TRIGGERS ---
++--------------+--------------------+
+| trigger_name | trigger_definition |
++--------------+--------------------+
++--------------+--------------------+
+(0 registro)
+
+--- 5. TABELAS REFERENCIADAS (FK saindo) ---
++-----------------+-------------+-------------------+------------------+-------------------+
+| constraint_name | column_name | referenced_schema | referenced_table | referenced_column |
++-----------------+-------------+-------------------+------------------+-------------------+
++-----------------+-------------+-------------------+------------------+-------------------+
+(0 registro)
+
+--- 6. QUEM REFERENCIA ESSA TABELA (FK entrando) ---
++--------------+------------+-------------+-----------------+-------------------+
+| table_schema | table_name | column_name | constraint_name | referenced_column |
++--------------+------------+-------------+-----------------+-------------------+
++--------------+------------+-------------+-----------------+-------------------+
+(0 registro)
+
+--- 7. SEQUENCIAS ---
++-------------+----------------+
+| column_name | column_default |
++-------------+----------------+
++-------------+----------------+
+(0 registro)
+
+============================================================
+TABELA: GFILIAL
+============================================================
+--- 1. COLUNAS ---
++------------------+--------------+-------------------+--------------------------+-------------------+---------------+-------------+----------------+
+| ordinal_position | column_name  |     data_type     | character_maximum_length | numeric_precision | numeric_scale | is_nullable | column_default |
++------------------+--------------+-------------------+--------------------------+-------------------+---------------+-------------+----------------+
+|                1 | IDBANCODADOS | smallint          |                          |                16 |             0 | NO          |                |
+|                2 | CODCOLIGADA  | smallint          |                          |                16 |             0 | NO          |                |
+|                3 | CODFILIAL    | smallint          |                          |                16 |             0 | NO          |                |
+|                4 | NOME         | character varying |                      100 |                   |               | YES         |                |
++------------------+--------------+-------------------+--------------------------+-------------------+---------------+-------------+----------------+
+(4 registros)
+
+--- 2. CONSTRAINTS ---
++-----------------+-------------+----------------------------------------------------------+
+| constraint_name |    tipo     |                        definicao                         |
++-----------------+-------------+----------------------------------------------------------+
+| GFILIAL_pkey    | PRIMARY KEY | PRIMARY KEY ("IDBANCODADOS", "CODCOLIGADA", "CODFILIAL") |
++-----------------+-------------+----------------------------------------------------------+
+(1 registro)
+
+--- 3. INDEXES ---
++--------------+-----------------------------------------------------------------------------------------------------------------+
+|  indexname   |                                                    indexdef                                                     |
++--------------+-----------------------------------------------------------------------------------------------------------------+
+| GFILIAL_pkey | CREATE UNIQUE INDEX "GFILIAL_pkey" ON public."GFILIAL" USING btree ("IDBANCODADOS", "CODCOLIGADA", "CODFILIAL") |
++--------------+-----------------------------------------------------------------------------------------------------------------+
+(1 registro)
+
+--- 4. TRIGGERS ---
++--------------+--------------------+
+| trigger_name | trigger_definition |
++--------------+--------------------+
++--------------+--------------------+
+(0 registro)
+
+--- 5. TABELAS REFERENCIADAS (FK saindo) ---
++-----------------+-------------+-------------------+------------------+-------------------+
+| constraint_name | column_name | referenced_schema | referenced_table | referenced_column |
++-----------------+-------------+-------------------+------------------+-------------------+
++-----------------+-------------+-------------------+------------------+-------------------+
+(0 registro)
+
+--- 6. QUEM REFERENCIA ESSA TABELA (FK entrando) ---
++--------------+-----------------+--------------+----------------------------+-------------------+
+| table_schema |   table_name    | column_name  |      constraint_name       | referenced_column |
++--------------+-----------------+--------------+----------------------------+-------------------+
+| public       | CPARTIDA        | IDBANCODADOS | FK_CPARTIDA_GFILIAL        | IDBANCODADOS      |
+| public       | CPARTIDA        | IDBANCODADOS | FK_CPARTIDA_GFILIAL        | CODCOLIGADA       |
+| public       | CPARTIDA        | IDBANCODADOS | FK_CPARTIDA_GFILIAL        | CODFILIAL         |
+| public       | CPARTIDA        | CODCOLIGADA  | FK_CPARTIDA_GFILIAL        | IDBANCODADOS      |
+| public       | CPARTIDA        | CODCOLIGADA  | FK_CPARTIDA_GFILIAL        | CODCOLIGADA       |
+| public       | CPARTIDA        | CODCOLIGADA  | FK_CPARTIDA_GFILIAL        | CODFILIAL         |
+| public       | CPARTIDA        | CODFILIAL    | FK_CPARTIDA_GFILIAL        | IDBANCODADOS      |
+| public       | CPARTIDA        | CODFILIAL    | FK_CPARTIDA_GFILIAL        | CODCOLIGADA       |
+| public       | CPARTIDA        | CODFILIAL    | FK_CPARTIDA_GFILIAL        | CODFILIAL         |
+| public       | CSALDOEXERCICIO | IDBANCODADOS | FK_CSALDOEXERCICIO_GFILIAL | IDBANCODADOS      |
+| public       | CSALDOEXERCICIO | IDBANCODADOS | FK_CSALDOEXERCICIO_GFILIAL | CODCOLIGADA       |
+| public       | CSALDOEXERCICIO | IDBANCODADOS | FK_CSALDOEXERCICIO_GFILIAL | CODFILIAL         |
+| public       | CSALDOEXERCICIO | CODCOLIGADA  | FK_CSALDOEXERCICIO_GFILIAL | IDBANCODADOS      |
+| public       | CSALDOEXERCICIO | CODCOLIGADA  | FK_CSALDOEXERCICIO_GFILIAL | CODCOLIGADA       |
+| public       | CSALDOEXERCICIO | CODCOLIGADA  | FK_CSALDOEXERCICIO_GFILIAL | CODFILIAL         |
+| public       | CSALDOEXERCICIO | CODFILIAL    | FK_CSALDOEXERCICIO_GFILIAL | IDBANCODADOS      |
+| public       | CSALDOEXERCICIO | CODFILIAL    | FK_CSALDOEXERCICIO_GFILIAL | CODCOLIGADA       |
+| public       | CSALDOEXERCICIO | CODFILIAL    | FK_CSALDOEXERCICIO_GFILIAL | CODFILIAL         |
+| public       | FLAN            | IDBANCODADOS | FK_FLAN_CODFILIAL          | IDBANCODADOS      |
+| public       | FLAN            | IDBANCODADOS | FK_FLAN_CODFILIAL          | CODCOLIGADA       |
+| public       | FLAN            | IDBANCODADOS | FK_FLAN_CODFILIAL          | CODFILIAL         |
+| public       | FLAN            | CODCOLIGADA  | FK_FLAN_CODFILIAL          | IDBANCODADOS      |
+| public       | FLAN            | CODCOLIGADA  | FK_FLAN_CODFILIAL          | CODCOLIGADA       |
+| public       | FLAN            | CODCOLIGADA  | FK_FLAN_CODFILIAL          | CODFILIAL         |
+| public       | FLAN            | CODFILIAL    | FK_FLAN_CODFILIAL          | IDBANCODADOS      |
+| public       | FLAN            | CODFILIAL    | FK_FLAN_CODFILIAL          | CODCOLIGADA       |
+| public       | FLAN            | CODFILIAL    | FK_FLAN_CODFILIAL          | CODFILIAL         |
+| public       | FLANBAIXA       | IDBANCODADOS | FK_FLANBAIXA_GFILIAL       | IDBANCODADOS      |
+| public       | FLANBAIXA       | IDBANCODADOS | FK_FLANBAIXA_GFILIAL       | CODCOLIGADA       |
+| public       | FLANBAIXA       | IDBANCODADOS | FK_FLANBAIXA_GFILIAL       | CODFILIAL         |
+| public       | FLANBAIXA       | CODCOLIGADA  | FK_FLANBAIXA_GFILIAL       | IDBANCODADOS      |
+| public       | FLANBAIXA       | CODCOLIGADA  | FK_FLANBAIXA_GFILIAL       | CODCOLIGADA       |
+| public       | FLANBAIXA       | CODCOLIGADA  | FK_FLANBAIXA_GFILIAL       | CODFILIAL         |
+| public       | FLANBAIXA       | CODFILIAL    | FK_FLANBAIXA_GFILIAL       | IDBANCODADOS      |
+| public       | FLANBAIXA       | CODFILIAL    | FK_FLANBAIXA_GFILIAL       | CODCOLIGADA       |
+| public       | FLANBAIXA       | CODFILIAL    | FK_FLANBAIXA_GFILIAL       | CODFILIAL         |
+| public       | TMOV            | IDBANCODADOS | FK_TMOV_GFILIAL            | IDBANCODADOS      |
+| public       | TMOV            | IDBANCODADOS | FK_TMOV_GFILIAL            | CODCOLIGADA       |
+| public       | TMOV            | IDBANCODADOS | FK_TMOV_GFILIAL            | CODFILIAL         |
+| public       | TMOV            | CODCOLIGADA  | FK_TMOV_GFILIAL            | IDBANCODADOS      |
+| public       | TMOV            | CODCOLIGADA  | FK_TMOV_GFILIAL            | CODCOLIGADA       |
+| public       | TMOV            | CODCOLIGADA  | FK_TMOV_GFILIAL            | CODFILIAL         |
+| public       | TMOV            | CODFILIAL    | FK_TMOV_GFILIAL            | IDBANCODADOS      |
+| public       | TMOV            | CODFILIAL    | FK_TMOV_GFILIAL            | CODCOLIGADA       |
+| public       | TMOV            | CODFILIAL    | FK_TMOV_GFILIAL            | CODFILIAL         |
++--------------+-----------------+--------------+----------------------------+-------------------+
+(45 registros)
+
+--- 7. SEQUENCIAS ---
++-------------+----------------+
+| column_name | column_default |
++-------------+----------------+
++-------------+----------------+
+(0 registro)
+
+============================================================
+TABELA: TMOV
+============================================================
+--- 1. COLUNAS ---
++------------------+------------------+-------------------+--------------------------+-------------------+---------------+-------------+----------------+
+| ordinal_position |   column_name    |     data_type     | character_maximum_length | numeric_precision | numeric_scale | is_nullable | column_default |
++------------------+------------------+-------------------+--------------------------+-------------------+---------------+-------------+----------------+
+|                1 | IDBANCODADOS     | smallint          |                          |                16 |             0 | NO          |                |
+|                2 | CODCOLIGADA      | smallint          |                          |                16 |             0 | NO          |                |
+|                3 | IDMOV            | integer           |                          |                32 |             0 | NO          |                |
+|                4 | CODFILIAL        | smallint          |                          |                16 |             0 | YES         |                |
+|                5 | CODCFO           | character varying |                       25 |                   |               | YES         |                |
+|                6 | NUMEROMOV        | character varying |                       35 |                   |               | YES         |                |
+|                7 | CODTMV           | character varying |                       10 |                   |               | YES         |                |
+|                8 | DATAEMISSAO      | date              |                          |                   |               | YES         |                |
+|                9 | DATASAIDA        | date              |                          |                   |               | YES         |                |
+|               10 | VALORBRUTO       | numeric           |                          |                15 |             4 | YES         |                |
+|               11 | VALORLIQUIDO     | numeric           |                          |                15 |             4 | YES         |                |
+|               12 | CODCCUSTO        | character varying |                       25 |                   |               | YES         |                |
+|               13 | CODCXA           | character varying |                       10 |                   |               | YES         |                |
+|               14 | CODCOLCFO        | smallint          |                          |                16 |             0 | YES         |                |
+|               15 | CODCOLCXA        | smallint          |                          |                16 |             0 | YES         |                |
+|               16 | INTEGRAAPLICACAO | character varying |                        1 |                   |               | NO          |                |
++------------------+------------------+-------------------+--------------------------+-------------------+---------------+-------------+----------------+
+(16 registros)
+
+--- 2. CONSTRAINTS ---
++-------------------+-------------+-------------------------------------------------------------------------------------------------------------------------------------+
+|  constraint_name  |    tipo     |                                                              definicao                                                              |
++-------------------+-------------+-------------------------------------------------------------------------------------------------------------------------------------+
+| FK_TMOV_GCOLIGADA | FOREIGN KEY | FOREIGN KEY ("IDBANCODADOS", "CODCOLIGADA") REFERENCES "GCOLIGADA"("IDBANCODADOS", "CODCOLIGADA") NOT VALID                         |
+| FK_TMOV_GFILIAL   | FOREIGN KEY | FOREIGN KEY ("IDBANCODADOS", "CODCOLIGADA", "CODFILIAL") REFERENCES "GFILIAL"("IDBANCODADOS", "CODCOLIGADA", "CODFILIAL") NOT VALID |
+| FK_TMOV_FCXA      | FOREIGN KEY | FOREIGN KEY ("IDBANCODADOS", "CODCOLCXA", "CODCXA") REFERENCES "FCXA"("IDBANCODADOS", "CODCOLIGADA", "CODCXA") NOT VALID            |
+| FK_TMOV_GCUSTO    | FOREIGN KEY | FOREIGN KEY ("IDBANCODADOS", "CODCOLIGADA", "CODCCUSTO") REFERENCES "GCCUSTO"("IDBANCODADOS", "CODCOLIGADA", "CODCCUSTO") NOT VALID |
+| FK_TMOV_FCFO      | FOREIGN KEY | FOREIGN KEY ("IDBANCODADOS", "CODCOLCFO", "CODCFO") REFERENCES "FCFO"("IDBANCODADOS", "CODCOLIGADA", "CODCFO") NOT VALID            |
+| TMOV_pkey         | PRIMARY KEY | PRIMARY KEY ("IDMOV", "CODCOLIGADA", "IDBANCODADOS")                                                                                |
++-------------------+-------------+-------------------------------------------------------------------------------------------------------------------------------------+
+(6 registros)
+
+--- 3. INDEXES ---
++-----------------------+--------------------------------------------------------------------------------------------------------------+
+|       indexname       |                                                   indexdef                                                   |
++-----------------------+--------------------------------------------------------------------------------------------------------------+
+| fki_FK_TMOV_GCUSTO    | CREATE INDEX "fki_FK_TMOV_GCUSTO" ON public."TMOV" USING btree ("IDBANCODADOS", "CODCOLIGADA", "CODCCUSTO")  |
+| fki_FK_TMOV_FCXA      | CREATE INDEX "fki_FK_TMOV_FCXA" ON public."TMOV" USING btree ("IDBANCODADOS", "CODCOLCXA", "CODCXA")         |
+| fki_FK_TMOV_FCFO      | CREATE INDEX "fki_FK_TMOV_FCFO" ON public."TMOV" USING btree ("IDBANCODADOS", "CODCOLCFO", "CODCFO")         |
+| fki_FK_TMOV_GFILIAL   | CREATE INDEX "fki_FK_TMOV_GFILIAL" ON public."TMOV" USING btree ("IDBANCODADOS", "CODCOLIGADA", "CODFILIAL") |
+| fki_FK_TMOV_GCOLIGADA | CREATE INDEX "fki_FK_TMOV_GCOLIGADA" ON public."TMOV" USING btree ("IDBANCODADOS", "CODCOLIGADA")            |
+| TMOV_pkey             | CREATE UNIQUE INDEX "TMOV_pkey" ON public."TMOV" USING btree ("IDMOV", "CODCOLIGADA", "IDBANCODADOS")        |
++-----------------------+--------------------------------------------------------------------------------------------------------------+
+(6 registros)
+
+--- 4. TRIGGERS ---
++--------------+--------------------+
+| trigger_name | trigger_definition |
++--------------+--------------------+
++--------------+--------------------+
+(0 registro)
+
+--- 5. TABELAS REFERENCIADAS (FK saindo) ---
++-------------------+--------------+-------------------+------------------+-------------------+
+|  constraint_name  | column_name  | referenced_schema | referenced_table | referenced_column |
++-------------------+--------------+-------------------+------------------+-------------------+
+| FK_TMOV_GCOLIGADA | IDBANCODADOS | public            | GCOLIGADA        | IDBANCODADOS      |
+| FK_TMOV_GCOLIGADA | CODCOLIGADA  | public            | GCOLIGADA        | IDBANCODADOS      |
+| FK_TMOV_GCOLIGADA | IDBANCODADOS | public            | GCOLIGADA        | CODCOLIGADA       |
+| FK_TMOV_GCOLIGADA | CODCOLIGADA  | public            | GCOLIGADA        | CODCOLIGADA       |
+| FK_TMOV_GFILIAL   | IDBANCODADOS | public            | GFILIAL          | IDBANCODADOS      |
+| FK_TMOV_GFILIAL   | CODCOLIGADA  | public            | GFILIAL          | IDBANCODADOS      |
+| FK_TMOV_GFILIAL   | CODFILIAL    | public            | GFILIAL          | IDBANCODADOS      |
+| FK_TMOV_GFILIAL   | IDBANCODADOS | public            | GFILIAL          | CODCOLIGADA       |
+| FK_TMOV_GFILIAL   | CODCOLIGADA  | public            | GFILIAL          | CODCOLIGADA       |
+| FK_TMOV_GFILIAL   | CODFILIAL    | public            | GFILIAL          | CODCOLIGADA       |
+| FK_TMOV_GFILIAL   | IDBANCODADOS | public            | GFILIAL          | CODFILIAL         |
+| FK_TMOV_GFILIAL   | CODCOLIGADA  | public            | GFILIAL          | CODFILIAL         |
+| FK_TMOV_GFILIAL   | CODFILIAL    | public            | GFILIAL          | CODFILIAL         |
+| FK_TMOV_FCXA      | IDBANCODADOS | public            | FCXA             | IDBANCODADOS      |
+| FK_TMOV_FCXA      | CODCOLCXA    | public            | FCXA             | IDBANCODADOS      |
+| FK_TMOV_FCXA      | CODCXA       | public            | FCXA             | IDBANCODADOS      |
+| FK_TMOV_FCXA      | IDBANCODADOS | public            | FCXA             | CODCOLIGADA       |
+| FK_TMOV_FCXA      | CODCOLCXA    | public            | FCXA             | CODCOLIGADA       |
+| FK_TMOV_FCXA      | CODCXA       | public            | FCXA             | CODCOLIGADA       |
+| FK_TMOV_FCXA      | IDBANCODADOS | public            | FCXA             | CODCXA            |
+| FK_TMOV_FCXA      | CODCOLCXA    | public            | FCXA             | CODCXA            |
+| FK_TMOV_FCXA      | CODCXA       | public            | FCXA             | CODCXA            |
+| FK_TMOV_GCUSTO    | IDBANCODADOS | public            | GCCUSTO          | IDBANCODADOS      |
+| FK_TMOV_GCUSTO    | CODCOLIGADA  | public            | GCCUSTO          | IDBANCODADOS      |
+| FK_TMOV_GCUSTO    | CODCCUSTO    | public            | GCCUSTO          | IDBANCODADOS      |
+| FK_TMOV_GCUSTO    | IDBANCODADOS | public            | GCCUSTO          | CODCOLIGADA       |
+| FK_TMOV_GCUSTO    | CODCOLIGADA  | public            | GCCUSTO          | CODCOLIGADA       |
+| FK_TMOV_GCUSTO    | CODCCUSTO    | public            | GCCUSTO          | CODCOLIGADA       |
+| FK_TMOV_GCUSTO    | IDBANCODADOS | public            | GCCUSTO          | CODCCUSTO         |
+| FK_TMOV_GCUSTO    | CODCOLIGADA  | public            | GCCUSTO          | CODCCUSTO         |
+| FK_TMOV_GCUSTO    | CODCCUSTO    | public            | GCCUSTO          | CODCCUSTO         |
+| FK_TMOV_FCFO      | IDBANCODADOS | public            | FCFO             | IDBANCODADOS      |
+| FK_TMOV_FCFO      | CODCOLCFO    | public            | FCFO             | IDBANCODADOS      |
+| FK_TMOV_FCFO      | CODCFO       | public            | FCFO             | IDBANCODADOS      |
+| FK_TMOV_FCFO      | IDBANCODADOS | public            | FCFO             | CODCOLIGADA       |
+| FK_TMOV_FCFO      | CODCOLCFO    | public            | FCFO             | CODCOLIGADA       |
+| FK_TMOV_FCFO      | CODCFO       | public            | FCFO             | CODCOLIGADA       |
+| FK_TMOV_FCFO      | IDBANCODADOS | public            | FCFO             | CODCFO            |
+| FK_TMOV_FCFO      | CODCOLCFO    | public            | FCFO             | CODCFO            |
+| FK_TMOV_FCFO      | CODCFO       | public            | FCFO             | CODCFO            |
++-------------------+--------------+-------------------+------------------+-------------------+
+(40 registros)
+
+--- 6. QUEM REFERENCIA ESSA TABELA (FK entrando) ---
++--------------+------------+-------------+-----------------+-------------------+
+| table_schema | table_name | column_name | constraint_name | referenced_column |
++--------------+------------+-------------+-----------------+-------------------+
++--------------+------------+-------------+-----------------+-------------------+
+(0 registro)
+
+--- 7. SEQUENCIAS ---
++-------------+----------------+
+| column_name | column_default |
++-------------+----------------+
++-------------+----------------+
+(0 registro)
+
+Uso de paginação está desabilitado.
+Estilo de borda é 2.
+============================================================
+TABELA: GCCUSTO
+============================================================
+--- 1. COLUNAS ---
++------------------+--------------+-------------------+--------------------------+-------------------+---------------+-------------+----------------+
+| ordinal_position | column_name  |     data_type     | character_maximum_length | numeric_precision | numeric_scale | is_nullable | column_default |
++------------------+--------------+-------------------+--------------------------+-------------------+---------------+-------------+----------------+
+|                1 | IDBANCODADOS | smallint          |                          |                16 |             0 | NO          |                |
+|                2 | CODCOLIGADA  | smallint          |                          |                16 |             0 | NO          |                |
+|                3 | CODCCUSTO    | character varying |                       25 |                   |               | NO          |                |
+|                4 | NOME         | character varying |                      100 |                   |               | YES         |                |
+|                5 | CODREDUZIDO  | character varying |                       25 |                   |               | NO          |                |
+|                6 | ENVIASPED    | boolean           |                          |                   |               | NO          |                |
+|                7 | ID           | integer           |                          |                32 |             0 | NO          |                |
++------------------+--------------+-------------------+--------------------------+-------------------+---------------+-------------+----------------+
+(7 registros)
+
+--- 2. CONSTRAINTS ---
++---------------------+-------------+-------------------------------------------------------------------------------------------------------------+
+|   constraint_name   |    tipo     |                                                  definicao                                                  |
++---------------------+-------------+-------------------------------------------------------------------------------------------------------------+
+| FK_GCUSTO_GCOLIGADA | FOREIGN KEY | FOREIGN KEY ("IDBANCODADOS", "CODCOLIGADA") REFERENCES "GCOLIGADA"("IDBANCODADOS", "CODCOLIGADA") NOT VALID |
+| GCCUSTO_pkey        | PRIMARY KEY | PRIMARY KEY ("IDBANCODADOS", "CODCOLIGADA", "CODCCUSTO")                                                    |
++---------------------+-------------+-------------------------------------------------------------------------------------------------------------+
+(2 registros)
+
+--- 3. INDEXES ---
++-------------------------+-----------------------------------------------------------------------------------------------------------------+
+|        indexname        |                                                    indexdef                                                     |
++-------------------------+-----------------------------------------------------------------------------------------------------------------+
+| fki_FK_GCUSTO_GCOLIGADA | CREATE INDEX "fki_FK_GCUSTO_GCOLIGADA" ON public."GCCUSTO" USING btree ("IDBANCODADOS", "CODCOLIGADA")          |
+| GCCUSTO_pkey            | CREATE UNIQUE INDEX "GCCUSTO_pkey" ON public."GCCUSTO" USING btree ("IDBANCODADOS", "CODCOLIGADA", "CODCCUSTO") |
++-------------------------+-----------------------------------------------------------------------------------------------------------------+
+(2 registros)
+
+--- 4. TRIGGERS ---
++--------------+--------------------+
+| trigger_name | trigger_definition |
++--------------+--------------------+
++--------------+--------------------+
+(0 registro)
+
+--- 5. TABELAS REFERENCIADAS (FK saindo) ---
++---------------------+--------------+-------------------+------------------+-------------------+
+|   constraint_name   | column_name  | referenced_schema | referenced_table | referenced_column |
++---------------------+--------------+-------------------+------------------+-------------------+
+| FK_GCUSTO_GCOLIGADA | IDBANCODADOS | public            | GCOLIGADA        | IDBANCODADOS      |
+| FK_GCUSTO_GCOLIGADA | CODCOLIGADA  | public            | GCOLIGADA        | IDBANCODADOS      |
+| FK_GCUSTO_GCOLIGADA | IDBANCODADOS | public            | GCOLIGADA        | CODCOLIGADA       |
+| FK_GCUSTO_GCOLIGADA | CODCOLIGADA  | public            | GCOLIGADA        | CODCOLIGADA       |
++---------------------+--------------+-------------------+------------------+-------------------+
+(4 registros)
+
+--- 6. QUEM REFERENCIA ESSA TABELA (FK entrando) ---
++--------------+-----------------+--------------+---------------------------+-------------------+
+| table_schema |   table_name    | column_name  |      constraint_name      | referenced_column |
++--------------+-----------------+--------------+---------------------------+-------------------+
+| public       | CSALDOEXERCICIO | IDBANCODADOS | FK_CSALDOEXERCICIO_GCUSTO | IDBANCODADOS      |
+| public       | CSALDOEXERCICIO | IDBANCODADOS | FK_CSALDOEXERCICIO_GCUSTO | CODCOLIGADA       |
+| public       | CSALDOEXERCICIO | IDBANCODADOS | FK_CSALDOEXERCICIO_GCUSTO | CODCCUSTO         |
+| public       | CSALDOEXERCICIO | CODCOLIGADA  | FK_CSALDOEXERCICIO_GCUSTO | IDBANCODADOS      |
+| public       | CSALDOEXERCICIO | CODCOLIGADA  | FK_CSALDOEXERCICIO_GCUSTO | CODCOLIGADA       |
+| public       | CSALDOEXERCICIO | CODCOLIGADA  | FK_CSALDOEXERCICIO_GCUSTO | CODCCUSTO         |
+| public       | CSALDOEXERCICIO | CODCCUSTO    | FK_CSALDOEXERCICIO_GCUSTO | IDBANCODADOS      |
+| public       | CSALDOEXERCICIO | CODCCUSTO    | FK_CSALDOEXERCICIO_GCUSTO | CODCOLIGADA       |
+| public       | CSALDOEXERCICIO | CODCCUSTO    | FK_CSALDOEXERCICIO_GCUSTO | CODCCUSTO         |
+| public       | FLAN            | IDBANCODADOS | FK_FLAN_GCCUSTO           | IDBANCODADOS      |
+| public       | FLAN            | IDBANCODADOS | FK_FLAN_GCCUSTO           | CODCOLIGADA       |
+| public       | FLAN            | IDBANCODADOS | FK_FLAN_GCCUSTO           | CODCCUSTO         |
+| public       | FLAN            | CODCOLIGADA  | FK_FLAN_GCCUSTO           | IDBANCODADOS      |
+| public       | FLAN            | CODCOLIGADA  | FK_FLAN_GCCUSTO           | CODCOLIGADA       |
+| public       | FLAN            | CODCOLIGADA  | FK_FLAN_GCCUSTO           | CODCCUSTO         |
+| public       | FLAN            | CODCCUSTO    | FK_FLAN_GCCUSTO           | IDBANCODADOS      |
+| public       | FLAN            | CODCCUSTO    | FK_FLAN_GCCUSTO           | CODCOLIGADA       |
+| public       | FLAN            | CODCCUSTO    | FK_FLAN_GCCUSTO           | CODCCUSTO         |
+| public       | CPARTIDA        | IDBANCODADOS | FK_CPARTIDA_GCCUSTO       | IDBANCODADOS      |
+| public       | CPARTIDA        | IDBANCODADOS | FK_CPARTIDA_GCCUSTO       | CODCOLIGADA       |
+| public       | CPARTIDA        | IDBANCODADOS | FK_CPARTIDA_GCCUSTO       | CODCCUSTO         |
+| public       | CPARTIDA        | CODCOLIGADA  | FK_CPARTIDA_GCCUSTO       | IDBANCODADOS      |
+| public       | CPARTIDA        | CODCOLIGADA  | FK_CPARTIDA_GCCUSTO       | CODCOLIGADA       |
+| public       | CPARTIDA        | CODCOLIGADA  | FK_CPARTIDA_GCCUSTO       | CODCCUSTO         |
+| public       | CPARTIDA        | CODCCUSTO    | FK_CPARTIDA_GCCUSTO       | IDBANCODADOS      |
+| public       | CPARTIDA        | CODCCUSTO    | FK_CPARTIDA_GCCUSTO       | CODCOLIGADA       |
+| public       | CPARTIDA        | CODCCUSTO    | FK_CPARTIDA_GCCUSTO       | CODCCUSTO         |
+| public       | FLANBAIXA       | IDBANCODADOS | FK_FLANBAIXA_GCUSTO       | IDBANCODADOS      |
+| public       | FLANBAIXA       | IDBANCODADOS | FK_FLANBAIXA_GCUSTO       | CODCOLIGADA       |
+| public       | FLANBAIXA       | IDBANCODADOS | FK_FLANBAIXA_GCUSTO       | CODCCUSTO         |
+| public       | FLANBAIXA       | CODCOLIGADA  | FK_FLANBAIXA_GCUSTO       | IDBANCODADOS      |
+| public       | FLANBAIXA       | CODCOLIGADA  | FK_FLANBAIXA_GCUSTO       | CODCOLIGADA       |
+| public       | FLANBAIXA       | CODCOLIGADA  | FK_FLANBAIXA_GCUSTO       | CODCCUSTO         |
+| public       | FLANBAIXA       | CODCCUSTO    | FK_FLANBAIXA_GCUSTO       | IDBANCODADOS      |
+| public       | FLANBAIXA       | CODCCUSTO    | FK_FLANBAIXA_GCUSTO       | CODCOLIGADA       |
+| public       | FLANBAIXA       | CODCCUSTO    | FK_FLANBAIXA_GCUSTO       | CODCCUSTO         |
+| public       | TMOV            | IDBANCODADOS | FK_TMOV_GCUSTO            | IDBANCODADOS      |
+| public       | TMOV            | IDBANCODADOS | FK_TMOV_GCUSTO            | CODCOLIGADA       |
+| public       | TMOV            | IDBANCODADOS | FK_TMOV_GCUSTO            | CODCCUSTO         |
+| public       | TMOV            | CODCOLIGADA  | FK_TMOV_GCUSTO            | IDBANCODADOS      |
+| public       | TMOV            | CODCOLIGADA  | FK_TMOV_GCUSTO            | CODCOLIGADA       |
+| public       | TMOV            | CODCOLIGADA  | FK_TMOV_GCUSTO            | CODCCUSTO         |
+| public       | TMOV            | CODCCUSTO    | FK_TMOV_GCUSTO            | IDBANCODADOS      |
+| public       | TMOV            | CODCCUSTO    | FK_TMOV_GCUSTO            | CODCOLIGADA       |
+| public       | TMOV            | CODCCUSTO    | FK_TMOV_GCUSTO            | CODCCUSTO         |
++--------------+-----------------+--------------+---------------------------+-------------------+
+(45 registros)
+
+--- 7. SEQUENCIAS ---
++-------------+----------------+
+| column_name | column_default |
++-------------+----------------+
++-------------+----------------+
+(0 registro)
+

@@ -8,4 +8,6 @@ export interface Empresa {
   cgc: string;
   cidade: string;
   estado: string;
+  /** Flag do painel (não existe no TOTVS). Inativa some dos comboboxes de Fechamentos. */
+  ativo: boolean;
 }

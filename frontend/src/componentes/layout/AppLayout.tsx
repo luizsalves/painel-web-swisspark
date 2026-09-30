@@ -1,14 +1,14 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import type { ReactNode } from "react";
 import AppSidebar from "./AppSidebar";
 
 interface AppLayoutProps {
-  children: ReactNode;
+  children: ReactNode; className?: string;
 }
 
 const SIDEBAR_BRAND_THEME_KEY = "sp-sidebar-brand-theme";
 
-export default function AppLayout({ children }: AppLayoutProps) {
+export default function AppLayout({ children, className = "" }: AppLayoutProps) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isBrandLight, setIsBrandLight] = useState(() => {
     try {
@@ -36,7 +36,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   };
 
   return (
-    <div className="sp-app-shell">
+    <div className={`sp-app-shell ${className}`}>
       <AppSidebar
         isCollapsed={isSidebarCollapsed}
         isBrandLight={isBrandLight}

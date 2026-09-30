@@ -22,6 +22,26 @@ public class FechamentoValidacaoService(IFechamentoValidacaoRepository repositor
     private static readonly string[] PerfisConfere =
         [PerfisUsuario.Gerente, PerfisUsuario.Administrador];
 
+    public Task<List<ProdutividadeUsuarioViewModel>> ObterProdutividadeAsync(
+        string status, string? anoMes, CancellationToken cancellationToken)
+    {
+        var statusNormalizado = NormalizarStatusDeAcao(status)
+            ?? throw new RegraDeNegocioException(
+                $"Status inválido: \"{status}\". Use Preparado, Conferido ou Fechado.");
+
+        return repository.ContarPorUsuarioAsync(statusNormalizado, anoMes, cancellationToken);
+    }
+
+    // "Finalizado" é o rótulo da tela pra Fechado — no banco o valor é sempre "Fechado".
+    public static string? NormalizarStatusDeAcao(string? status) =>
+        status?.Trim().ToLowerInvariant() switch
+        {
+            "preparado" => StatusFechamento.Preparado,
+            "conferido" => StatusFechamento.Conferido,
+            "fechado" or "finalizado" => StatusFechamento.Fechado,
+            _ => null,
+        };
+
     public async Task<FechamentoValidacaoViewModel> ObterStatusAtualAsync(
         short codColigada, short codFilial, string codConta, string anoMes, CancellationToken cancellationToken)
     {
