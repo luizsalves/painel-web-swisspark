@@ -16,7 +16,7 @@ services:
       # do keys.json. Duas formas de entregar o segredo, escolha uma:
       #
       #   (a) por aqui, a partir do .env  â€” uma variÃ¡vel por conexÃ£o
-      #   (b) montando o keys.json da raiz â€” descomente o bloco volumes abaixo
+      #   (b) montando o secrets/keys.json â€” descomente o bloco volumes abaixo
       #
       # O caminho (b) escala melhor: as seis conexÃµes vÃªm do arquivo e ligar uma
       # nova nÃ£o exige mexer neste compose. Pelo (a), cada conexÃ£o que o cÃ³digo
@@ -43,13 +43,13 @@ services:
       Hosting__UseHttpsRedirection: "false"
       Hosting__UseForwardedHeaders: "true"
 
-    # (b) Usar o keys.json da raiz em vez do .env: descomente as quatro linhas.
+    # (b) Usar o secrets/keys.json em vez do .env: descomente as quatro linhas.
     # create_host_path: false faz o container falhar se o arquivo nÃ£o existir,
     # em vez de o Docker criar um diretÃ³rio vazio no lugar.
     volumes:
       - type: bind
-        source: ./keys.json
-        target: /app/keys.json
+        source: ./secrets/keys.json
+        target: /app/secrets/keys.json
         read_only: true
         bind:
           create_host_path: false

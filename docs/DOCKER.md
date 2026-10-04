@@ -56,15 +56,15 @@ chave que `ConnectionStrings:Contabil` do `keys.json`.
 
 Cada conexão nova que o código passar a usar precisa de mais uma linha no compose.
 
-**(b) Montando o `keys.json` que já está no servidor** — se você mantém o arquivo na raiz do
+**(b) Montando o `keys.json` que já está no servidor** — se você mantém o arquivo em `secrets/keys.json` no
 projeto e não quer repetir a senha no `.env`, descomente o bloco `volumes` do serviço `api`
 no `docker-compose.yml`:
 
 ```yaml
     volumes:
       - type: bind
-        source: ./keys.json
-        target: /app/keys.json
+        source: ./secrets/keys.json
+        target: /app/secrets/keys.json
         read_only: true
         bind:
           create_host_path: false
@@ -82,8 +82,8 @@ no compose.
 ### Onde a aplicação procura o keys.json
 
 Fora do container, ela sobe de diretório a partir da pasta do projeto .NET até achar um
-`keys.json` — até 5 níveis. Ou seja, o arquivo pode ficar na raiz do repositório, ao lado de
-`backend/` e `frontend/`, que é onde ele naturalmente vai parar.
+`secrets/keys.json` — até 5 níveis. O arquivo fica na pasta `secrets/` da raiz do
+repositório, ao lado de `backend/` e `frontend/`.
 
 `PAINEL_KEYS_FILE` tem precedência sobre a busca e aceita qualquer caminho.
 

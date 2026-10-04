@@ -25,10 +25,8 @@ var builder = WebApplication.CreateBuilder(args);
 // ==========================================================================
 // Segredos
 //
-// Connection strings ficam no keys.json, que não entra no repositório. Na
-// prática ele fica na raiz do projeto, ao lado de backend/ e frontend/ — e não
-// dentro da pasta do projeto .NET. Por isso a busca sobe de diretório em vez de
-// olhar só o ContentRoot.
+// Connection strings ficam em secrets/keys.json, fora do controle de versão.
+// A busca sobe a partir do ContentRoot até encontrar a pasta secrets.
 //
 // PAINEL_KEYS_FILE tem precedência e aponta para qualquer caminho.
 // Modelo do formato: keys.example.json, na raiz.
@@ -41,7 +39,7 @@ if (string.IsNullOrWhiteSpace(arquivoDeChaves))
 
     for (var nivel = 0; nivel < 5 && diretorio is not null; nivel++)
     {
-        var candidato = Path.Combine(diretorio.FullName, "keys.json");
+        var candidato = Path.Combine(diretorio.FullName, "secrets", "keys.json");
 
         if (File.Exists(candidato))
         {
@@ -81,7 +79,7 @@ if (string.IsNullOrWhiteSpace(conexaoDoPainel))
     // Dizer qual arquivo foi lido poupa a meia hora de procurar por que o valor
     // "está lá" mas a aplicação não enxerga.
     var ondeProcurou = arquivoDeChaves is null
-        ? $"Nenhum keys.json encontrado a partir de {builder.Environment.ContentRootPath} (subindo até 5 níveis)."
+        ? $"Nenhum secrets/keys.json encontrado a partir de {builder.Environment.ContentRootPath} (subindo até 5 níveis)."
         : $"keys.json lido: {arquivoDeChaves}";
 
     throw new InvalidOperationException(
@@ -127,7 +125,7 @@ var auth = builder.Configuration.GetSection(AuthOptions.SectionName).Get<AuthOpt
 if (Encoding.UTF8.GetByteCount(auth.JwtSigningKey) < 32)
 {
     var ondeProcurou = arquivoDeChaves is null
-        ? $"Nenhum keys.json encontrado a partir de {builder.Environment.ContentRootPath}."
+        ? $"Nenhum secrets/keys.json encontrado a partir de {builder.Environment.ContentRootPath}."
         : $"keys.json lido: {arquivoDeChaves}";
 
     throw new InvalidOperationException(

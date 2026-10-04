@@ -239,13 +239,14 @@ Trocar a chave invalida todas as sessões abertas.
 ### 3. Backend
 
 ```bash
-cp keys.example.json keys.json      # na RAIZ; preencha ConnectionStrings:Contabil
+mkdir -p secrets
+cp keys.example.json secrets/keys.json      # preencha ConnectionStrings:Contabil
 cd backend/PainelWebSwissPark.Api
 dotnet restore
 dotnet run
 ```
 
-O `keys.json` fica na raiz, ao lado de `backend/` e `frontend/`, e está no `.gitignore`. A
+O `keys.json` fica em `secrets/` na raiz do projeto, e está no `.gitignore`. A
 aplicação sobe de diretório a partir da pasta do projeto até encontrá-lo. `PAINEL_KEYS_FILE`
 aponta para outro caminho, se preferir.
 
