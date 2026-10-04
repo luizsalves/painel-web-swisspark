@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { RefreshCw } from "lucide-react";
 import AppHeader from "../../componentes/layout/AppHeader";
 import AppLayout from "../../componentes/layout/AppLayout";
 import Button from "../../componentes/ui/Button";
-import Input from "../../componentes/ui/Input";
+import Select from "../../componentes/ui/Select";
 import LoadingSpinner from "../../componentes/ui/LoadingSpinner";
 import Modal from "../../componentes/ui/Modal";
 import StatusBadge from "../../componentes/ui/StatusBadge";
@@ -26,17 +26,51 @@ function ordenarPorConta(contas: ContaContabilTotvs[]): ContaContabilTotvs[] {
 
 export default function ContasContabeis() {
   const [contas, setContas] = useState<ContaContabilTotvs[]>([]);
-  const [carregando, setCarregando] = useState(true);
+  const [carregando, setCarregando] = useState(false);
+  const [opcoesContas, setOpcoesContas] = useState<ContaContabilTotvs[]>([]);
+  const [carregandoOpcoes, setCarregandoOpcoes] = useState(false);
+  const [consultou, setConsultou] = useState(false);
   const [erroDaLista, setErroDaLista] = useState<string | null>(null);
-  const [busca, setBusca] = useState("");
 
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
 
+  const [empresaSelecionada, setEmpresaSelecionada] = useState("");
+  const [contaSelecionada, setContaSelecionada] = useState("");
+  const [somenteBsb, setSomenteBsb] = useState(true);
+  const [todasEmpresas, setTodasEmpresas] = useState(false);
+  const buscandoEmpresas = useRef(false);
+
   useEffect(() => {
-    listarEmpresas()
-      .then(setEmpresas)
-      .catch(() => setEmpresas([]));
+    let cancelado = false;
+    listarEmpresas(true).then((lista) => {
+      if (cancelado) return;
+      setEmpresas(lista);
+      const padrao = lista.find((empresa) =>
+        empresa.nome.toLocaleUpperCase("pt-BR").replace(/[^A-Z0-9]/g, "") === "AEPLAGROPECUARIALTDA"
+      );
+      if (!padrao) throw new Error("AEPL AGROPECUARIA LTDA não encontrada no banco BSB Brasília.");
+      setEmpresaSelecionada(String(padrao.codColigada));
+    }).catch((erro) => {
+      if (cancelado) return;
+      setErroDaLista(extrairMensagemDeErro(erro, "Não foi possível carregar a empresa padrão."));
+      setCarregando(false);
+    });
+    return () => { cancelado = true; };
   }, []);
+
+  async function carregarTodasEmpresas() {
+    if (todasEmpresas || buscandoEmpresas.current) return;
+    buscandoEmpresas.current = true;
+    try {
+      const lista = await listarEmpresas();
+      setEmpresas(lista);
+      setTodasEmpresas(true);
+    } catch (erro) {
+      setErroDaLista(extrairMensagemDeErro(erro, "Não foi possível carregar as empresas."));
+    } finally {
+      buscandoEmpresas.current = false;
+    }
+  }
 
   // Uma coligada pode ter várias filiais — junta todas as filiais (e o nome,
   // que é o mesmo pra todas elas) por coligada, pra exibir na tabela.
@@ -54,35 +88,38 @@ export default function ContasContabeis() {
   const [erroDaConfirmacao, setErroDaConfirmacao] = useState<string | null>(null);
   const [alterandoStatus, setAlterandoStatus] = useState(false);
 
-  const carregarLista = useCallback(async () => {
-    setCarregando(true);
-    setErroDaLista(null);
+  // Prepara apenas as opcoes do combo; a tabela depende do botao Carregar.
+  useEffect(() => {
+    if (!empresaSelecionada) return;
+    let cancelado = false;
+    setCarregandoOpcoes(true);
+    setOpcoesContas([]);
+    listarContasContabeis({ somenteBsb, codColigada: Number(empresaSelecionada) })
+      .then((lista) => { if (!cancelado) setOpcoesContas(ordenarPorConta(lista)); })
+      .catch((erro) => {
+        if (!cancelado) setErroDaLista(extrairMensagemDeErro(erro, "Erro ao carregar as opcoes de contas."));
+      })
+      .finally(() => { if (!cancelado) setCarregandoOpcoes(false); });
+    return () => { cancelado = true; };
+  }, [empresaSelecionada, somenteBsb]);
 
+  async function carregarContas() {
+    if (!empresaSelecionada || carregando) return;
+    setCarregando(true);
+    setConsultou(true);
+    setErroDaLista(null);
+    setContas([]);
     try {
-      const lista = await listarContasContabeis();
-      setContas(ordenarPorConta(lista));
+      const lista = await listarContasContabeis({ somenteBsb, codColigada: Number(empresaSelecionada) });
+      setContas(ordenarPorConta(contaSelecionada
+        ? lista.filter((conta) => conta.codConta === contaSelecionada)
+        : lista));
     } catch (erro) {
-      setErroDaLista(extrairMensagemDeErro(erro, "Não foi possível carregar as contas contábeis."));
+      setErroDaLista(extrairMensagemDeErro(erro, "Erro ao carregar as contas contabeis."));
     } finally {
       setCarregando(false);
     }
-  }, []);
-
-  useEffect(() => {
-    void carregarLista();
-  }, [carregarLista]);
-
-  const listaFiltrada = useMemo(() => {
-    const termo = busca.trim().toLocaleLowerCase("pt-BR");
-    if (!termo) return contas;
-
-    return contas.filter(
-      (conta) =>
-        conta.codConta.toLocaleLowerCase("pt-BR").includes(termo) ||
-        conta.reduzido.toLocaleLowerCase("pt-BR").includes(termo) ||
-        conta.descricao.toLocaleLowerCase("pt-BR").includes(termo)
-    );
-  }, [contas, busca]);
+  }
 
   function guardarNaLista(salva: ContaContabilTotvs) {
     setContas((atuais) => ordenarPorConta(atuais.map((conta) => (conta.id === salva.id ? salva : conta))));
@@ -167,28 +204,55 @@ export default function ContasContabeis() {
       />
 
       <main className="sp-management">
-        <div className="sp-management__toolbar">
-          <div className="sp-management__search">
-            <Input
-              aria-label="Buscar contas contábeis"
-              placeholder="Buscar por código, reduzido ou descrição"
-              value={busca}
-              onChange={(event) => setBusca(event.target.value)}
-              leadingIcon={<Search size={18} />}
-            />
-          </div>
-          <span className="sp-management__count">
-            {listaFiltrada.length} {listaFiltrada.length === 1 ? "conta" : "contas"}
-          </span>
+        <div className="sp-contas__filtros">
+          <Select
+            id="filtro-empresa" label="Empresa" value={empresaSelecionada}
+            disabled={carregando}
+            onFocus={() => void carregarTodasEmpresas()}
+            onPointerDown={() => void carregarTodasEmpresas()}
+            onChange={(event) => {
+              setEmpresaSelecionada(event.target.value);
+              setContaSelecionada("");
+              setContas([]);
+              setConsultou(false);
+              setSomenteBsb(false);
+            }}
+            options={[
+              ...(!empresaSelecionada ? [{ value: "", label: "Selecione uma empresa" }] : []),
+              ...Array.from(empresasPorColigada, ([codigo, filiais]) => ({
+                value: String(codigo), label: `${filiais[0].nome} (${codigo})`,
+              })),
+            ]}
+          />
+          <Select
+            id="filtro-conta" label="Conta contábil" value={contaSelecionada}
+            disabled={carregando || carregandoOpcoes || !empresaSelecionada}
+            onChange={(event) => {
+              setContaSelecionada(event.target.value);
+              setContas([]);
+              setConsultou(false);
+            }}
+            options={[
+              { value: "", label: "Todas as contas da empresa" },
+              ...opcoesContas.map((conta) => ({ value: conta.codConta, label: `${conta.codConta} - ${conta.descricao}` })),
+            ]}
+          />
+          <Button
+            type="button" icon={<RefreshCw size={18} />}
+            isLoading={carregando}
+            disabled={!empresaSelecionada || carregandoOpcoes}
+            onClick={() => void carregarContas()}
+          >
+            Carregar
+          </Button>
         </div>
-
         {erroDaLista && (
           <p className="sp-usuarios__erro" role="alert">
             {erroDaLista}
           </p>
         )}
 
-        <section className="sp-management__table" aria-label="Lista de contas contábeis">
+        {consultou && <section className="sp-management__table" aria-label="Lista de contas contábeis">
           {carregando ? (
             <div className="sp-usuarios__carregando">
               <LoadingSpinner size={28} />
@@ -196,12 +260,12 @@ export default function ContasContabeis() {
           ) : (
             <Table
               columns={colunas}
-              data={listaFiltrada}
+              data={contas}
               getRowId={(row) => row.id}
               emptyMessage="Nenhuma conta contábil encontrada."
             />
           )}
-        </section>
+        </section>}
       </main>
 
       <Modal

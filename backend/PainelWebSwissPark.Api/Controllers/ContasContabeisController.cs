@@ -20,9 +20,9 @@ public class ContasContabeisController(
     /// o flag de ativo/inativo do próprio painel.
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> Get(CancellationToken cancellationToken)
+    public async Task<IActionResult> Get(CancellationToken cancellationToken, [FromQuery] bool somenteBsb = false, [FromQuery] short? codColigada = null)
     {
-        var contas = await contasContabeisService.ListarAsync(cancellationToken);
+        var contas = await contasContabeisService.ListarAsync(cancellationToken, somenteBsb, codColigada);
         return Ok(contas);
     }
 

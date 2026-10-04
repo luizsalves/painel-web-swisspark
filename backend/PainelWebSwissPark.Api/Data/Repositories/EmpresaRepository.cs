@@ -54,13 +54,19 @@ public class EmpresaRepository(AppDbContext context) : IEmpresaRepository
         ) X ORDER BY X.NOME ASC
         """;
 
-    public async Task<List<GfilialUniao>> ListarTodasColigadasAsync(CancellationToken cancellationToken)
+    public async Task<List<GfilialUniao>> ListarTodasColigadasAsync(CancellationToken cancellationToken, bool somenteBsb = false)
     {
         // Sem .OrderBy() aqui: compor LINQ em cima de SqlQueryRaw faz o EF Core
         // envolver o texto inteiro como subconsulta, e aí o "ORDER BY X.NOME ASC"
         // que já existe dentro do SQL bruto vira um ORDER BY dentro de subconsulta
         // sem TOP/OFFSET — o SQL Server rejeita isso (erro 1033). A ordenação por
         // Nome já é feita no próprio texto do SQL, não precisa duplicar.
-        return await context.Database.SqlQueryRaw<GfilialUniao>(Sql).ToListAsync(cancellationToken);
+        return await context.Database.SqlQueryRaw<GfilialUniao>(somenteBsb ? """
+            SELECT DISTINCT CODCOLIGADA, CODFILIAL,
+                LTRIM(RTRIM(NOMEFANTASIA)) AS NOMEFANTASIA, LTRIM(RTRIM(NOME)) AS NOME,
+                LTRIM(RTRIM(CGC)) AS CGC, LTRIM(RTRIM(CIDADE)) AS CIDADE, LTRIM(RTRIM(ESTADO)) AS ESTADO
+            FROM corpore_bsb.dbo.GFILIAL WHERE ATIVO = 1
+            ORDER BY NOME
+            """ : Sql).ToListAsync(cancellationToken);
     }
 }

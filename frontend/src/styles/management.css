@@ -245,3 +245,14 @@
     gap: 6px;
   }
 }
+
+.sp-contas__filtros {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+  align-items: end;
+  gap: 16px;
+}
+
+@media (max-width: 640px) {
+  .sp-contas__filtros { grid-template-columns: 1fr; }
+}

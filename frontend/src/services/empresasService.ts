@@ -3,8 +3,8 @@ import type { Empresa } from "../interfaces/Empresa";
 
 const RECURSO = "/empresas";
 
-export async function listarEmpresas(): Promise<Empresa[]> {
-  const { data } = await api.get<Empresa[]>(RECURSO);
+export async function listarEmpresas(somenteBsb = false): Promise<Empresa[]> {
+  const { data } = await api.get<Empresa[]>(RECURSO, { params: { somenteBsb } });
   return data;
 }
 

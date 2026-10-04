@@ -17,9 +17,9 @@ public class ContasContabeisTotvsService(
     private static readonly TimeSpan DuracaoCache = TimeSpan.FromHours(6);
     private const string ChaveCache = "contascontabeis:totvs";
 
-    public async Task<List<ContaContabilViewModel>> ListarAsync(CancellationToken cancellationToken)
+    public async Task<List<ContaContabilViewModel>> ListarAsync(CancellationToken cancellationToken, bool somenteBsb = false, short? codColigada = null)
     {
-        var contas = await ObterContasAsync(cancellationToken);
+        var contas = await ObterContasAsync(cancellationToken, somenteBsb, codColigada);
         var status = await contaContabilConfiguracaoRepository.ListarStatusAsync(cancellationToken);
 
         return contas.Select(c => ParaViewModel(c, status)).ToList();
@@ -37,14 +37,14 @@ public class ContasContabeisTotvsService(
         return ParaViewModel(conta, new Dictionary<(short, string), bool> { [(codColigada, codConta)] = ativo });
     }
 
-    private async Task<List<CcontaUniao>> ObterContasAsync(CancellationToken cancellationToken)
+    private async Task<List<CcontaUniao>> ObterContasAsync(CancellationToken cancellationToken, bool somenteBsb = false, short? codColigada = null)
     {
-        if (cache.TryGetValue(ChaveCache, out List<CcontaUniao>? emCache) && emCache is not null)
+        if (cache.TryGetValue($"{ChaveCache}:{somenteBsb}:{codColigada}", out List<CcontaUniao>? emCache) && emCache is not null)
         {
             return emCache;
         }
 
-        var contas = await contaContabilRepository.ListarTodasColigadasAsync(cancellationToken);
+        var contas = await contaContabilRepository.ListarTodasColigadasAsync(cancellationToken, somenteBsb, codColigada);
 
         var deduplicadas = contas
             // CODCOLIGADA+CODCONTA é a chave de negócio real, mas REDUZIDO/DESCRICAO
@@ -54,7 +54,7 @@ public class ContasContabeisTotvsService(
             .Select(g => g.First())
             .ToList();
 
-        cache.Set(ChaveCache, deduplicadas, DuracaoCache);
+        cache.Set($"{ChaveCache}:{somenteBsb}:{codColigada}", deduplicadas, DuracaoCache);
         return deduplicadas;
     }
 

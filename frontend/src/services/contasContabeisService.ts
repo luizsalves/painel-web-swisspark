@@ -3,8 +3,8 @@ import type { ContaContabilTotvs } from "../interfaces/ContaContabil";
 
 const RECURSO = "/contascontabeis";
 
-export async function listarContasContabeis(): Promise<ContaContabilTotvs[]> {
-  const { data } = await api.get<ContaContabilTotvs[]>(RECURSO);
+export async function listarContasContabeis(params?: { somenteBsb?: boolean; codColigada?: number }): Promise<ContaContabilTotvs[]> {
+  const { data } = await api.get<ContaContabilTotvs[]>(RECURSO, { params });
   return data;
 }
 

@@ -42,10 +42,16 @@ public class ContaContabilTotvsRepository(AppDbContext context) : IContaContabil
         FROM corpore_neu.dbo.CCONTA
         """;
 
-    public async Task<List<CcontaUniao>> ListarTodasColigadasAsync(CancellationToken cancellationToken)
+    public async Task<List<CcontaUniao>> ListarTodasColigadasAsync(CancellationToken cancellationToken, bool somenteBsb = false, short? codColigada = null)
     {
-        return await context.Database.SqlQueryRaw<CcontaUniao>(Sql)
-            .OrderBy(c => c.CodConta)
+        var query = context.Database.SqlQueryRaw<CcontaUniao>(somenteBsb ? """
+            SELECT DISTINCT CODCOLIGADA, LTRIM(RTRIM(CODCONTA)) AS CODCONTA,
+                LTRIM(RTRIM(REDUZIDO)) AS REDUZIDO, LTRIM(RTRIM(DESCRICAO)) AS DESCRICAO
+            FROM corpore_bsb.dbo.CCONTA
+            """ : Sql);
+        if (codColigada.HasValue)
+            query = query.Where(c => c.CodColigada == codColigada.Value);
+        return await query.OrderBy(c => c.CodConta)
             .ToListAsync(cancellationToken);
     }
 }

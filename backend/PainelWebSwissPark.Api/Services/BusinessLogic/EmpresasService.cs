@@ -18,9 +18,9 @@ public class EmpresasService(
     private static readonly TimeSpan DuracaoCacheFiliais = TimeSpan.FromHours(6);
     private const string ChaveCacheFiliais = "empresas:totvs-filiais";
 
-    public async Task<List<EmpresaViewModel>> ListarAsync(CancellationToken cancellationToken)
+    public async Task<List<EmpresaViewModel>> ListarAsync(CancellationToken cancellationToken, bool somenteBsb = false)
     {
-        var filiais = await ObterFiliaisAsync(cancellationToken);
+        var filiais = await ObterFiliaisAsync(cancellationToken, somenteBsb);
         var status = await empresaConfiguracaoRepository.ListarStatusAsync(cancellationToken);
 
         return filiais
@@ -40,15 +40,15 @@ public class EmpresasService(
         return ParaViewModel(filial, new Dictionary<(short, short), bool> { [(codColigada, codFilial)] = ativo });
     }
 
-    private async Task<List<GfilialUniao>> ObterFiliaisAsync(CancellationToken cancellationToken)
+    private async Task<List<GfilialUniao>> ObterFiliaisAsync(CancellationToken cancellationToken, bool somenteBsb = false)
     {
-        if (cache.TryGetValue(ChaveCacheFiliais, out List<GfilialUniao>? emCache) && emCache is not null)
+        if (cache.TryGetValue($"{ChaveCacheFiliais}:{somenteBsb}", out List<GfilialUniao>? emCache) && emCache is not null)
         {
             return emCache;
         }
 
-        var filiais = await empresaRepository.ListarTodasColigadasAsync(cancellationToken);
-        cache.Set(ChaveCacheFiliais, filiais, DuracaoCacheFiliais);
+        var filiais = await empresaRepository.ListarTodasColigadasAsync(cancellationToken, somenteBsb);
+        cache.Set($"{ChaveCacheFiliais}:{somenteBsb}", filiais, DuracaoCacheFiliais);
         return filiais;
     }
 

@@ -20,9 +20,9 @@ public class EmpresasController(
     /// ativo/inativo do próprio painel.
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> Get(CancellationToken cancellationToken)
+    public async Task<IActionResult> Get(CancellationToken cancellationToken, [FromQuery] bool somenteBsb = false)
     {
-        var empresas = await empresasService.ListarAsync(cancellationToken);
+        var empresas = await empresasService.ListarAsync(cancellationToken, somenteBsb);
         return Ok(empresas);
     }
 
