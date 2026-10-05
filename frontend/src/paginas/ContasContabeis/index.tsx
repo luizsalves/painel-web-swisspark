@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import AppHeader from "../../componentes/layout/AppHeader";
 import AppLayout from "../../componentes/layout/AppLayout";
@@ -10,13 +10,9 @@ import StatusBadge from "../../componentes/ui/StatusBadge";
 import Table from "../../componentes/ui/Table";
 import type { TableColumn } from "../../componentes/ui/Table";
 import { extrairMensagemDeErro } from "../../services/api";
-import { alterarStatusContaContabil, listarContasContabeis } from "../../services/contasContabeisService";
-import { listarEmpresas } from "../../services/empresasService";
-import type { ContaContabilTotvs } from "../../interfaces/ContaContabil";
-import type { Empresa } from "../../interfaces/Empresa";
+import { alterarStatusContaContabil, listarColigadasFiliaisContabeis, listarContasContabeis, listarEmpresasContabeis } from "../../services/contasContabeisService";
+import type { ColigadaFilialContabil, ContaContabilTotvs, EmpresaContabil } from "../../interfaces/ContaContabil";
 
-/** CODCOLIGADA 0 no TOTVS é o cadastro global/compartilhado — não é uma empresa de verdade. */
-const COLIGADA_GLOBAL = 0;
 
 function ordenarPorConta(contas: ContaContabilTotvs[]): ContaContabilTotvs[] {
   return [...contas].sort(
@@ -29,91 +25,95 @@ export default function ContasContabeis() {
   const [carregando, setCarregando] = useState(false);
   const [opcoesContas, setOpcoesContas] = useState<ContaContabilTotvs[]>([]);
   const [carregandoOpcoes, setCarregandoOpcoes] = useState(false);
+  const [opcoesCarregadas, setOpcoesCarregadas] = useState(false);
   const [consultou, setConsultou] = useState(false);
   const [erroDaLista, setErroDaLista] = useState<string | null>(null);
 
-  const [empresas, setEmpresas] = useState<Empresa[]>([]);
+  const [empresas, setEmpresas] = useState<EmpresaContabil[]>([]);
+  const [coligadasFiliais, setColigadasFiliais] = useState<ColigadaFilialContabil[]>([]);
+  const [carregandoEmpresas, setCarregandoEmpresas] = useState(true);
+  const [carregandoFiliais, setCarregandoFiliais] = useState(false);
 
-  const [empresaSelecionada, setEmpresaSelecionada] = useState("");
+  // null = ainda não escolhido; "" = opção Todos escolhida explicitamente.
+  const [empresaSelecionada, setEmpresaSelecionada] = useState<string | null>(null);
+  const [filialSelecionada, setFilialSelecionada] = useState<string | null>(null);
   const [contaSelecionada, setContaSelecionada] = useState("");
-  const [somenteBsb, setSomenteBsb] = useState(true);
-  const [todasEmpresas, setTodasEmpresas] = useState(false);
-  const buscandoEmpresas = useRef(false);
 
   useEffect(() => {
     let cancelado = false;
-    listarEmpresas(true).then((lista) => {
+    // Ao abrir a tela, apenas os nomes das empresas são consultados.
+    listarEmpresasContabeis().then((lista) => {
       if (cancelado) return;
       setEmpresas(lista);
-      const padrao = lista.find((empresa) =>
-        empresa.nome.toLocaleUpperCase("pt-BR").replace(/[^A-Z0-9]/g, "") === "AEPLAGROPECUARIALTDA"
-      );
-      if (!padrao) throw new Error("AEPL AGROPECUARIA LTDA não encontrada no banco BSB Brasília.");
-      setEmpresaSelecionada(String(padrao.codColigada));
     }).catch((erro) => {
       if (cancelado) return;
-      setErroDaLista(extrairMensagemDeErro(erro, "Não foi possível carregar a empresa padrão."));
-      setCarregando(false);
-    });
+      setErroDaLista(extrairMensagemDeErro(erro, "Não foi possível carregar as empresas."));
+    }).finally(() => { if (!cancelado) setCarregandoEmpresas(false); });
     return () => { cancelado = true; };
   }, []);
 
-  async function carregarTodasEmpresas() {
-    if (todasEmpresas || buscandoEmpresas.current) return;
-    buscandoEmpresas.current = true;
-    try {
-      const lista = await listarEmpresas();
-      setEmpresas(lista);
-      setTodasEmpresas(true);
-    } catch (erro) {
-      setErroDaLista(extrairMensagemDeErro(erro, "Não foi possível carregar as empresas."));
-    } finally {
-      buscandoEmpresas.current = false;
-    }
-  }
-
-  // Uma coligada pode ter várias filiais — junta todas as filiais (e o nome,
-  // que é o mesmo pra todas elas) por coligada, pra exibir na tabela.
+  // Os nomes identificam as empresas; os códigos das filiais vêm da CPARTIDA.
   const empresasPorColigada = useMemo(() => {
-    const mapa = new Map<number, Empresa[]>();
-    for (const empresa of empresas) {
-      const lista = mapa.get(empresa.codColigada) ?? [];
-      lista.push(empresa);
-      mapa.set(empresa.codColigada, lista);
-    }
-    return mapa;
+    return new Map(empresas.map((empresa) => [empresa.codColigada, empresa.nome]));
   }, [empresas]);
+
+  const filiais = useMemo(() =>
+    [...new Set(coligadasFiliais.map((linha) => linha.codFilial))].sort((a, b) => a - b),
+    [coligadasFiliais]
+  );
+  const opcoesContasUnicas = useMemo(() =>
+    [...new Map(opcoesContas.map((conta) => [conta.codConta, conta])).values()],
+    [opcoesContas]
+  );
+
+  useEffect(() => {
+    if (empresaSelecionada === null) return;
+    let cancelado = false;
+    setCarregandoFiliais(true);
+    listarColigadasFiliaisContabeis(empresaSelecionada === "" ? undefined : Number(empresaSelecionada))
+      .then((lista) => { if (!cancelado) setColigadasFiliais(lista); })
+      .catch((erro) => { if (!cancelado) setErroDaLista(extrairMensagemDeErro(erro, "Erro ao carregar as filiais.")); })
+      .finally(() => { if (!cancelado) setCarregandoFiliais(false); });
+    return () => { cancelado = true; };
+  }, [empresaSelecionada]);
 
   const [alvoDaConfirmacao, setAlvoDaConfirmacao] = useState<ContaContabilTotvs | null>(null);
   const [erroDaConfirmacao, setErroDaConfirmacao] = useState<string | null>(null);
   const [alterandoStatus, setAlterandoStatus] = useState(false);
 
-  // Prepara apenas as opcoes do combo; a tabela depende do botao Carregar.
+  // Contas só são consultadas depois da escolha da empresa e da filial.
   useEffect(() => {
-    if (!empresaSelecionada) return;
+    if (empresaSelecionada === null || filialSelecionada === null) return;
     let cancelado = false;
     setCarregandoOpcoes(true);
-    setOpcoesContas([]);
-    listarContasContabeis({ somenteBsb, codColigada: Number(empresaSelecionada) })
-      .then((lista) => { if (!cancelado) setOpcoesContas(ordenarPorConta(lista)); })
+    setOpcoesCarregadas(false);
+    listarContasContabeis({
+      codColigada: empresaSelecionada === "" ? undefined : Number(empresaSelecionada),
+      codFilial: filialSelecionada === "" ? undefined : Number(filialSelecionada),
+    })
+      .then((lista) => {
+        if (!cancelado) {
+          setOpcoesContas(ordenarPorConta(lista));
+          setOpcoesCarregadas(true);
+        }
+      })
       .catch((erro) => {
         if (!cancelado) setErroDaLista(extrairMensagemDeErro(erro, "Erro ao carregar as opcoes de contas."));
       })
       .finally(() => { if (!cancelado) setCarregandoOpcoes(false); });
     return () => { cancelado = true; };
-  }, [empresaSelecionada, somenteBsb]);
+  }, [empresaSelecionada, filialSelecionada]);
 
   async function carregarContas() {
-    if (!empresaSelecionada || carregando) return;
+    if (empresaSelecionada === null || filialSelecionada === null || carregando || !opcoesCarregadas) return;
     setCarregando(true);
     setConsultou(true);
     setErroDaLista(null);
     setContas([]);
     try {
-      const lista = await listarContasContabeis({ somenteBsb, codColigada: Number(empresaSelecionada) });
-      setContas(ordenarPorConta(contaSelecionada
-        ? lista.filter((conta) => conta.codConta === contaSelecionada)
-        : lista));
+      setContas(ordenarPorConta(opcoesContas.filter((conta) =>
+        (!contaSelecionada || conta.codConta === contaSelecionada)
+      )));
     } catch (erro) {
       setErroDaLista(extrairMensagemDeErro(erro, "Erro ao carregar as contas contabeis."));
     } finally {
@@ -149,27 +149,24 @@ export default function ContasContabeis() {
   const colunas: TableColumn<ContaContabilTotvs>[] = [
     { key: "coligada", header: "Coligada", render: (row) => row.codColigada },
     { key: "codConta", header: "Código", render: (row) => row.codConta },
+    { key: "reduzido", header: "Reduzido", render: (row) => row.reduzido || "—" },
     {
       key: "empresa",
       header: "Empresa",
       render: (row) => {
-        if (row.codColigada === COLIGADA_GLOBAL) return "Global (todas as empresas)";
-        const filiais = empresasPorColigada.get(row.codColigada);
-        return filiais?.[0]?.nome ?? "—";
+        return empresasPorColigada.get(row.codColigada) ?? "—";
       },
     },
     {
       key: "filial",
       header: "Filial",
       render: (row) => {
-        if (row.codColigada === COLIGADA_GLOBAL) return "—";
-        const filiais = empresasPorColigada.get(row.codColigada);
-        if (!filiais || filiais.length === 0) return "—";
-        return filiais.map((filial) => `${filial.codFilial} - ${filial.nomeFantasia}`).join(", ");
+        return row.codFiliais
+          .filter((codigo) => !filialSelecionada || codigo === Number(filialSelecionada))
+          .join(", ") || "—";
       },
     },
-    { key: "reduzido", header: "Reduzido", render: (row) => row.reduzido },
-    { key: "descricao", header: "Descrição", render: (row) => row.descricao },
+    { key: "descricao", header: "Descrição da conta", render: (row) => row.descricao || "—" },
     {
       key: "status",
       header: "Status",
@@ -200,47 +197,69 @@ export default function ContasContabeis() {
     <AppLayout>
       <AppHeader
         title="Contas Contábeis"
-        subtitle="Consulte o plano de contas e ative ou desative contas para a conciliação"
+        subtitle="Consulte as contas com lançamentos e ative ou desative contas para a conciliação"
       />
 
       <main className="sp-management">
         <div className="sp-contas__filtros">
           <Select
-            id="filtro-empresa" label="Empresa" value={empresaSelecionada}
-            disabled={carregando}
-            onFocus={() => void carregarTodasEmpresas()}
-            onPointerDown={() => void carregarTodasEmpresas()}
+            id="filtro-empresa" label="Empresa" value={empresaSelecionada ?? "__pendente__"}
+            disabled={carregando || carregandoEmpresas}
             onChange={(event) => {
               setEmpresaSelecionada(event.target.value);
+              setFilialSelecionada(null);
+              setColigadasFiliais([]);
+              setOpcoesContas([]);
+              setOpcoesCarregadas(false);
               setContaSelecionada("");
               setContas([]);
               setConsultou(false);
-              setSomenteBsb(false);
+              setErroDaLista(null);
             }}
             options={[
-              ...(!empresaSelecionada ? [{ value: "", label: "Selecione uma empresa" }] : []),
-              ...Array.from(empresasPorColigada, ([codigo, filiais]) => ({
-                value: String(codigo), label: `${filiais[0].nome} (${codigo})`,
-              })),
+              ...(empresaSelecionada === null ? [{ value: "__pendente__", label: "Selecione uma empresa" }] : []),
+              { value: "", label: "Todas as empresas" },
+              ...empresas.map((empresa) => ({ value: String(empresa.codColigada), label: empresa.nome })),
+            ]}
+          />
+          <p className="sp-contas__coligada" aria-live="polite">
+            Coligada: <strong>{empresaSelecionada === null ? "—" : empresaSelecionada || "Todas"}</strong>
+          </p>
+          <Select
+            id="filtro-filial" label="Filial" value={filialSelecionada ?? "__pendente__"}
+            disabled={carregando || carregandoFiliais || empresaSelecionada === null}
+            onChange={(event) => {
+              setFilialSelecionada(event.target.value);
+              setOpcoesContas([]);
+              setOpcoesCarregadas(false);
+              setContaSelecionada("");
+              setContas([]);
+              setConsultou(false);
+              setErroDaLista(null);
+            }}
+            options={[
+              ...(filialSelecionada === null ? [{ value: "__pendente__", label: "Selecione uma filial" }] : []),
+              { value: "", label: "Todas as filiais" },
+              ...filiais.map((filial) => ({ value: String(filial), label: String(filial) })),
             ]}
           />
           <Select
             id="filtro-conta" label="Conta contábil" value={contaSelecionada}
-            disabled={carregando || carregandoOpcoes || !empresaSelecionada}
+            disabled={carregando || !opcoesCarregadas}
             onChange={(event) => {
               setContaSelecionada(event.target.value);
               setContas([]);
               setConsultou(false);
             }}
             options={[
-              { value: "", label: "Todas as contas da empresa" },
-              ...opcoesContas.map((conta) => ({ value: conta.codConta, label: `${conta.codConta} - ${conta.descricao}` })),
+              { value: "", label: opcoesCarregadas ? "Todas as contas" : carregandoOpcoes ? "Carregando contas..." : "Selecione empresa e filial" },
+              ...opcoesContasUnicas.map((conta) => ({ value: conta.codConta, label: conta.descricao ? `${conta.codConta} - ${conta.descricao}` : conta.codConta })),
             ]}
           />
           <Button
             type="button" icon={<RefreshCw size={18} />}
             isLoading={carregando}
-            disabled={!empresaSelecionada || carregandoOpcoes}
+            disabled={empresaSelecionada === null || filialSelecionada === null || !opcoesCarregadas}
             onClick={() => void carregarContas()}
           >
             Carregar

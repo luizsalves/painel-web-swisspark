@@ -248,9 +248,19 @@
 
 .sp-contas__filtros {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+  grid-template-columns: minmax(0, 1.3fr) auto minmax(120px, .6fr) minmax(0, 1fr) auto;
   align-items: end;
   gap: 16px;
+}
+
+.sp-contas__coligada {
+  margin: 0;
+  padding-bottom: 10px;
+  white-space: nowrap;
+}
+
+@media (min-width: 641px) and (max-width: 1100px) {
+  .sp-contas__filtros { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 640px) {

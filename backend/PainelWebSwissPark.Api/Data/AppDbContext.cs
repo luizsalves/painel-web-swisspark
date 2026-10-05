@@ -23,6 +23,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.ToTable("GFILIAL");
             entity.HasKey(e => new { e.CodColigada, e.CodFilial });
 
+            entity.HasQueryFilter(e => e.CodColigada != 0);
+
             entity.Property(e => e.CodColigada).HasColumnName("CODCOLIGADA");
             entity.Property(e => e.CodFilial).HasColumnName("CODFILIAL");
             entity.Property(e => e.Nome).HasColumnName("NOME");

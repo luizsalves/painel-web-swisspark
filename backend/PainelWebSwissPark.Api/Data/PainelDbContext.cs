@@ -107,6 +107,8 @@ public class PainelDbContext(
             entity.HasKey(e => e.Id);
 
             entity.Property(e => e.Id).HasColumnName("id").ValueGeneratedOnAdd();
+            entity.HasQueryFilter(e => e.CodColigada != 0);
+
             entity.Property(e => e.CodColigada).HasColumnName("cod_coligada");
             entity.Property(e => e.CodFilial).HasColumnName("cod_filial");
             entity.Property(e => e.CodConta).HasColumnName("cod_conta").IsRequired();
@@ -130,6 +132,8 @@ public class PainelDbContext(
             entity.ToTable("bi_empresa_configuracao", _schema);
             entity.HasKey(e => new { e.CodColigada, e.CodFilial });
 
+            entity.HasQueryFilter(e => e.CodColigada != 0);
+
             entity.Property(e => e.CodColigada).HasColumnName("cod_coligada");
             entity.Property(e => e.CodFilial).HasColumnName("cod_filial");
             entity.Property(e => e.Ativo).HasColumnName("ativo").HasDefaultValue(true);
@@ -141,6 +145,8 @@ public class PainelDbContext(
         {
             entity.ToTable("bi_conta_contabil_configuracao", _schema);
             entity.HasKey(e => new { e.CodColigada, e.CodConta });
+
+            entity.HasQueryFilter(e => e.CodColigada != 0);
 
             entity.Property(e => e.CodColigada).HasColumnName("cod_coligada");
             entity.Property(e => e.CodConta).HasColumnName("cod_conta");

@@ -22,8 +22,6 @@ public enum TabelaTotvs
 public enum TipoFiltroTotvs
 {
     Igual,
-    /// <summary>Coluna = valor OU coluna = 0 — CODCOLIGADA 0 é o cadastro global do TOTVS.</summary>
-    IgualOuGlobal,
     MaiorOuIgual,
     Menor,
     Contem,
@@ -52,7 +50,8 @@ public class TotvsConsultaRepository(AppDbContext context) : ITotvsConsultaRepos
             await using var comando = conexao.CreateCommand();
             comando.CommandTimeout = context.Database.GetCommandTimeout() ?? 60;
 
-            var condicoes = new List<string>();
+            // Regra do painel: nenhuma consulta inclui a coligada zero.
+            var condicoes = new List<string> { "[CODCOLIGADA] <> 0" };
             for (var i = 0; i < filtros.Count; i++)
             {
                 var filtro = filtros[i];
@@ -60,7 +59,6 @@ public class TotvsConsultaRepository(AppDbContext context) : ITotvsConsultaRepos
                 condicoes.Add(filtro.Tipo switch
                 {
                     TipoFiltroTotvs.Igual => $"[{filtro.Coluna}] = {parametro}",
-                    TipoFiltroTotvs.IgualOuGlobal => $"([{filtro.Coluna}] = {parametro} OR [{filtro.Coluna}] = 0)",
                     TipoFiltroTotvs.MaiorOuIgual => $"[{filtro.Coluna}] >= {parametro}",
                     TipoFiltroTotvs.Menor => $"[{filtro.Coluna}] < {parametro}",
                     TipoFiltroTotvs.Contem => $"[{filtro.Coluna}] LIKE {parametro}",

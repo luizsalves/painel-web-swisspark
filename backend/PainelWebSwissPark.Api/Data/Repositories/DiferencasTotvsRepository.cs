@@ -49,7 +49,7 @@ public class DiferencasTotvsRepository(AppDbContext context) : IDiferencasTotvsR
         WITH CONTAS AS (
             SELECT CODCOLIGADA, LTRIM(RTRIM(CODCONTA)) AS CODCONTA, UPPER(LTRIM(RTRIM(DESCRICAO))) AS DESCRICAO
             FROM __BASE__.dbo.CCONTA WITH (NOLOCK)
-            WHERE UPPER(LTRIM(RTRIM(DESCRICAO))) IN ({ContasFornecedores})
+            WHERE CODCOLIGADA <> 0 AND UPPER(LTRIM(RTRIM(DESCRICAO))) IN ({ContasFornecedores})
         ),
         NF AS (
             SELECT P.CODCOLIGADA, P.CODFILIAL, P.CREDITO AS CODCONTA, P.VALOR,
@@ -58,7 +58,7 @@ public class DiferencasTotvsRepository(AppDbContext context) : IDiferencasTotvsR
                         THEN LEFT(P.COMPLEMENTO, PATINDEX('%[^0-9]%', P.COMPLEMENTO + 'x') - 1) END AS CODCFO,
                    {DocumentoTratado("P.DOCUMENTO")} AS DOC
             FROM __BASE__.dbo.CLANCA P WITH (NOLOCK)
-            WHERE P.DATA >= '2025-01-01' AND P.DATA <= CONVERT(date, {"{0}"}) AND P.CREDITO IS NOT NULL
+            WHERE P.CODCOLIGADA <> 0 AND P.DATA >= '2025-01-01' AND P.DATA <= CONVERT(date, {"{0}"}) AND P.CREDITO IS NOT NULL
               AND UPPER(P.COMPLEMENTO) LIKE '%NF%'
               AND UPPER(P.COMPLEMENTO) NOT LIKE '%PAGAM%'
               AND UPPER(P.COMPLEMENTO) NOT LIKE '%S/NF%'
@@ -70,7 +70,7 @@ public class DiferencasTotvsRepository(AppDbContext context) : IDiferencasTotvsR
             FROM __BASE__.dbo.FLAN F WITH (NOLOCK)
             JOIN __BASE__.dbo.TMOV M WITH (NOLOCK)
               ON M.CODCOLIGADA = F.CODCOLIGADA AND M.IDMOV = F.IDMOV AND M.CODFILIAL = F.CODFILIAL
-            WHERE F.DATACANCELAMENTO IS NULL AND F.DATABAIXA IS NOT NULL AND F.DATABAIXA <= CONVERT(date, {"{0}"})
+            WHERE F.CODCOLIGADA <> 0 AND F.DATACANCELAMENTO IS NULL AND F.DATABAIXA IS NOT NULL AND F.DATABAIXA <= CONVERT(date, {"{0}"})
               AND F.DATAVENCIMENTO >= '2025-01-01' AND M.DATAEMISSAO >= '2025-01-01'
             GROUP BY F.CODCOLIGADA, F.CODFILIAL, F.CODCFO, {DocumentoTratado("M.NUMEROMOV")}
         )
@@ -88,18 +88,18 @@ public class DiferencasTotvsRepository(AppDbContext context) : IDiferencasTotvsR
         WITH CONTAS AS (
             SELECT CODCOLIGADA, LTRIM(RTRIM(CODCONTA)) AS CODCONTA, UPPER(LTRIM(RTRIM(DESCRICAO))) AS DESCRICAO
             FROM __BASE__.dbo.CCONTA WITH (NOLOCK)
-            WHERE UPPER(LTRIM(RTRIM(DESCRICAO))) IN ({ContasAdiantamento})
+            WHERE CODCOLIGADA <> 0 AND UPPER(LTRIM(RTRIM(DESCRICAO))) IN ({ContasAdiantamento})
         ),
         PART AS (
             SELECT P.CODCOLIGADA, P.CODFILIAL, K.CODCONTA, 'D' AS LADO, P.DOCUMENTO, P.VALOR
             FROM __BASE__.dbo.CPARTIDA P WITH (NOLOCK)
             JOIN CONTAS K ON K.CODCOLIGADA = P.CODCOLIGADA AND K.CODCONTA = P.DEBITO
-            WHERE P.DATA >= '2025-01-01'
+            WHERE P.CODCOLIGADA <> 0 AND P.DATA >= '2025-01-01'
             UNION ALL
             SELECT P.CODCOLIGADA, P.CODFILIAL, K.CODCONTA, 'C', P.DOCUMENTO, P.VALOR
             FROM __BASE__.dbo.CPARTIDA P WITH (NOLOCK)
             JOIN CONTAS K ON K.CODCOLIGADA = P.CODCOLIGADA AND K.CODCONTA = P.CREDITO
-            WHERE P.DATA >= '2025-01-01'
+            WHERE P.CODCOLIGADA <> 0 AND P.DATA >= '2025-01-01'
         ),
         CONTA_DO_DOC AS (
             SELECT DISTINCT CODCOLIGADA, {DocumentoTratado("DOCUMENTO")} AS DOC, CODCONTA FROM PART
@@ -111,7 +111,7 @@ public class DiferencasTotvsRepository(AppDbContext context) : IDiferencasTotvsR
                    NULLIF(SUBSTRING(F.NUMERODOCUMENTO, PATINDEX('%[^0]%', F.NUMERODOCUMENTO + 'x'), 100), '') AS DOC
             FROM __BASE__.dbo.FLAN F WITH (NOLOCK)
             LEFT JOIN __BASE__.dbo.FRELLAN C WITH (NOLOCK) ON C.CODCOLIGADA = F.CODCOLIGADA AND C.IDLAN = F.IDLAN
-            WHERE F.CODTDO IN ('ADF', 'ADC') AND F.DATABAIXA <= CONVERT(date, {"{0}"}) AND F.DATACANCELAMENTO IS NULL
+            WHERE F.CODCOLIGADA <> 0 AND F.CODTDO IN ('ADF', 'ADC') AND F.DATABAIXA <= CONVERT(date, {"{0}"}) AND F.DATACANCELAMENTO IS NULL
               AND F.DATAVENCIMENTO >= '2025-01-01'
         ),
         BASE AS (
@@ -129,7 +129,7 @@ public class DiferencasTotvsRepository(AppDbContext context) : IDiferencasTotvsR
               ON C.CODCOLIGADA = F.CODCOLIGADA AND C.IDLANREL = F.IDLANREL AND C.TIPOREL = 28
             JOIN __BASE__.dbo.FLANBAIXA B WITH (NOLOCK) ON B.CODCOLIGADA = C.CODCOLIGADA AND B.IDBAIXA = C.IDBAIXA
             JOIN __BASE__.dbo.FLAN L WITH (NOLOCK) ON L.CODCOLIGADA = B.CODCOLIGADA AND L.IDLAN = B.IDLAN
-            WHERE B.DATABAIXA <= CONVERT(date, {"{0}"}) AND L.DATAEMISSAO <= CONVERT(date, {"{0}"})
+            WHERE B.CODCOLIGADA <> 0 AND B.DATABAIXA <= CONVERT(date, {"{0}"}) AND L.DATAEMISSAO <= CONVERT(date, {"{0}"})
         ),
         G401 AS (SELECT CODCOLIGADA, CODFILIAL, CODCFO, SEGUNDONUMERO, IDLANREL, SUM(VALORVINCULO) AS ACUM FROM PARC
                  WHERE IDBAIXAREL IS NOT NULL AND DATACANCELBAIXA IS NULL
@@ -180,18 +180,18 @@ public class DiferencasTotvsRepository(AppDbContext context) : IDiferencasTotvsR
         WITH CONTAS AS (
             SELECT CODCOLIGADA, LTRIM(RTRIM(CODCONTA)) AS CODCONTA, UPPER(LTRIM(RTRIM(DESCRICAO))) AS DESCRICAO
             FROM __BASE__.dbo.CCONTA WITH (NOLOCK)
-            WHERE UPPER(LTRIM(RTRIM(DESCRICAO))) IN ({ContasFornecedores}, {ContasAdiantamento})
+            WHERE CODCOLIGADA <> 0 AND UPPER(LTRIM(RTRIM(DESCRICAO))) IN ({ContasFornecedores}, {ContasAdiantamento})
         ),
         MOV AS (
             SELECT A.CODCOLIGADA, A.CODFILIAL, K.CODCONTA, K.DESCRICAO, A.VALOR AS DEB, CAST(0 AS numeric(18, 4)) AS CRED
             FROM __BASE__.dbo.CPARTIDA A WITH (NOLOCK)
             JOIN CONTAS K ON K.CODCOLIGADA = A.CODCOLIGADA AND K.CODCONTA = A.DEBITO
-            WHERE A.DATA <= CONVERT(date, {"{0}"})
+            WHERE A.CODCOLIGADA <> 0 AND A.DATA <= CONVERT(date, {"{0}"})
             UNION ALL
             SELECT A.CODCOLIGADA, A.CODFILIAL, K.CODCONTA, K.DESCRICAO, 0, A.VALOR
             FROM __BASE__.dbo.CPARTIDA A WITH (NOLOCK)
             JOIN CONTAS K ON K.CODCOLIGADA = A.CODCOLIGADA AND K.CODCONTA = A.CREDITO
-            WHERE A.DATA <= CONVERT(date, {"{0}"})
+            WHERE A.CODCOLIGADA <> 0 AND A.DATA <= CONVERT(date, {"{0}"})
         )
         SELECT CODCOLIGADA AS CodColigada, CODFILIAL AS CodFilial, CODCONTA AS CodConta, MAX(DESCRICAO) AS Descricao,
                CAST(CASE WHEN CODCONTA LIKE '1%' THEN SUM(DEB) - SUM(CRED) ELSE SUM(CRED) - SUM(DEB) END AS numeric(18, 4)) AS SaldoRazao

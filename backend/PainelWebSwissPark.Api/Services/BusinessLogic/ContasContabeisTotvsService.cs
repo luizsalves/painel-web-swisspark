@@ -9,66 +9,92 @@ public class ContasContabeisTotvsService(
     IContaContabilConfiguracaoRepository contaContabilConfiguracaoRepository,
     IMemoryCache cache) : IContasContabeisTotvsService
 {
-    // Plano de contas do TOTVS muda raríssimo, mas o UNION cruza os 4 bancos a
-    // cada chamada. As telas de Fechamentos e de Contas Contábeis pedem essa
-    // mesma lista — sem cache, abrir as duas seguidas dispara a consulta de
-    // novo. O status ativo/inativo do painel NÃO entra nesse cache: vem sempre
-    // fresco do Postgres, então ativar/desativar reflete na hora.
-    private static readonly TimeSpan DuracaoCache = TimeSpan.FromHours(6);
-    private const string ChaveCache = "contascontabeis:totvs";
+    // Compartilha a leitura da CPARTIDA entre as telas por poucos minutos:
+    // novos lançamentos podem introduzir contas na lista. O status do painel
+    // é lido separadamente, para ativar/desativar refletir na hora.
+    private static readonly TimeSpan DuracaoCache = TimeSpan.FromMinutes(5);
+    private const string ChaveCache = "contascontabeis:cpartida";
 
-    public async Task<List<ContaContabilViewModel>> ListarAsync(CancellationToken cancellationToken, bool somenteBsb = false, short? codColigada = null)
+    public async Task<List<EmpresaContabilViewModel>> ListarEmpresasAsync(CancellationToken cancellationToken)
     {
-        var contas = await ObterContasAsync(cancellationToken, somenteBsb, codColigada);
+        const string chave = ChaveCache + ":empresas";
+        if (cache.TryGetValue(chave, out List<EmpresaContabilViewModel>? emCache) && emCache is not null)
+            return emCache;
+
+        var linhas = await contaContabilRepository.ListarEmpresasAsync(cancellationToken);
+        var resultado = linhas.GroupBy(e => e.CodColigada)
+            .Select(g => new EmpresaContabilViewModel(g.Key, g.First().Nome)).ToList();
+        cache.Set(chave, resultado, DuracaoCache);
+        return resultado;
+    }
+
+    public async Task<List<ColigadaFilialContabilViewModel>> ListarColigadasFiliaisAsync(
+        CancellationToken cancellationToken, short? codColigada = null)
+    {
+        var chave = $"{ChaveCache}:coligadasfiliais:{codColigada}";
+        if (cache.TryGetValue(chave, out List<ColigadaFilialContabilViewModel>? emCache) && emCache is not null)
+            return emCache;
+
+        var linhas = await contaContabilRepository.ListarColigadasFiliaisAsync(cancellationToken, codColigada);
+        var resultado = linhas.Select(l => new ColigadaFilialContabilViewModel(l.CodColigada, l.CodFilial)).ToList();
+        cache.Set(chave, resultado, DuracaoCache);
+        return resultado;
+    }
+
+    public async Task<List<ContaContabilViewModel>> ListarAsync(
+        CancellationToken cancellationToken, bool somenteBsb = false, short? codColigada = null, short? codFilial = null)
+    {
+        var contas = await ObterContasAsync(cancellationToken, somenteBsb, codColigada, codFilial);
         var status = await contaContabilConfiguracaoRepository.ListarStatusAsync(cancellationToken);
 
-        return contas.Select(c => ParaViewModel(c, status)).ToList();
+        return contas.GroupBy(c => (c.CodColigada, c.CodConta))
+            .Select(g => ParaViewModel(g, status)).ToList();
     }
 
     public async Task<ContaContabilViewModel?> AtualizarStatusAsync(
         short codColigada, string codConta, bool ativo, Guid autorId, CancellationToken cancellationToken)
     {
-        var contas = await ObterContasAsync(cancellationToken);
-        var conta = contas.FirstOrDefault(c => c.CodColigada == codColigada && c.CodConta == codConta);
-        if (conta is null) return null;
+        var contas = await ObterContasAsync(cancellationToken, codColigada: codColigada);
+        var linhas = contas.Where(c => c.CodColigada == codColigada && c.CodConta == codConta).ToList();
+        if (linhas.Count == 0) return null;
 
         await contaContabilConfiguracaoRepository.DefinirStatusAsync(codColigada, codConta, ativo, autorId, cancellationToken);
 
-        return ParaViewModel(conta, new Dictionary<(short, string), bool> { [(codColigada, codConta)] = ativo });
+        return ParaViewModel(linhas, new Dictionary<(short, string), bool> { [(codColigada, codConta)] = ativo });
     }
 
-    private async Task<List<CcontaUniao>> ObterContasAsync(CancellationToken cancellationToken, bool somenteBsb = false, short? codColigada = null)
+    private async Task<List<ContaContabilMovimentada>> ObterContasAsync(
+        CancellationToken cancellationToken, bool somenteBsb = false, short? codColigada = null, short? codFilial = null)
     {
-        if (cache.TryGetValue($"{ChaveCache}:{somenteBsb}:{codColigada}", out List<CcontaUniao>? emCache) && emCache is not null)
+        var chave = $"{ChaveCache}:{somenteBsb}:{codColigada}:{codFilial}";
+        if (cache.TryGetValue(chave, out List<ContaContabilMovimentada>? emCache) && emCache is not null)
         {
             return emCache;
         }
 
-        var contas = await contaContabilRepository.ListarTodasColigadasAsync(cancellationToken, somenteBsb, codColigada);
+        var contas = await contaContabilRepository.ListarTodasColigadasAsync(cancellationToken, somenteBsb, codColigada, codFilial);
 
-        var deduplicadas = contas
-            // CODCOLIGADA+CODCONTA é a chave de negócio real, mas REDUZIDO/DESCRICAO
-            // têm pequenas diferenças de formatação entre as 4 bases — o DISTINCT do
-            // SQL não colapsa isso sozinho, então dedupe aqui por coligada+conta.
-            .GroupBy(c => (c.CodColigada, c.CodConta))
-            .Select(g => g.First())
-            .ToList();
-
-        cache.Set($"{ChaveCache}:{somenteBsb}:{codColigada}", deduplicadas, DuracaoCache);
-        return deduplicadas;
+        cache.Set(chave, contas, DuracaoCache);
+        return contas;
     }
 
     // Ausência na configuração do painel significa ativa (default) — só ganha
     // linha em bi_conta_contabil_configuracao quando alguém mexe explicitamente.
     private static ContaContabilViewModel ParaViewModel(
-        CcontaUniao c, IReadOnlyDictionary<(short CodColigada, string CodConta), bool> status) =>
-        new()
+        IEnumerable<ContaContabilMovimentada> linhas, IReadOnlyDictionary<(short CodColigada, string CodConta), bool> status)
+    {
+        var lista = linhas.ToList();
+        var c = lista[0];
+        return new()
         {
             Id = $"{c.CodColigada}-{c.CodConta}",
             CodColigada = c.CodColigada,
             CodConta = c.CodConta,
-            Reduzido = c.Reduzido ?? string.Empty,
-            Descricao = c.Descricao ?? string.Empty,
+            CodFiliais = lista.Select(l => l.CodFilial).Distinct().Order().ToList(),
+            Reduzido = lista.Select(l => l.Reduzido).FirstOrDefault(r => !string.IsNullOrWhiteSpace(r)) ?? string.Empty,
+            Descricao = lista.Select(l => l.Descricao).Where(d => !string.IsNullOrWhiteSpace(d))
+                .Order(StringComparer.Ordinal).FirstOrDefault() ?? string.Empty,
             Ativo = !status.TryGetValue((c.CodColigada, c.CodConta), out var ativo) || ativo,
         };
+    }
 }

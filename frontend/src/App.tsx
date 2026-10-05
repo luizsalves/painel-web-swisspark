@@ -4,6 +4,7 @@ import ProtectedRoute from "./rotas/ProtectedRoute";
 import Login from "./paginas/Login";
 import Dashboard from "./paginas/Dashboard";
 import Fechamentos from "./paginas/Fechamentos";
+import Balancete from "./paginas/Balancete";
 import Empresas from "./paginas/Empresas";
 import ContasContabeis from "./paginas/ContasContabeis";
 import IaPlanning from "./paginas/IaPlanning";
@@ -32,6 +33,14 @@ function App() {
             element={
               <ProtectedRoute requireModulo={MODULO_CONCILIACAO}>
                 <Fechamentos />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/balancete"
+            element={
+              <ProtectedRoute>
+                <Balancete />
               </ProtectedRoute>
             }
           />

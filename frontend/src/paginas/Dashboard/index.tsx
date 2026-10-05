@@ -85,7 +85,7 @@ export default function Dashboard() {
   return (
     <AppLayout>
       <AppHeader
-        title="Painel de Conciliação"
+        title="Produtividade e Eficiência"
         subtitle="Backlog de fechamentos por período, cruzando empresas e contas contábeis ativas"
       />
 

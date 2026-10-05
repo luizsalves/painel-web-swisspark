@@ -1,7 +1,4 @@
 import { Navigate } from "react-router-dom";
-import { Compass } from "lucide-react";
-import AppLayout from "../../componentes/layout/AppLayout";
-import AppHeader from "../../componentes/layout/AppHeader";
 import { useAuth } from "../../contexts/AuthContext";
 import { MODULO_CONCILIACAO } from "../../interfaces/Auth";
 
@@ -23,21 +20,5 @@ export default function Inicio() {
     return <Navigate to="/usuarios" replace />;
   }
 
-  // Acontece com quem pertence só a um módulo que ainda não tem tela pronta.
-  return (
-    <AppLayout>
-      <AppHeader title="Bem-vindo(a)" subtitle="Seu acesso está ativo" />
-
-      <main className="sp-management">
-        <div className="sp-inicio-vazio">
-          <Compass size={36} aria-hidden="true" />
-          <h2>Nenhuma tela disponível ainda</h2>
-          <p>
-            Seu acesso está liberado, mas os módulos a que você pertence ainda não têm telas
-            publicadas. Assim que houver, elas aparecem no menu ao lado.
-          </p>
-        </div>
-      </main>
-    </AppLayout>
-  );
+  return <Navigate to="/balancete" replace />;
 }

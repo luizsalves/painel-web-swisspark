@@ -39,7 +39,11 @@ public class LancamentosTotvsRepository(AppDbContext context) : ILancamentosTotv
                 A.[DATA],
                 UPPER(LTRIM(RTRIM(E.[NOME]))) AS [EMPRESA],
                 A.[CODCOLIGADA],
-                COALESCE(CT.[REDUZIDO], '-') AS [REDUZIDO],
+                COALESCE(
+                    NULLIF(LTRIM(RTRIM(CONVERT(varchar(80), CT.[REDUZIDO]))), ''),
+                    NULLIF(LTRIM(RTRIM(CONVERT(varchar(80), CT0.[REDUZIDO]))), ''),
+                    '-'
+                ) AS [REDUZIDO],
                 {3} AS [CODCONTA],
                 A.[CODFILIAL],
                 LTRIM(RTRIM(E.[NOMEFANTASIA])) AS [NOMEFANTASIA],
@@ -64,7 +68,10 @@ public class LancamentosTotvsRepository(AppDbContext context) : ILancamentosTotv
             LEFT JOIN __SCHEMA__.dbo.[CCONTA] CT WITH (NOLOCK)
                 ON CT.[CODCOLIGADA] = A.[CODCOLIGADA]
                AND CT.[CODCONTA] = {3}
-            WHERE A.[CODCOLIGADA] = {0}
+            LEFT JOIN __SCHEMA__.dbo.[CCONTA] CT0 WITH (NOLOCK)
+                ON CT0.[CODCOLIGADA] = 0
+               AND CT0.[CODCONTA] = {3}
+            WHERE A.[CODCOLIGADA] <> 0 AND A.[CODCOLIGADA] = {0}
               AND A.[CODFILIAL] = {1}
               AND CONVERT(char(7), A.[DATA], 126) = {2}
               AND (A.[DEBITO] = {3} OR A.[CREDITO] = {3})
@@ -80,7 +87,7 @@ public class LancamentosTotvsRepository(AppDbContext context) : ILancamentosTotv
                         ELSE -SUM(A.[VALOR])
                     END AS [VALOR]
                 FROM __SCHEMA__.dbo.[CPARTIDA] A WITH (NOLOCK)
-                WHERE A.[CODCOLIGADA] = {0}
+                WHERE A.[CODCOLIGADA] <> 0 AND A.[CODCOLIGADA] = {0}
                   AND A.[CODFILIAL] = {1}
                   AND A.[DATA] < CONVERT(date, {2} + '-01')
                   AND A.[DEBITO] = {3}
@@ -93,7 +100,7 @@ public class LancamentosTotvsRepository(AppDbContext context) : ILancamentosTotv
                         ELSE SUM(A.[VALOR])
                     END
                 FROM __SCHEMA__.dbo.[CPARTIDA] A WITH (NOLOCK)
-                WHERE A.[CODCOLIGADA] = {0}
+                WHERE A.[CODCOLIGADA] <> 0 AND A.[CODCOLIGADA] = {0}
                   AND A.[CODFILIAL] = {1}
                   AND A.[DATA] < CONVERT(date, {2} + '-01')
                   AND A.[CREDITO] = {3}

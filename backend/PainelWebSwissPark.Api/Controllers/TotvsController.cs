@@ -68,8 +68,7 @@ public class TotvsController(ITotvsConsultaService service) : ControllerBase
     }
 
     /// <summary>
-    /// GET /api/totvs/fcfo — clientes/fornecedores. Traz também o cadastro
-    /// global (CODCOLIGADA 0), que vale pra todas as coligadas.
+    /// GET /api/totvs/fcfo — clientes/fornecedores da coligada informada.
     /// </summary>
     [HttpGet("fcfo")]
     public Task<IActionResult> Fcfo(
@@ -78,7 +77,7 @@ public class TotvsController(ITotvsConsultaService service) : ControllerBase
         [FromQuery] int? limite, [FromQuery] string? @base, CancellationToken cancellationToken)
     {
         var filtros = new Filtros()
-            .IgualOuGlobal("CODCOLIGADA", codColigada)
+            .Igual("CODCOLIGADA", codColigada)
             .Igual("CODCFO", codCfo)
             .Contem("CGCCFO", cnpj)
             .Contem("NOME", nome)
@@ -146,7 +145,7 @@ public class TotvsController(ITotvsConsultaService service) : ControllerBase
         return Listar(TabelaTotvs.FRELLAN, filtros, "[CODCOLIGADA], [IDLAN] DESC, [IDLANREL] DESC", limite, @base, cancellationToken);
     }
 
-    /// <summary>GET /api/totvs/ftdo — tipos de documento (NF, boleto, duplicata...). Inclui o cadastro global.</summary>
+    /// <summary>GET /api/totvs/ftdo — tipos de documento (NF, boleto, duplicata...).</summary>
     [HttpGet("ftdo")]
     public Task<IActionResult> Ftdo(
         [FromQuery, BindRequired] short codColigada, [FromQuery] string? codTdo, [FromQuery] string? descricao,
@@ -154,7 +153,7 @@ public class TotvsController(ITotvsConsultaService service) : ControllerBase
         [FromQuery] int? limite, [FromQuery] string? @base, CancellationToken cancellationToken)
     {
         var filtros = new Filtros()
-            .IgualOuGlobal("CODCOLIGADA", codColigada)
+            .Igual("CODCOLIGADA", codColigada)
             .Igual("CODTDO", codTdo)
             .Contem("DESCRICAO", descricao)
             .Igual("PAGREC", pagRec);
@@ -162,7 +161,7 @@ public class TotvsController(ITotvsConsultaService service) : ControllerBase
         return Listar(TabelaTotvs.FTDO, filtros, "[CODCOLIGADA], [CODTDO]", limite, @base, cancellationToken);
     }
 
-    /// <summary>GET /api/totvs/gccusto — centros de custo. Inclui o cadastro global.</summary>
+    /// <summary>GET /api/totvs/gccusto — centros de custo.</summary>
     [HttpGet("gccusto")]
     public Task<IActionResult> GcCusto(
         [FromQuery, BindRequired] short codColigada, [FromQuery] string? codCCusto, [FromQuery] string? nome,
@@ -170,7 +169,7 @@ public class TotvsController(ITotvsConsultaService service) : ControllerBase
         [FromQuery] int? limite, [FromQuery] string? @base, CancellationToken cancellationToken)
     {
         var filtros = new Filtros()
-            .IgualOuGlobal("CODCOLIGADA", codColigada)
+            .Igual("CODCOLIGADA", codColigada)
             .Igual("CODCCUSTO", codCCusto)
             .Contem("NOME", nome)
             .Igual("ATIVO", ativo);
@@ -214,12 +213,6 @@ public class TotvsController(ITotvsConsultaService service) : ControllerBase
         public Filtros Igual(string coluna, object? valor)
         {
             if (valor is not null && valor is not string { Length: 0 }) Lista.Add(new(coluna, TipoFiltroTotvs.Igual, valor));
-            return this;
-        }
-
-        public Filtros IgualOuGlobal(string coluna, object valor)
-        {
-            Lista.Add(new(coluna, TipoFiltroTotvs.IgualOuGlobal, valor));
             return this;
         }
 

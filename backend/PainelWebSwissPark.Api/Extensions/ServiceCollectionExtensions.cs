@@ -47,6 +47,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ILancamentosTotvsRepository, LancamentosTotvsRepository>();
         services.AddScoped<ILancamentosTotvsService, LancamentosTotvsService>();
 
+        services.AddScoped<BalanceteTotvsRepository>();
+        services.AddScoped<IBalanceteService, BalanceteService>();
+
         services.AddScoped<ITotvsConsultaRepository, TotvsConsultaRepository>();
         services.AddScoped<ITotvsConsultaService, TotvsConsultaService>();
 

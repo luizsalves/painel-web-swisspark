@@ -2,9 +2,11 @@ namespace PainelWebSwissPark.Api.Data.Repositories;
 
 public interface IContaContabilTotvsRepository
 {
+    Task<List<EmpresaContabil>> ListarEmpresasAsync(CancellationToken cancellationToken);
+    Task<List<ColigadaFilialMovimentada>> ListarColigadasFiliaisAsync(CancellationToken cancellationToken, short? codColigada = null);
+
     /// <summary>
-    /// União do CCONTA das quatro coligadas (corpore, corpore_bsb, corpore_mao,
-    /// corpore_neu) — cada uma é um banco separado no mesmo SQL Server.
+    /// União dos créditos e débitos da CPARTIDA nas quatro bases, sem coligada zero.
     /// </summary>
-    Task<List<CcontaUniao>> ListarTodasColigadasAsync(CancellationToken cancellationToken, bool somenteBsb = false, short? codColigada = null);
+    Task<List<ContaContabilMovimentada>> ListarTodasColigadasAsync(CancellationToken cancellationToken, bool somenteBsb = false, short? codColigada = null, short? codFilial = null);
 }

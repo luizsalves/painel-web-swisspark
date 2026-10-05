@@ -34,7 +34,8 @@ interface NavItem {
 
 // Itens sem "disabled" já têm página implementada; os demais aguardam a próxima etapa.
 const NAV_ITEMS: NavItem[] = [
-  { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard", modulo: MODULO_CONCILIACAO },
+  { label: "Produtividade", icon: LayoutDashboard, path: "/dashboard", modulo: MODULO_CONCILIACAO },
+  { label: "Balancete", icon: BarChart3, path: "/balancete" },
   { label: "Fechamentos", icon: CalendarCheck2, path: "/fechamentos", modulo: MODULO_CONCILIACAO },
   { label: "Empresas", icon: Building2, path: "/empresas", modulo: MODULO_CONCILIACAO },
   { label: "Contas Contábeis", icon: BookText, path: "/contas", modulo: MODULO_CONCILIACAO },

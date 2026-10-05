@@ -15,20 +15,29 @@ public class ContasContabeisController(
     IUsuarioAtualService usuarioAtual) : ControllerBase
 {
     /// <summary>
-    /// GET /api/contascontabeis — plano de contas das quatro bases TOTVS
+    /// GET /api/contascontabeis — contas movimentadas na CPARTIDA das quatro bases TOTVS
     /// (corpore, corpore_bsb, corpore_mao, corpore_neu), só para leitura, com
     /// o flag de ativo/inativo do próprio painel.
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> Get(CancellationToken cancellationToken, [FromQuery] bool somenteBsb = false, [FromQuery] short? codColigada = null)
+    public async Task<IActionResult> Get(CancellationToken cancellationToken, [FromQuery] bool somenteBsb = false,
+        [FromQuery] short? codColigada = null, [FromQuery] short? codFilial = null)
     {
-        var contas = await contasContabeisService.ListarAsync(cancellationToken, somenteBsb, codColigada);
+        var contas = await contasContabeisService.ListarAsync(cancellationToken, somenteBsb, codColigada, codFilial);
         return Ok(contas);
     }
 
+    [HttpGet("empresas")]
+    public async Task<IActionResult> GetEmpresas(CancellationToken cancellationToken) =>
+        Ok(await contasContabeisService.ListarEmpresasAsync(cancellationToken));
+
+    [HttpGet("coligadas-filiais")]
+    public async Task<IActionResult> GetColigadasFiliais(CancellationToken cancellationToken, [FromQuery] short? codColigada = null) =>
+        Ok(await contasContabeisService.ListarColigadasFiliaisAsync(cancellationToken, codColigada));
+
     /// <summary>
     /// PATCH /api/contascontabeis/{codColigada}/{codConta}/status — ativa ou
-    /// desativa uma conta contábil no painel. Não mexe em CCONTA (somente
+    /// desativa uma conta contábil no painel. Não mexe no TOTVS (somente
     /// leitura); grava só no Postgres do painel. Qualquer usuário do módulo de
     /// Conciliação pode alterar.
     /// </summary>
