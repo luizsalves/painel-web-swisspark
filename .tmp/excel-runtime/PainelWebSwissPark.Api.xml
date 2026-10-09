@@ -1,0 +1,1186 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>PainelWebSwissPark.Api</name>
+    </assembly>
+    <members>
+        <member name="T:PainelWebSwissPark.Api.AgenteContabil.ChatEndpoint">
+            <summary>
+            Endpoint de chat da CFO Tati (tela IA Planning). Restrito ao superadministrador
+            por enquanto — diferente do resto do painel, que libera por módulo/perfil.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.AgenteContabil.ChatEndpoint.#ctor(PainelWebSwissPark.Api.AgenteContabil.HarnessService)">
+            <summary>
+            Endpoint de chat da CFO Tati (tela IA Planning). Restrito ao superadministrador
+            por enquanto — diferente do resto do painel, que libera por módulo/perfil.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.AgenteContabil.ChatEndpoint.Chat(PainelWebSwissPark.Api.DTOs.Requests.PerguntarCfoTatiRequest,System.Threading.CancellationToken)">
+            <summary>POST /api/agente-contabil/chat</summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.AgenteContabil.Ferramentas.ConsultarBacklogPorEmpresa">
+            <summary>
+            Quebra o backlog de conciliação por empresa — é o que a Tati usa quando o
+            pedido é uma comparação ou um gráfico entre empresas, em vez do resumo
+            único de <see cref="T:PainelWebSwissPark.Api.AgenteContabil.Ferramentas.ConsultarBacklogStatus"/>.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.AgenteContabil.Ferramentas.ConsultarBacklogPorEmpresa.#ctor(PainelWebSwissPark.Api.Services.BusinessLogic.IDashboardService)">
+            <summary>
+            Quebra o backlog de conciliação por empresa — é o que a Tati usa quando o
+            pedido é uma comparação ou um gráfico entre empresas, em vez do resumo
+            único de <see cref="T:PainelWebSwissPark.Api.AgenteContabil.Ferramentas.ConsultarBacklogStatus"/>.
+            </summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.AgenteContabil.Ferramentas.ConsultarBacklogStatus">
+            <summary>
+            Ferramenta que a CFO Tati chama quando precisa de números de backlog de
+            conciliação (contas pendentes/preparadas/conferidas/fechadas) — os mesmos
+            KPIs fixos da tela IA Planning. Não confundir com <see cref="T:PainelWebSwissPark.Api.AgenteContabil.Ferramentas.ConsultarSaldo"/>,
+            que traz o saldo contábil em R$ de uma conta específica.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.AgenteContabil.Ferramentas.ConsultarBacklogStatus.#ctor(PainelWebSwissPark.Api.Services.BusinessLogic.IDashboardService)">
+            <summary>
+            Ferramenta que a CFO Tati chama quando precisa de números de backlog de
+            conciliação (contas pendentes/preparadas/conferidas/fechadas) — os mesmos
+            KPIs fixos da tela IA Planning. Não confundir com <see cref="T:PainelWebSwissPark.Api.AgenteContabil.Ferramentas.ConsultarSaldo"/>,
+            que traz o saldo contábil em R$ de uma conta específica.
+            </summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.AgenteContabil.Ferramentas.ConsultarDiferencas">
+            <summary>
+            Empresas e contas com diferença na conciliação: saldo do razão − composição
+            do saldo (NFs de fornecedores e adiantamentos em aberto) ≠ 0, no fim do mês.
+            Mesmo cálculo do GET /api/diferencas.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.AgenteContabil.Ferramentas.ConsultarDiferencas.#ctor(PainelWebSwissPark.Api.Services.BusinessLogic.IDiferencasService)">
+            <summary>
+            Empresas e contas com diferença na conciliação: saldo do razão − composição
+            do saldo (NFs de fornecedores e adiantamentos em aberto) ≠ 0, no fim do mês.
+            Mesmo cálculo do GET /api/diferencas.
+            </summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.AgenteContabil.Ferramentas.ConsultarFechamento">
+            <summary>
+            Situação de um fechamento específico (empresa + filial + conta + período)
+            em bi_fechamento_validacao: status atual e quem preparou/conferiu/fechou.
+            Mesma leitura da tela de Fechamentos (<see cref="M:PainelWebSwissPark.Api.Services.BusinessLogic.IFechamentoValidacaoService.ObterStatusAtualAsync(System.Int16,System.Int16,System.String,System.String,System.Threading.CancellationToken)"/>).
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.AgenteContabil.Ferramentas.ConsultarFechamento.#ctor(PainelWebSwissPark.Api.Services.BusinessLogic.IEmpresasService,PainelWebSwissPark.Api.Services.BusinessLogic.IFechamentoValidacaoService)">
+            <summary>
+            Situação de um fechamento específico (empresa + filial + conta + período)
+            em bi_fechamento_validacao: status atual e quem preparou/conferiu/fechou.
+            Mesma leitura da tela de Fechamentos (<see cref="M:PainelWebSwissPark.Api.Services.BusinessLogic.IFechamentoValidacaoService.ObterStatusAtualAsync(System.Int16,System.Int16,System.String,System.String,System.Threading.CancellationToken)"/>).
+            </summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.AgenteContabil.Ferramentas.ConsultarProdutividadeTime">
+            <summary>
+            Ranking do time: quantas contas cada usuário preparou, conferiu ou fechou.
+            Mesma consulta do GET /api/fechamento-validacao/produtividade.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.AgenteContabil.Ferramentas.ConsultarProdutividadeTime.#ctor(PainelWebSwissPark.Api.Services.BusinessLogic.IFechamentoValidacaoService)">
+            <summary>
+            Ranking do time: quantas contas cada usuário preparou, conferiu ou fechou.
+            Mesma consulta do GET /api/fechamento-validacao/produtividade.
+            </summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.AgenteContabil.Ferramentas.ConsultarSaldo">
+            <summary>
+            Ferramenta que traz o saldo contábil de verdade (em R$) de uma conta,
+            filial e período — os mesmos quatro números (saldo inicial, débitos,
+            créditos, saldo final) que aparecem na tela de Fechamentos. O cálculo em si
+            não é duplicado aqui: quem soma é o <see cref="T:PainelWebSwissPark.Api.Services.BusinessLogic.ILancamentosTotvsService"/>
+            que já existe; esta classe só resolve "empresa" (nome) pra coligada/filial
+            e formata o resultado pro agente.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.AgenteContabil.Ferramentas.ConsultarSaldo.#ctor(PainelWebSwissPark.Api.Services.BusinessLogic.IEmpresasService,PainelWebSwissPark.Api.Services.BusinessLogic.ILancamentosTotvsService)">
+            <summary>
+            Ferramenta que traz o saldo contábil de verdade (em R$) de uma conta,
+            filial e período — os mesmos quatro números (saldo inicial, débitos,
+            créditos, saldo final) que aparecem na tela de Fechamentos. O cálculo em si
+            não é duplicado aqui: quem soma é o <see cref="T:PainelWebSwissPark.Api.Services.BusinessLogic.ILancamentosTotvsService"/>
+            que já existe; esta classe só resolve "empresa" (nome) pra coligada/filial
+            e formata o resultado pro agente.
+            </summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.AgenteContabil.HarnessService">
+            <summary>
+            Roda o loop do agente: manda a pergunta pro modelo, e enquanto ele pedir pra
+            usar uma ferramenta, executa e devolve o resultado, até ele responder com
+            texto final (ou estourar o limite de idas e vindas).
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.AgenteContabil.HarnessService.#ctor(PainelWebSwissPark.Api.AgenteContabil.ModelClient,PainelWebSwissPark.Api.AgenteContabil.Ferramentas.ConsultarSaldo,PainelWebSwissPark.Api.AgenteContabil.Ferramentas.ConsultarBacklogStatus,PainelWebSwissPark.Api.AgenteContabil.Ferramentas.ConsultarBacklogPorEmpresa,PainelWebSwissPark.Api.AgenteContabil.Ferramentas.ConsultarProdutividadeTime,PainelWebSwissPark.Api.AgenteContabil.Ferramentas.ConsultarFechamento,PainelWebSwissPark.Api.AgenteContabil.Ferramentas.ConsultarDiferencas,Microsoft.Extensions.Logging.ILogger{PainelWebSwissPark.Api.AgenteContabil.HarnessService})">
+            <summary>
+            Roda o loop do agente: manda a pergunta pro modelo, e enquanto ele pedir pra
+            usar uma ferramenta, executa e devolve o resultado, até ele responder com
+            texto final (ou estourar o limite de idas e vindas).
+            </summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.AgenteContabil.ModelClient">
+            <summary>
+            Fala com o modelo — o HarnessService decide o quê perguntar, este só envia.
+            A DeepSeek expõe uma API compatível com a da OpenAI, então reaproveita o SDK
+            oficial da OpenAI apontado pro endpoint da DeepSeek, em vez de montar HTTP cru.
+            </summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.Authorization.AdministradorDeModuloHandler">
+            <summary>
+            Abre a área administrativa para quem administra algum módulo. Não decide
+            QUAIS usuários a pessoa enxerga — esse recorte é por módulo e fica no
+            UsuariosService, onde o admin da conciliação vê só a turma da conciliação.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Authorization.AdministradorDeModuloHandler.#ctor(PainelWebSwissPark.Api.Services.Auth.IUsuarioAtualService,Microsoft.Extensions.Logging.ILogger{PainelWebSwissPark.Api.Authorization.AdministradorDeModuloHandler})">
+            <summary>
+            Abre a área administrativa para quem administra algum módulo. Não decide
+            QUAIS usuários a pessoa enxerga — esse recorte é por módulo e fica no
+            UsuariosService, onde o admin da conciliação vê só a turma da conciliação.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Authorization.ClaimsPrincipalExtensions.ObterBiUserId(System.Security.Claims.ClaimsPrincipal)">
+            <summary>
+            Id do usuário na bi_users, vindo do claim "sub" do token.
+            Só existe em endpoint autorizado — por isso o lançamento em vez de retorno nulo.
+            </summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.Authorization.ExigeModuloAttribute">
+             <summary>
+             Amarra um endpoint a um módulo. Quem não pertence ao módulo toma 403, mesmo
+             estando autenticado e ativo.
+            
+             É aqui que a separação entre os sistemas realmente acontece. Esconder o item
+             do menu no front é cosmético: sem esta checagem, bastaria digitar a URL.
+             </summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.Authorization.ExigePerfilAttribute">
+            <summary>
+            Amarra um endpoint a um (ou mais) perfil específico dentro de um módulo —
+            não basta pertencer ao módulo (isso já é o <see cref="T:PainelWebSwissPark.Api.Authorization.ExigeModuloAttribute"/>),
+            precisa ter um desses perfis nele. Ex.: só Gerente e Administrador da
+            conciliação podem conferir um fechamento; o Analista dela toma 403.
+            </summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.Authorization.ExigeSuperAdminAttribute">
+            <summary>
+            Amarra um endpoint ao superadministrador — ninguém mais passa, nem quem
+            administra ou gerencia algum módulo. Usado em telas que ainda devem ficar
+            restritas ao dono do sistema (ex.: CFO Tati), diferente do
+            [ExigeModulo]/[AdministradorDeModulo] usados no resto do painel.
+            </summary>
+        </member>
+        <member name="F:PainelWebSwissPark.Api.Authorization.PoliticasAutorizacao.UsuarioAtivo">
+            <summary>Autenticado, ativo e sem senha provisória pendente. É a política padrão da API.</summary>
+        </member>
+        <member name="F:PainelWebSwissPark.Api.Authorization.PoliticasAutorizacao.AdministradorDeModulo">
+            <summary>
+            Administra pelo menos um módulo — ou é superadministrador.
+            Libera a tela de Usuários; o recorte de QUEM ela mostra é feito no serviço.
+            </summary>
+        </member>
+        <member name="F:PainelWebSwissPark.Api.Authorization.ClaimsPainel.Subject">
+            <summary>Id do usuário na bi_users. Vai no token e é por ele que a API o encontra.</summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.Authorization.UsuarioAtivoRequirement">
+            <summary>
+            Exige que quem apresentou o token do Entra também esteja cadastrado e ativo na bi_users.
+            É essa checagem, feita a cada requisição, que torna a revogação imediata: o administrador
+            desativa na tela e o próximo request já toma 403 — sem esperar token nenhum expirar.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Controllers.AuthController.Login(PainelWebSwissPark.Api.DTOs.Requests.LoginRequest,System.Threading.CancellationToken)">
+            <summary>
+            Troca e-mail e senha por um token. A senha é conferida contra o hash
+            PBKDF2 guardado na bi_users — em nenhum momento existe senha em texto no banco.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Controllers.AuthController.Me(System.Threading.CancellationToken)">
+            <summary>
+            Quem está falando com a API, com os módulos a que pertence. É o primeiro
+            request do front depois do login, e o que monta o menu.
+            </summary>
+            <remarks>
+            Exige apenas autenticação, e não a política padrão da API, de propósito: assim
+            responde também para quem está com senha provisória — que precisa saber disso
+            para ser mandado à tela de troca em vez de levar um 403 sem explicação.
+            </remarks>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Controllers.AuthController.TrocarSenha(PainelWebSwissPark.Api.DTOs.Requests.TrocarSenhaRequest,System.Threading.CancellationToken)">
+            <summary>
+            Troca da própria senha. Também é o caminho de quem entrou com senha
+            provisória — por isso exige só [Authorize], sem a política padrão que
+            justamente bloqueia esse caso.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Controllers.ContasContabeisController.Get(System.Threading.CancellationToken,System.Boolean,System.Nullable{System.Int16},System.Nullable{System.Int16})">
+            <summary>
+            GET /api/contascontabeis — contas movimentadas na CPARTIDA das quatro bases TOTVS
+            (corpore, corpore_bsb, corpore_mao, corpore_neu), só para leitura, com
+            o flag de ativo/inativo do próprio painel.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Controllers.ContasContabeisController.PatchStatus(System.Int16,System.String,PainelWebSwissPark.Api.DTOs.Requests.AlterarStatusContaContabilRequest,System.Threading.CancellationToken)">
+            <summary>
+            PATCH /api/contascontabeis/{codColigada}/{codConta}/status — ativa ou
+            desativa uma conta contábil no painel. Não mexe no TOTVS (somente
+            leitura); grava só no Postgres do painel. Qualquer usuário do módulo de
+            Conciliação pode alterar.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Controllers.DashboardController.GetResumo(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            GET /api/dashboard/resumo?anoMes=2026-01&amp;empresa=... — backlog de
+            conciliação do período: das combinações de filial ativa x conta
+            contábil ativa esperadas, quantas estão em cada etapa do fechamento.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Controllers.DashboardController.GetUltimoPeriodo(System.Threading.CancellationToken)">
+            <summary>GET /api/dashboard/ultimo-periodo — mês mais recente com algum fechamento registrado.</summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.Controllers.DiferencasController">
+            <summary>
+            GET /api/diferencas?anoMes=2026-08&amp;empresa= — contas com diferença entre o
+            saldo do razão e a composição do saldo (títulos/NFs em aberto), por empresa.
+            Só leitura do TOTVS.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Controllers.DiferencasController.#ctor(PainelWebSwissPark.Api.Services.BusinessLogic.IDiferencasService)">
+            <summary>
+            GET /api/diferencas?anoMes=2026-08&amp;empresa= — contas com diferença entre o
+            saldo do razão e a composição do saldo (títulos/NFs em aberto), por empresa.
+            Só leitura do TOTVS.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Controllers.EmpresasController.Get(System.Threading.CancellationToken,System.Boolean)">
+            <summary>
+            GET /api/empresas — coligadas/filiais das quatro bases TOTVS (corpore,
+            corpore_bsb, corpore_mao, corpore_neu), só para leitura, com o flag de
+            ativo/inativo do próprio painel.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Controllers.EmpresasController.PatchStatus(System.Int16,System.Int16,PainelWebSwissPark.Api.DTOs.Requests.AlterarStatusEmpresaRequest,System.Threading.CancellationToken)">
+            <summary>
+            PATCH /api/empresas/{codColigada}/{codFilial}/status — ativa ou desativa
+            uma coligada+filial no painel. Não mexe em GFILIAL (somente leitura);
+            grava só no Postgres do painel. Qualquer usuário do módulo de
+            Conciliação pode alterar.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Controllers.FechamentosController.Get(System.Int32,System.Int32,System.String,System.Threading.CancellationToken)">
+            <summary>
+            GET /api/fechamentos?empresaId=1&amp;contaContabilId=1&amp;periodo=2026-01
+            </summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.Controllers.FechamentoValidacaoController">
+            <summary>
+            Preparar → Conferir → Realizar Fechamento, com Reverter em qualquer etapa.
+            Cada ação grava uma linha nova em bi_fechamento_validacao — nunca atualiza
+            uma existente, então a trilha de quem fez o quê e quando fica completa.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Controllers.FechamentoValidacaoController.#ctor(PainelWebSwissPark.Api.Services.BusinessLogic.IFechamentoValidacaoService,PainelWebSwissPark.Api.Services.Auth.IUsuarioAtualService)">
+            <summary>
+            Preparar → Conferir → Realizar Fechamento, com Reverter em qualquer etapa.
+            Cada ação grava uma linha nova em bi_fechamento_validacao — nunca atualiza
+            uma existente, então a trilha de quem fez o quê e quando fica completa.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Controllers.FechamentoValidacaoController.Get(System.Int16,System.Int16,System.String,System.String,System.Threading.CancellationToken)">
+            <summary>GET /api/fechamento-validacao?codColigada=&amp;codFilial=&amp;codConta=&amp;anoMes=</summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Controllers.FechamentoValidacaoController.GetProdutividade(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            GET /api/fechamento-validacao/produtividade?status=Fechado&amp;anoMes=2026-08 —
+            quantas contas cada usuário preparou/conferiu/fechou, maior primeiro.
+            status: Preparado, Conferido ou Fechado (Finalizado = Fechado). anoMes opcional.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Controllers.FechamentoValidacaoController.Preparar(PainelWebSwissPark.Api.DTOs.Requests.PrepararFechamentoRequest,System.Threading.CancellationToken)">
+            <summary>Analista, Gerente ou Administrador podem preparar.</summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Controllers.FechamentoValidacaoController.Conferir(PainelWebSwissPark.Api.DTOs.Requests.ChaveFechamentoRequest,System.Threading.CancellationToken)">
+            <summary>Só Gerente e Administrador conferem — o Analista não confere o que ele mesmo preparou.</summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Controllers.FechamentoValidacaoController.RealizarFechamento(PainelWebSwissPark.Api.DTOs.Requests.RealizarFechamentoRequest,System.Threading.CancellationToken)">
+            <summary>Analista, Gerente ou Administrador podem realizar o fechamento.</summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Controllers.FechamentoValidacaoController.Reverter(PainelWebSwissPark.Api.DTOs.Requests.ChaveFechamentoRequest,System.Threading.CancellationToken)">
+            <summary>
+            Desfaz a etapa atual. Quem pode depende do que está sendo desfeito — o
+            service decide (Analista desfaz Preparar/Fechar, Gerente desfaz Conferir).
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Controllers.FiliaisController.ObterComMesmoCodigo(System.Threading.CancellationToken)">
+            <summary>
+            GET /api/filiais/mesmo-codigo — GFILIAL com ela mesma, casada por
+            CODFILIAL, só para leitura (nunca grava nada no TOTVS).
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Controllers.LancamentosController.Get(System.Int16,System.Int16,System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            GET /api/lancamentos?codColigada=1&amp;codFilial=1&amp;anoMes=2026-01&amp;codConta=1.1.01.01.0001
+            — consulta as quatro bases TOTVS em paralelo e junta o resultado; só para leitura.
+            </summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.Controllers.TotvsController">
+            <summary>
+            Leitura das tabelas do TOTVS RM — só GET, nunca grava. Uma rota por tabela.
+            Em todas: codColigada obrigatório (as tabelas são grandes e indexadas por
+            ele), limite opcional (padrão 100, máx. 1000) e base opcional
+            (corpore, bsb, mao, neu — sem ela, lê as 4). Cada linha traz todas as
+            colunas da tabela, com o nome original do TOTVS, mais "BASE".
+            Datas "até" são inclusivas (o dia inteiro).
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Controllers.TotvsController.#ctor(PainelWebSwissPark.Api.Services.BusinessLogic.ITotvsConsultaService)">
+            <summary>
+            Leitura das tabelas do TOTVS RM — só GET, nunca grava. Uma rota por tabela.
+            Em todas: codColigada obrigatório (as tabelas são grandes e indexadas por
+            ele), limite opcional (padrão 100, máx. 1000) e base opcional
+            (corpore, bsb, mao, neu — sem ela, lê as 4). Cada linha traz todas as
+            colunas da tabela, com o nome original do TOTVS, mais "BASE".
+            Datas "até" são inclusivas (o dia inteiro).
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Controllers.TotvsController.Cexercicio(System.Int16,System.Nullable{System.Int32},System.String,System.Nullable{System.Int32},System.String,System.Threading.CancellationToken)">
+            <summary>GET /api/totvs/cexercicio — exercícios contábeis (períodos abertos/fechados).</summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Controllers.TotvsController.CsaldoExercicio(System.Int16,System.Nullable{System.Int32},System.String,System.Nullable{System.Int16},System.String,System.Nullable{System.Int32},System.String,System.Threading.CancellationToken)">
+            <summary>GET /api/totvs/csaldoexercicio — saldos contábeis por exercício.</summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Controllers.TotvsController.CrateioLc(System.Int16,System.Nullable{System.Int32},System.String,System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.Nullable{System.Int32},System.String,System.Threading.CancellationToken)">
+            <summary>GET /api/totvs/crateiolc — rateios dos lançamentos contábeis.</summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Controllers.TotvsController.Fcfo(System.Int16,System.String,System.String,System.String,System.Nullable{System.Int16},System.Nullable{System.Int16},System.Nullable{System.Int32},System.String,System.Threading.CancellationToken)">
+            <summary>
+            GET /api/totvs/fcfo — clientes/fornecedores da coligada informada.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Controllers.TotvsController.Flan(System.Int16,System.Nullable{System.Int16},System.Nullable{System.Int32},System.String,System.Nullable{System.Int16},System.Nullable{System.Int16},System.Nullable{System.Int32},System.String,System.String,System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.Nullable{System.Int32},System.String,System.Threading.CancellationToken)">
+            <summary>GET /api/totvs/flan — lançamentos financeiros (contas a pagar e a receber).</summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Controllers.TotvsController.FlanBaixa(System.Int16,System.Nullable{System.Int32},System.Nullable{System.Int16},System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.Nullable{System.Int32},System.String,System.Threading.CancellationToken)">
+            <summary>GET /api/totvs/flanbaixa — baixas (pagamentos/recebimentos) dos lançamentos financeiros.</summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Controllers.TotvsController.FrelLan(System.Int16,System.Nullable{System.Int32},System.Nullable{System.Int32},System.Nullable{System.Int16},System.Nullable{System.Int32},System.String,System.Threading.CancellationToken)">
+            <summary>GET /api/totvs/frellan — relacionamentos entre lançamentos financeiros.</summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Controllers.TotvsController.Ftdo(System.Int16,System.String,System.String,System.Nullable{System.Int16},System.Nullable{System.Int32},System.String,System.Threading.CancellationToken)">
+            <summary>GET /api/totvs/ftdo — tipos de documento (NF, boleto, duplicata...).</summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Controllers.TotvsController.GcCusto(System.Int16,System.String,System.String,System.String,System.Nullable{System.Int32},System.String,System.Threading.CancellationToken)">
+            <summary>GET /api/totvs/gccusto — centros de custo.</summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Controllers.TotvsController.Tmov(System.Int16,System.Nullable{System.Int16},System.Nullable{System.Int32},System.String,System.String,System.String,System.String,System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.Nullable{System.Int32},System.String,System.Threading.CancellationToken)">
+            <summary>GET /api/totvs/tmov — movimentos (pedidos, NFs, entradas/saídas de estoque).</summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.Controllers.TotvsController.Filtros">
+            <summary>Monta a lista ignorando os filtros não informados na requisição.</summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.Controllers.UsuariosController">
+             <summary>
+             Área administrativa: quem entra no painel, em quais módulos e com qual perfil.
+            
+             O recorte por módulo é feito no serviço: o administrador da conciliação só
+             lista, edita e desativa quem tem vínculo com a conciliação. Um id de outro
+             módulo responde 404, não 403 — ele não deve nem descobrir que aquela pessoa
+             existe.
+            
+             Usuário não é removido, é desativado — a trilha de auditoria depende do
+             registro continuar existindo.
+             </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Controllers.UsuariosController.#ctor(PainelWebSwissPark.Api.Services.BusinessLogic.IUsuariosService,PainelWebSwissPark.Api.Services.Auth.IUsuarioAtualService)">
+             <summary>
+             Área administrativa: quem entra no painel, em quais módulos e com qual perfil.
+            
+             O recorte por módulo é feito no serviço: o administrador da conciliação só
+             lista, edita e desativa quem tem vínculo com a conciliação. Um id de outro
+             módulo responde 404, não 403 — ele não deve nem descobrir que aquela pessoa
+             existe.
+            
+             Usuário não é removido, é desativado — a trilha de auditoria depende do
+             registro continuar existindo.
+             </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Controllers.UsuariosController.GetModulos(System.Threading.CancellationToken)">
+            <summary>Os módulos que quem está logado pode conceder. Alimenta o formulário.</summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Controllers.UsuariosController.RedefinirSenha(System.Guid,PainelWebSwissPark.Api.DTOs.Requests.RedefinirSenhaRequest,System.Threading.CancellationToken)">
+            <summary>Define uma senha provisória para outra pessoa.</summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.Data.Entities.ContaContabil">
+            <summary>
+            Espelha o plano de contas (equivalente a CCONTA no TOTVS RM).
+            </summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.Data.Entities.Empresa">
+            <summary>
+            Espelha a tabela de empresas/filiais (equivalente a GFILIAL no TOTVS RM).
+            Campos e nomes ainda não confirmados contra o schema real do SQL Server.
+            </summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.Data.Entities.Fechamento">
+            <summary>
+            Cabeçalho da conciliação de uma conta contábil em um período — equivalente
+            funcional ao que a VW_FT_COMPOSICAO expõe hoje para o Excel (saldo, composição,
+            status e prioridade), agora servido diretamente para o React via API.
+            </summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.Data.Entities.Fechamento.Periodo">
+            <summary>Primeiro dia do mês de referência (ex.: 2026-01-01 para 01/2026).</summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.Data.Entities.Fechamento.Status">
+            <summary>Backlog | Preparado | Pré-conferido | Conferido | Pendência | Fechado.</summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.Data.Entities.Fechamento.Prioridade">
+            <summary>Alta | Média | Regular | Baixa.</summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.Data.Entities.Lancamento">
+            <summary>
+            Lançamento contábil dentro de um fechamento (equivalente a um registro de
+            CLANCA já resolvido em débito/crédito).
+            </summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.Data.Entities.Lancamento.Tipo">
+            <summary>Debito | Credito.</summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.Data.Entities.Pendencia.Prioridade">
+            <summary>Alta | Média | Regular | Baixa.</summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.Data.Entities.Totvs.Gfilial">
+            <summary>
+            Tabela nativa do TOTVS RM (SQL Server) — empresa/filial. Chave real é
+            CODCOLIGADA + CODFILIAL. Só as colunas usadas pelo painel estão mapeadas
+            aqui; o restante das ~50 colunas da tabela real fica de fora.
+            </summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.Data.PainelDbContext">
+            <summary>
+            Contexto do Postgres do painel (hoje o banco contabil). Só as tabelas do próprio
+            painel moram aqui — nada do ETL do Pentaho.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Data.PainelDbContext.#ctor(Microsoft.EntityFrameworkCore.DbContextOptions{PainelWebSwissPark.Api.Data.PainelDbContext},Microsoft.Extensions.Options.IOptions{PainelWebSwissPark.Api.Options.PainelDbOptions})">
+            <summary>
+            Contexto do Postgres do painel (hoje o banco contabil). Só as tabelas do próprio
+            painel moram aqui — nada do ETL do Pentaho.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Data.Repositories.BasesTotvs.Ler(System.String)">
+            <summary>Aceita "corpore", "bsb", "mao", "neu" (ou o nome completo do banco).</summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.Data.Repositories.ContaContabilMovimentada">
+            <summary>
+            Conta encontrada no crédito ou débito da CPARTIDA, identificada por coligada.
+            </summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.Data.Repositories.ComposicaoContaLinha">
+            <summary>Composição do saldo de uma conta numa base: soma do que está em aberto.</summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.Data.Repositories.DiferencasTotvsRepository">
+            <summary>
+            Composição do saldo e saldo do razão, lidos direto do TOTVS (só SELECT),
+            reproduzindo a lógica do fc_fech_composicao_v12 do sistema antigo:
+            - Fornecedores de Materiais/Serviços: NFs lançadas a crédito − pagamentos (FLAN ligada à TMOV);
+            - Adiantamentos: títulos ADF/ADC baixados − NFs vinculadas (cascata 401 → 501 → 601 → 701 → 801).
+            O corte em 2025-01-01 é o mesmo período que a carga do sistema antigo copiava do TOTVS.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Data.Repositories.DiferencasTotvsRepository.#ctor(PainelWebSwissPark.Api.Data.AppDbContext)">
+            <summary>
+            Composição do saldo e saldo do razão, lidos direto do TOTVS (só SELECT),
+            reproduzindo a lógica do fc_fech_composicao_v12 do sistema antigo:
+            - Fornecedores de Materiais/Serviços: NFs lançadas a crédito − pagamentos (FLAN ligada à TMOV);
+            - Adiantamentos: títulos ADF/ADC baixados − NFs vinculadas (cascata 401 → 501 → 601 → 701 → 801).
+            O corte em 2025-01-01 é o mesmo período que a carga do sistema antigo copiava do TOTVS.
+            </summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.Data.Repositories.GfilialUniao">
+            <summary>
+            Uma linha do UNION de GFILIAL. Não é entidade do model (não tem ToTable nem
+            chave configurada) de propósito: essa forma só existe para essa consulta
+            específica.
+            </summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.Data.Repositories.FechamentoRepository">
+            <summary>
+            Isola o FechamentosService do EF Core/DbContext diretamente — só essa classe
+            sabe como o Fechamento é montado a partir das tabelas reais do SQL Server.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Data.Repositories.FechamentoRepository.#ctor(PainelWebSwissPark.Api.Data.AppDbContext)">
+            <summary>
+            Isola o FechamentosService do EF Core/DbContext diretamente — só essa classe
+            sabe como o Fechamento é montado a partir das tabelas reais do SQL Server.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Data.Repositories.IContaContabilConfiguracaoRepository.ListarStatusAsync(System.Threading.CancellationToken)">
+            <summary>Status (ativo/inativo) de cada coligada+conta que já foi alterada pelo painel.</summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Data.Repositories.IContaContabilTotvsRepository.ListarTodasColigadasAsync(System.Threading.CancellationToken,System.Boolean,System.Nullable{System.Int16},System.Nullable{System.Int16})">
+            <summary>
+            União dos créditos e débitos da CPARTIDA nas quatro bases, sem coligada zero.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Data.Repositories.IDiferencasTotvsRepository.ListarComposicaoAsync(PainelWebSwissPark.Api.Data.Repositories.BaseTotvs,System.DateOnly,System.Threading.CancellationToken)">
+            <summary>Composição do saldo (em aberto) por coligada/filial/conta, numa base, até o fim do mês.</summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Data.Repositories.IDiferencasTotvsRepository.ListarSaldoRazaoAsync(PainelWebSwissPark.Api.Data.Repositories.BaseTotvs,System.DateOnly,System.Threading.CancellationToken)">
+            <summary>Saldo do razão, no fim do mês, das contas que têm composição (fornecedores e adiantamentos).</summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Data.Repositories.IEmpresaConfiguracaoRepository.ListarStatusAsync(System.Threading.CancellationToken)">
+            <summary>Status (ativo/inativo) de cada coligada+filial que já foi alterada pelo painel.</summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Data.Repositories.IEmpresaRepository.ListarTodasColigadasAsync(System.Threading.CancellationToken,System.Boolean)">
+            <summary>
+            União do GFILIAL das quatro coligadas (corpore, corpore_bsb, corpore_mao,
+            corpore_neu) — cada uma é um banco separado no mesmo SQL Server.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Data.Repositories.IFechamentoValidacaoRepository.ListarHistoricoAsync(System.Int16,System.Int16,System.String,System.String,System.Threading.CancellationToken)">
+            <summary>Histórico completo da chave, mais antigo primeiro.</summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Data.Repositories.IFechamentoValidacaoRepository.ListarPorAnoMesAsync(System.String,System.Threading.CancellationToken)">
+            <summary>Todas as linhas de um período (todas as chaves) — base do resumo do dashboard.</summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Data.Repositories.IFechamentoValidacaoRepository.ObterUltimoAnoMesAsync(System.Threading.CancellationToken)">
+            <summary>O AnoMes mais recente com pelo menos uma linha — null se a tabela estiver vazia.</summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Data.Repositories.IFechamentoValidacaoRepository.ObterNomesAsync(System.Collections.Generic.IReadOnlyCollection{System.Guid},System.Threading.CancellationToken)">
+            <summary>Nomes dos usuários dados os ids — usado para montar "preparado por", "conferido por" etc.</summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Data.Repositories.IFechamentoValidacaoRepository.ContarPorUsuarioAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Quantas linhas com esse status cada usuário registrou (realizado_por), maior primeiro.
+            anoMes null = todos os períodos.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Data.Repositories.IFilialRepository.ObterComMesmoCodFilialAsync(System.Threading.CancellationToken)">
+            <summary>
+            GFILIAL com ela mesma, casando pelo CODFILIAL — traz pares de filiais
+            com o mesmo código em coligadas diferentes.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Data.Repositories.ILancamentosTotvsRepository.ListarAsync(PainelWebSwissPark.Api.Data.Repositories.BaseTotvs,System.Int16,System.Int16,System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Lançamentos de CPARTIDA de uma única base TOTVS, filtrados por
+            coligada+filial+período+conta, com a linha extra de SALDO_RAZAO
+            (saldo anterior ao período + débitos + créditos do período).
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Data.Repositories.ITotvsConsultaRepository.ListarAsync(PainelWebSwissPark.Api.Data.Repositories.BaseTotvs,PainelWebSwissPark.Api.Data.Repositories.TabelaTotvs,System.Collections.Generic.IReadOnlyList{PainelWebSwissPark.Api.Data.Repositories.FiltroTotvs},System.String,System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            SELECT TOP (limite) * de uma tabela do TOTVS numa base, com os filtros
+            (todos em AND). Cada linha vem com todas as colunas da tabela + "BASE".
+            ordenacao é texto fixo do código (ex.: "[CODCOLIGADA], [IDLAN] DESC").
+            </summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.Data.Repositories.LancamentoTotvsLinha">
+            <summary>
+            Uma linha do razão (lançamento) ou a linha extra de SALDO_RAZAO por
+            ANO_MES+CODCONTA. Não é entidade do model — só existe para essa consulta.
+            </summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.Data.Repositories.TabelaTotvs">
+            <summary>Tabelas do TOTVS liberadas pra leitura genérica — o nome vai direto no SQL, então só o que está aqui.</summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.Data.Repositories.FiltroTotvs">
+            <summary>
+            Coluna sempre é constante escrita no código (controller), nunca texto vindo
+            da requisição; o valor vai como parâmetro.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Data.Repositories.FiltroTotvs.#ctor(System.String,PainelWebSwissPark.Api.Data.Repositories.TipoFiltroTotvs,System.Object)">
+            <summary>
+            Coluna sempre é constante escrita no código (controller), nunca texto vindo
+            da requisição; o valor vai como parâmetro.
+            </summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.DTOs.Requests.AtualizarUsuarioRequest.Modulos">
+            <summary>
+            Os vínculos da pessoa nos módulos que quem edita administra. Vínculos em
+            outros módulos não são tocados — o administrador do mkt não consegue
+            remover ninguém da conciliação nem sem querer.
+            </summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.DTOs.Requests.ChaveFechamentoRequest">
+            <summary>Identifica a conta/mês que está sendo preparada, conferida, fechada ou revertida.</summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.DTOs.Requests.ChaveFechamentoRequest.AnoMes">
+            <summary>Formato AAAA-MM.</summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.DTOs.Requests.CriarUsuarioRequest.Modulos">
+            <summary>
+            Em quais módulos a pessoa entra, e com qual perfil em cada um.
+            Só é possível conceder módulos que quem está criando administra.
+            </summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.DTOs.Requests.CriarUsuarioRequest.SenhaInicial">
+            <summary>
+            Senha inicial definida pelo administrador. Entra como provisória: a pessoa
+            é obrigada a trocar no primeiro acesso.
+            </summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.DTOs.Requests.MensagemChatDto.Autor">
+            <summary>"usuario" ou "tati".</summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.DTOs.Requests.PerguntarCfoTatiRequest.AnoMes">
+            <summary>AAAA-MM — mesmo período selecionado nos filtros da tela.</summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.DTOs.Requests.PerguntarCfoTatiRequest.Empresa">
+            <summary>Nome (razão social) da empresa filtrada, ou vazio/nulo para todas.</summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.DTOs.Requests.PerguntarCfoTatiRequest.Historico">
+            <summary>Mensagens trocadas antes desta pergunta, mais antiga primeiro.</summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.DTOs.Requests.PrepararFechamentoRequest.Prioridade">
+            <summary>1 (mais alta) a 4. Opcional.</summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.DTOs.Requests.RealizarFechamentoRequest.SaldoAtual">
+            <summary>Atualiza o saldo atual no momento do fechamento, se informado.</summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.DTOs.Requests.RedefinirSenhaRequest">
+            <summary>
+            Um administrador define uma senha nova para outra pessoa. Ela entra como
+            provisória: quem receber é obrigado a trocar no próximo acesso.
+            </summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.DTOs.Requests.VinculoDeModuloRequest">
+            <summary>O perfil de uma pessoa dentro de um módulo.</summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.DTOs.ViewModels.ContaContabilViewModel">
+            <summary>
+            Uma conta movimentada na CPARTIDA do TOTVS RM, pronta para preencher o
+            combobox de Conta Contábil do front.
+            </summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.DTOs.ViewModels.ContaContabilViewModel.Id">
+            <summary>Identificador único por coligada e conta, unificado entre as bases.</summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.DTOs.ViewModels.ContaContabilViewModel.Reduzido">
+            <summary>Código reduzido da CCONTA da coligada, ou da coligada global (0).</summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.DTOs.ViewModels.ContaContabilViewModel.Ativo">
+            <summary>Flag do painel. Desativada some do combobox de Fechamentos.</summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.DTOs.ViewModels.DashboardResumoViewModel">
+            <summary>
+            Resumo do backlog de conciliação de um período: das combinações de filial
+            ativa x conta contábil ativa (o universo esperado daquele mês), quantas
+            estão em cada etapa do fechamento.
+            </summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.DTOs.ViewModels.DashboardResumoViewModel.BacklogTotal">
+            <summary>Total de combinações filial-ativa x conta-ativa esperadas no período.</summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.DTOs.ViewModels.DashboardResumoViewModel.Pendentes">
+            <summary>Ainda sem nenhuma linha em bi_fechamento_validacao para o período.</summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.DTOs.ViewModels.DiferencasViewModel">
+            <summary>Diferença = saldo do razão − composição do saldo, por conta, no fim do mês.</summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.DTOs.ViewModels.DiferencasViewModel.ValorTotal">
+            <summary>Soma das diferenças em valor absoluto.</summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.DTOs.ViewModels.DiferencaEmpresaViewModel.ValorAbsoluto">
+            <summary>Soma das diferenças em valor absoluto — é o que ordena o ranking.</summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.DTOs.ViewModels.EmpresaViewModel">
+            <summary>
+            Uma coligada/filial do TOTVS RM (GFILIAL), pronta para preencher o combobox
+            de Empresa do front.
+            </summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.DTOs.ViewModels.EmpresaViewModel.Id">
+            <summary>Identificador único (coligada+filial).</summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.DTOs.ViewModels.EmpresaViewModel.NomeFilial">
+            <summary>Código da filial concatenado com o nome fantasia, ex.: "1 - AGV Participações", pronto pro combobox de Filial.</summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.DTOs.ViewModels.EmpresaViewModel.Ativo">
+            <summary>Flag do painel (não existe em GFILIAL). Desativada some dos comboboxes de Fechamentos.</summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.DTOs.ViewModels.FechamentoValidacaoViewModel">
+            <summary>
+            Status atual de uma conta/mês, junto de quem fez cada etapa e quando —
+            derivado da linha mais recente (status atual) e das linhas anteriores de
+            cada tipo (quem preparou, quem conferiu, quem fechou).
+            </summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.DTOs.ViewModels.FechamentoValidacaoViewModel.Status">
+            <summary>Ver <see cref="T:PainelWebSwissPark.Api.Entities.StatusFechamento"/>. "Pendente" quando não há nenhuma linha ainda.</summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.DTOs.ViewModels.FilialRelacionadaViewModel">
+            <summary>
+            Um par de filiais que compartilham o mesmo CODFILIAL em coligadas diferentes.
+            </summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.DTOs.ViewModels.LancamentoTotvsViewModel">
+            <summary>
+            Um lançamento do razão (CPARTIDA) do TOTVS RM, ou a linha extra de
+            SALDO_RAZAO (data nula) somando o período pra uma conta.
+            </summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.DTOs.ViewModels.LancamentoTotvsViewModel.NomeFilial">
+            <summary>Código da filial concatenado com o nome fantasia, ex.: "1 - AGV Participações".</summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.DTOs.ViewModels.LancamentoTotvsViewModel.SaldoRazao">
+            <summary>Só preenchido na linha-resumo (Data nula): saldo anterior ao período + débitos + créditos do período.</summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.DTOs.ViewModels.LancamentoTotvsViewModel.SaldoAnterior">
+            <summary>Só preenchido na linha-resumo (Data nula): saldo acumulado antes do período (sem os débitos/créditos dele).</summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.DTOs.ViewModels.ProdutividadeUsuarioViewModel">
+            <summary>Quantas ações (Preparado, Conferido ou Fechado) um usuário registrou.</summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.DTOs.ViewModels.UsuarioViewModel.IsSuperAdmin">
+            <summary>Enxerga e administra todos os módulos.</summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.DTOs.ViewModels.UsuarioViewModel.MustChangePassword">
+            <summary>
+            A senha atual foi definida por um administrador e ainda não foi trocada.
+            A tela mostra isso como "senha provisória".
+            </summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.DTOs.ViewModels.UsuarioViewModel.Modulos">
+            <summary>Os módulos da pessoa, com o perfil em cada um.</summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.Entities.BiModule">
+             <summary>
+             Um módulo é um sistema dentro do painel. Quem pertence a um não enxerga o
+             outro — nem as telas, nem os usuários.
+            
+             Fica em tabela, e não como constante no código, porque o segundo módulo ainda
+             não tem nome definido: acrescentar um é um INSERT, não um deploy.
+             </summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.Entities.BiModule.Key">
+            <summary>Chave usada no código e nas rotas. Ex.: "conciliacao".</summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.Entities.BiModule.Name">
+            <summary>Nome exibido na tela.</summary>
+        </member>
+        <member name="F:PainelWebSwissPark.Api.Entities.Modulos.Conciliacao">
+            <summary>O painel de conciliação contábil — as telas que existem hoje.</summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.Entities.BiUser">
+             <summary>
+             Quem pode entrar no painel e a senha com que entra. A senha nunca é guardada
+             em texto: só o hash PBKDF2 produzido pelo PasswordHasher do ASP.NET Core.
+            
+             O perfil NÃO fica aqui — ele é por módulo, na <see cref="T:PainelWebSwissPark.Api.Entities.BiUserModule"/>.
+             </summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.Entities.BiUser.PasswordHash">
+            <summary>Hash PBKDF2 da senha. Nunca sai da camada de serviço.</summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.Entities.BiUser.MustChangePassword">
+            <summary>
+            Verdadeiro quando a senha atual foi definida por um administrador.
+            A pessoa é obrigada a trocar antes de usar o painel — assim ninguém
+            continua acessando com uma senha que outra pessoa conhece.
+            </summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.Entities.BiUser.IsSuperAdmin">
+             <summary>
+             Enxerga e administra todos os módulos. É quem cria os administradores de
+             cada módulo — sem ele, o administrador da conciliação não teria como
+             criar o administrador do outro sistema, já que um não enxerga o outro.
+            
+             Criado uma única vez, pelas variáveis PAINEL_ADMIN_*.
+             </summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.Entities.BiUserAudit">
+            <summary>
+            Trilha de auditoria das alterações feitas na bi_users pela área administrativa.
+            Alimenta o item "Auditoria" do menu quando a tela existir.
+            </summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.Entities.BiUserAudit.TargetUserId">
+            <summary>Usuário que sofreu a alteração.</summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.Entities.BiUserAudit.Action">
+            <summary>Ver <see cref="T:PainelWebSwissPark.Api.Entities.AcoesAuditoria"/>.</summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.Entities.BiUserAudit.Details">
+            <summary>Resumo legível do que mudou (ex.: "perfil: Analista -> Gerente").</summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.Entities.BiUserAudit.ModuleKey">
+            <summary>Módulo em que a alteração aconteceu, quando aplicável.</summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.Entities.BiUserAudit.PerformedBy">
+            <summary>Quem executou a alteração.</summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.Entities.BiUserModule">
+             <summary>
+             O perfil de uma pessoa DENTRO de um módulo. Alguém pode ser Administrador na
+             conciliação e Analista no outro sistema — ou não existir no outro sistema.
+            
+             É por isso que o perfil não mora na bi_users: ele não é uma propriedade da
+             pessoa, é da relação entre a pessoa e o módulo.
+             </summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.Entities.ContaContabilConfiguracao">
+            <summary>
+            Override do painel para ativar/desativar uma conta contábil do TOTVS.
+            CCONTA (corpore/corpore_bsb/corpore_mao/corpore_neu) é somente leitura —
+            esse flag mora só aqui, no Postgres do painel. A ausência de linha para uma
+            coligada+conta significa ativa (default); só ganha linha quando alguém
+            explicitamente ativa ou desativa pela tela de Contas Contábeis.
+            </summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.Entities.EmpresaConfiguracao">
+            <summary>
+            Override do painel para ativar/desativar uma coligada+filial do TOTVS.
+            GFILIAL (corpore/corpore_bsb/corpore_mao/corpore_neu) é somente leitura —
+            esse flag mora só aqui, no Postgres do painel. A ausência de linha para uma
+            coligada+filial significa ativa (default); só ganha linha quando alguém
+            explicitamente ativa ou desativa pela tela de Empresas.
+            </summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.Entities.FechamentoValidacao">
+            <summary>
+            Uma linha da trilha de preparação/conferência/fechamento de uma conta num mês.
+            Nunca é alterada — cada ação (Preparar, Conferir, Realizar Fechamento, Reverter)
+            grava uma linha nova. O status "atual" de uma conta/mês é o status da linha
+            mais recente para aquela chave.
+            </summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.Entities.FechamentoValidacao.AnoMes">
+            <summary>Formato AAAA-MM.</summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.Entities.FechamentoValidacao.Status">
+            <summary>Ver <see cref="T:PainelWebSwissPark.Api.Entities.StatusFechamento"/>.</summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.Entities.FechamentoValidacao.Prioridade">
+            <summary>1 (mais alta) a 4. Carregada adiante entre as ações quando não reinformada.</summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.Entities.FechamentoValidacao.DataFechamento">
+            <summary>Primeiro dia do período (AnoMes) que está sendo fechado.</summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.Entities.FechamentoValidacao.RealizadoPor">
+            <summary>Quem executou esta ação especificamente (não é "quem preparou", é quem gravou ESTA linha).</summary>
+        </member>
+        <member name="F:PainelWebSwissPark.Api.Entities.StatusFechamento.Pendente">
+            <summary>Nenhuma ação ainda — estado inicial, não tem linha no banco.</summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.Entities.PerfisUsuario">
+            <summary>
+            Perfis aceitos pela bi_users. Espelha o CHECK da coluna role — mudar aqui exige
+            mudar a constraint no banco (docs/sql/001_bi_users.sql).
+            </summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.Exceptions.RegraDeNegocioException">
+            <summary>
+            Erro previsto de regra de negócio — a mensagem é escrita para o usuário final
+            e vai inteira para a resposta HTTP 400.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Exceptions.RegraDeNegocioException.#ctor(System.String)">
+            <summary>
+            Erro previsto de regra de negócio — a mensagem é escrita para o usuário final
+            e vai inteira para a resposta HTTP 400.
+            </summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.Extensions.BearerSecuritySchemeTransformer">
+            <summary>
+            Adiciona o esquema "Bearer" ao documento OpenAPI, para que a página de
+            documentação (Scalar) mostre o botão de autenticação e anexe o token JWT
+            automaticamente nas chamadas de teste.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Extensions.BearerSecuritySchemeTransformer.#ctor(Microsoft.AspNetCore.Authentication.IAuthenticationSchemeProvider)">
+            <summary>
+            Adiciona o esquema "Bearer" ao documento OpenAPI, para que a página de
+            documentação (Scalar) mostre o botão de autenticação e anexe o token JWT
+            automaticamente nas chamadas de teste.
+            </summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.Extensions.ServiceCollectionExtensions">
+            <summary>
+            Mantém o Program.cs enxuto: aqui fica o registro de acesso ao SQL Server
+            (EF Core) e dos Services/Repositories que dependem dele.
+            </summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.Options.AuthOptions.JwtSigningKey">
+            <summary>
+            Chave que assina os tokens. Mínimo de 32 bytes — HMAC-SHA256 recusa menos.
+            Vem do keys.json, nunca do appsettings.json.
+            Gere uma com: openssl rand -base64 48
+            </summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.Options.AuthOptions.TokenLifetimeMinutes">
+            <summary>
+            Validade do token em minutos. Pode ser generosa: o acesso é conferido na
+            bi_users a cada requisição, então desativar alguém vale na hora — não
+            depende de o token expirar.
+            </summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.Options.AuthOptions.MinimumPasswordLength">
+            <summary>Tamanho mínimo da senha.</summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.Options.DeepSeekOptions">
+            <summary>
+            Configuração da CFO Tati (tela IA Planning). A chave em si é segredo e vem
+            de DeepSeek:ApiKey no keys.json.
+            </summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.Options.PainelDbOptions.Schema">
+            <summary>
+            Schema da bi_users. Hoje "public" no banco contabil; quando o banco do painel
+            existir, basta apontar para "painel" sem tocar em código.
+            </summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.Options.PainelDbOptions.CacheSeconds">
+            <summary>
+            Segundos de cache da consulta de autorização por usuário.
+            0 (padrão) = sem cache, revogação vale já no próximo request.
+            Só aumente se a consulta virar gargalo — o atraso é o preço.
+            </summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.Services.Auth.AdministradorInicial">
+             <summary>
+             Cria o superadministrador a partir de variáveis de ambiente.
+            
+             Ele existe por um motivo estrutural: o administrador da conciliação não
+             enxerga o mkt, e vice-versa — então nenhum dos dois conseguiria criar o
+             outro. Alguém precisa estar acima dos módulos para isso.
+            
+             A tabela nasce vazia, então sem este bootstrap ninguém entra. A alternativa
+             comum — "o primeiro que logar vira admin" — entregaria o sistema a qualquer
+             pessoa que achasse a URL.
+            
+             Roda só quando PAINEL_ADMIN_EMAIL e PAINEL_ADMIN_PASSWORD estão definidas E
+             não existe superadministrador ativo. Depois do primeiro acesso as duas
+             variáveis podem sair do .env. Não há tela para promover ninguém a
+             superadministrador, de propósito.
+             </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Services.Auth.ILoginService.TrocarSenhaAsync(System.Guid,System.String,System.String,System.Threading.CancellationToken)">
+            <summary>Troca da própria senha. Exige a senha atual.</summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.Services.Auth.UsuarioAutorizado">
+            <summary>
+            Retrato imutável do usuário autorizado. É um snapshot destacado do EF de propósito:
+            pode ser cacheado entre requisições sem arrastar entidade rastreada junto.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Services.Auth.UsuarioAutorizado.#ctor(System.Guid,System.String,System.String,System.Boolean,System.Boolean,System.Boolean,System.Collections.Generic.IReadOnlyList{PainelWebSwissPark.Api.Services.Auth.ModuloDoUsuario})">
+            <summary>
+            Retrato imutável do usuário autorizado. É um snapshot destacado do EF de propósito:
+            pode ser cacheado entre requisições sem arrastar entidade rastreada junto.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Services.Auth.UsuarioAutorizado.PodeAcessarModulo(System.String)">
+            <summary>Pertence ao módulo — ou é superadministrador, que enxerga todos.</summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Services.Auth.UsuarioAutorizado.TemPerfilNoModulo(System.String,System.String)">
+            <summary>Tem exatamente este perfil neste módulo — ou é superadministrador, que tem todos.</summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Services.Auth.UsuarioAutorizado.TemAlgumPerfilNoModulo(System.String,System.String[])">
+            <summary>Tem qualquer um destes perfis neste módulo — ou é superadministrador, que tem todos.</summary>
+        </member>
+        <member name="F:PainelWebSwissPark.Api.Services.Auth.UsuarioAutorizado.PerfisComAcessoAdministrativo">
+            <summary>Perfis que enxergam e mexem na área administrativa, além do Administrador.</summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.Services.Auth.UsuarioAutorizado.EhAdministradorDeAlgumModulo">
+            <summary>Administra (ou gerencia) pelo menos um módulo. É o que libera a tela de Usuários.</summary>
+        </member>
+        <member name="P:PainelWebSwissPark.Api.Services.Auth.UsuarioAutorizado.ModulosQueAdministra">
+            <summary>
+            Módulos cuja turma esta pessoa pode gerenciar. Para o superadministrador a
+            lista vem vazia e o chamador trata como "todos" — ele não depende de
+            vínculo em bi_user_modules.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Services.Auth.IUsuarioAtualService.ResolverAsync(System.Security.Claims.ClaimsPrincipal,System.Threading.CancellationToken)">
+             <summary>
+             Traduz o token para o registro correspondente na bi_users, junto dos módulos.
+            
+             O token prova quem a pessoa é; módulos, perfis e situação vêm sempre do banco,
+             nunca do próprio token. É isso que faz tirar alguém de um módulo valer na
+             requisição seguinte.
+             </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Services.Auth.LoginService.ValidarSenha(System.String,System.Int32)">
+            <summary>Regra de senha usada tanto na troca quanto no cadastro pelo administrador.</summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Services.BusinessLogic.IDiferencasService.ObterAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>Contas com diferença (saldo do razão − composição ≠ 0) no fim do mês. empresa (Nome) opcional filtra.</summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.Services.BusinessLogic.FechamentoValidacaoService">
+            <summary>
+            Preparar/Conferir/Realizar Fechamento/Reverter — a autorização por perfil fixo
+            (Analista, Gerente e Administrador preparam e fecham; só Gerente e
+            Administrador conferem) é resolvida em <see cref="T:PainelWebSwissPark.Api.Authorization.ExigePerfilAttribute"/>,
+            no controller. Só o Reverter decide o perfil aqui, porque depende de qual
+            etapa está sendo desfeita.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Services.BusinessLogic.FechamentoValidacaoService.#ctor(PainelWebSwissPark.Api.Data.Repositories.IFechamentoValidacaoRepository)">
+            <summary>
+            Preparar/Conferir/Realizar Fechamento/Reverter — a autorização por perfil fixo
+            (Analista, Gerente e Administrador preparam e fecham; só Gerente e
+            Administrador conferem) é resolvida em <see cref="T:PainelWebSwissPark.Api.Authorization.ExigePerfilAttribute"/>,
+            no controller. Só o Reverter decide o perfil aqui, porque depende de qual
+            etapa está sendo desfeita.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Services.BusinessLogic.IDashboardService.ObterResumoAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>anoMes no formato AAAA-MM. empresa (opcional) filtra por Nome (razão social).</summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Services.BusinessLogic.IDashboardService.ObterResumoPorEmpresaAsync(System.String,System.Threading.CancellationToken)">
+            <summary>Resumo de cada empresa ativa (chave = Nome), calculado numa leitura só.</summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Services.BusinessLogic.IDashboardService.ObterUltimoPeriodoComDadosAsync(System.Threading.CancellationToken)">
+            <summary>
+            Período mais recente com algum fechamento registrado — usado pelo front pra abrir o
+            dashboard já num mês com dado, em vez do mês calendário atual (que pode estar vazio).
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Services.BusinessLogic.IFechamentoValidacaoService.ObterProdutividadeAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Ranking de usuários por quantidade de ações registradas com o status
+            (Preparado, Conferido ou Fechado — "Finalizado" vale como Fechado).
+            anoMes (AAAA-MM) opcional; sem ele, conta todos os períodos.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Services.BusinessLogic.ILancamentosTotvsService.ListarAsync(System.Int16,System.Int16,System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Consulta as quatro bases TOTVS em paralelo com o mesmo filtro e junta o
+            resultado — os lançamentos de verdade só existem em uma delas, mas o
+            front não precisa saber em qual.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Services.BusinessLogic.IUsuariosService.ListarAsync(PainelWebSwissPark.Api.Services.Auth.UsuarioAutorizado,System.Threading.CancellationToken)">
+            <summary>Só a turma dos módulos que o autor administra. O superadministrador vê todos.</summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Services.BusinessLogic.IUsuariosService.ListarModulosGerenciaveisAsync(PainelWebSwissPark.Api.Services.Auth.UsuarioAutorizado,System.Threading.CancellationToken)">
+            <summary>Módulos que o autor pode conceder ao cadastrar ou editar alguém.</summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Services.BusinessLogic.IUsuariosService.AtualizarAsync(System.Guid,PainelWebSwissPark.Api.DTOs.Requests.AtualizarUsuarioRequest,PainelWebSwissPark.Api.Services.Auth.UsuarioAutorizado,System.Threading.CancellationToken)">
+            <summary>Retorna null quando o usuário não existe ou está fora do alcance do autor.</summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Services.BusinessLogic.IUsuariosService.AlterarStatusAsync(System.Guid,System.Boolean,PainelWebSwissPark.Api.Services.Auth.UsuarioAutorizado,System.Threading.CancellationToken)">
+            <summary>Retorna null quando o usuário não existe ou está fora do alcance do autor.</summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Services.BusinessLogic.IUsuariosService.RedefinirSenhaAsync(System.Guid,System.String,PainelWebSwissPark.Api.Services.Auth.UsuarioAutorizado,System.Threading.CancellationToken)">
+            <summary>Retorna null quando o usuário não existe ou está fora do alcance do autor.</summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.Services.BusinessLogic.PreCalculoDiferencasService">
+            <summary>
+            Ao subir o backend, já calcula as diferenças do último período com dados —
+            o cálculo cruza as 4 bases do TOTVS e leva minutos, então a tela, o quadro
+            e a Tati encontram o resultado pronto no cache.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Services.BusinessLogic.PreCalculoDiferencasService.#ctor(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory,Microsoft.Extensions.Logging.ILogger{PainelWebSwissPark.Api.Services.BusinessLogic.PreCalculoDiferencasService})">
+            <summary>
+            Ao subir o backend, já calcula as diferenças do último período com dados —
+            o cálculo cruza as 4 bases do TOTVS e leva minutos, então a tela, o quadro
+            e a Tati encontram o resultado pronto no cache.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Services.BusinessLogic.ITotvsConsultaService.ListarAsync(PainelWebSwissPark.Api.Data.Repositories.TabelaTotvs,System.Collections.Generic.IReadOnlyList{PainelWebSwissPark.Api.Data.Repositories.FiltroTotvs},System.String,System.Nullable{System.Int32},System.String,System.Threading.CancellationToken)">
+            <summary>
+            Lê a tabela nas 4 bases do TOTVS (ou só na base pedida), em sequência,
+            até juntar <paramref name="limite"/> linhas. Cada linha traz "BASE".
+            </summary>
+        </member>
+        <member name="T:PainelWebSwissPark.Api.Services.BusinessLogic.UsuariosService">
+             <summary>
+             Regras da área administrativa.
+            
+             Duas famílias de trava aqui. A primeira separa os módulos: o administrador da
+             conciliação não enxerga nem toca em quem é só do mkt, e vice-versa. A segunda
+             impede que um administrador se tranque para fora — situação que só se resolve
+             com acesso direto ao banco.
+             </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Services.BusinessLogic.UsuariosService.#ctor(PainelWebSwissPark.Api.Data.PainelDbContext,Microsoft.AspNetCore.Identity.IPasswordHasher{PainelWebSwissPark.Api.Entities.BiUser},Microsoft.Extensions.Caching.Memory.IMemoryCache,Microsoft.Extensions.Options.IOptions{PainelWebSwissPark.Api.Options.AuthOptions},Microsoft.Extensions.Logging.ILogger{PainelWebSwissPark.Api.Services.BusinessLogic.UsuariosService})">
+             <summary>
+             Regras da área administrativa.
+            
+             Duas famílias de trava aqui. A primeira separa os módulos: o administrador da
+             conciliação não enxerga nem toca em quem é só do mkt, e vice-versa. A segunda
+             impede que um administrador se tranque para fora — situação que só se resolve
+             com acesso direto ao banco.
+             </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Services.BusinessLogic.UsuariosService.CarregarGerenciavelAsync(System.Guid,PainelWebSwissPark.Api.Services.Auth.UsuarioAutorizado,System.Threading.CancellationToken)">
+            <summary>
+            Carrega o usuário só se ele estiver ao alcance do autor. Devolver null em
+            vez de 403 é deliberado: o administrador do mkt não deve nem descobrir que
+            existe alguém na conciliação com aquele id.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Services.BusinessLogic.UsuariosService.ValidarVinculosAsync(System.Collections.Generic.List{PainelWebSwissPark.Api.DTOs.Requests.VinculoDeModuloRequest},PainelWebSwissPark.Api.Services.Auth.UsuarioAutorizado,System.Threading.CancellationToken)">
+            <summary>
+            Valida os vínculos pedidos: módulo existe, está ativo, o perfil é válido, e
+            o autor tem alçada para concedê-lo.
+            </summary>
+        </member>
+        <member name="M:PainelWebSwissPark.Api.Services.BusinessLogic.UsuariosService.InvalidarCache(System.Guid)">
+            <summary>
+            Só faz diferença quando PainelDb:CacheSeconds está ligado — sem isso o próximo
+            request já consulta o banco. Com cache ligado, é o que mantém a revogação imediata.
+            </summary>
+        </member>
+        <member name="T:Program">
+            <summary>
+            Auto-generated public partial Program class for top-level statement apps.
+            </summary>
+        </member>
+        <member name="M:Microsoft.AspNetCore.OpenApi.Generated.DocumentationCommentIdHelper.CreateDocumentationId(System.Type)">
+            <summary>
+            Generates a documentation comment ID for a type.
+            Example: T:Namespace.Outer+Inner`1 becomes T:Namespace.Outer.Inner`1
+            </summary>
+        </member>
+        <member name="M:Microsoft.AspNetCore.OpenApi.Generated.DocumentationCommentIdHelper.CreateDocumentationId(System.Reflection.PropertyInfo)">
+            <summary>
+            Generates a documentation comment ID for a property.
+            Example: P:Namespace.ContainingType.PropertyName or for an indexer P:Namespace.ContainingType.Item(System.Int32)
+            </summary>
+        </member>
+        <member name="M:Microsoft.AspNetCore.OpenApi.Generated.DocumentationCommentIdHelper.CreateDocumentationId(System.Type,System.String)">
+            <summary>
+            Generates a documentation comment ID for a property given its container type and property name.
+            Example: P:Namespace.ContainingType.PropertyName
+            </summary>
+        </member>
+        <member name="M:Microsoft.AspNetCore.OpenApi.Generated.DocumentationCommentIdHelper.CreateDocumentationId(System.Reflection.MethodInfo)">
+            <summary>
+            Generates a documentation comment ID for a method (or constructor).
+            For example:
+              M:Namespace.ContainingType.MethodName(ParamType1,ParamType2)~ReturnType
+              M:Namespace.ContainingType.#ctor(ParamType)
+            </summary>
+        </member>
+        <member name="M:Microsoft.AspNetCore.OpenApi.Generated.DocumentationCommentIdHelper.GetTypeDocId(System.Type,System.Boolean,System.Boolean)">
+            <summary>
+            Generates a documentation ID string for a type.
+            This method handles nested types (replacing '+' with '.'),
+            generic types, arrays, pointers, by-ref types, and generic parameters.
+            The <paramref name="includeGenericArguments"/> flag controls whether
+            constructed generic type arguments are emitted, while <paramref name="omitGenericArity"/>
+            controls whether the generic arity marker (e.g. "`1") is appended.
+            </summary>
+        </member>
+        <member name="M:Microsoft.AspNetCore.OpenApi.Generated.DocumentationCommentIdHelper.NormalizeDocId(System.String)">
+            <summary>
+            Normalizes a documentation comment ID to match the compiler-style format.
+            Strips the return type suffix for ordinary methods but retains it for conversion operators.
+            </summary>
+            <param name="docId">The documentation comment ID to normalize.</param>
+            <returns>The normalized documentation comment ID.</returns>
+        </member>
+    </members>
+</doc>

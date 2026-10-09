@@ -1,14 +1,13 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Archive, ClipboardList, CheckCircle2, AlertTriangle, CheckCheck } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Archive, ClipboardList, CheckCircle2, AlertTriangle, CheckCheck, RefreshCw } from "lucide-react";
 import AppLayout from "../../componentes/layout/AppLayout";
 import AppHeader from "../../componentes/layout/AppHeader";
 import KpiCard from "../../componentes/ui/KpiCard";
 import LoadingSpinner from "../../componentes/ui/LoadingSpinner";
-import WaterfallChart from "../../componentes/charts/WaterfallChart";
+import Button from "../../componentes/ui/Button";
 import MetricDonut from "../../componentes/charts/MetricDonut";
 import { extrairMensagemDeErro } from "../../services/api";
-import { obterResumoDashboard, obterUltimoPeriodoComDados } from "../../services/dashboardService";
-import { listarEmpresas } from "../../services/empresasService";
+import { obterResumoEmpresas, obterUltimoPeriodoComDados } from "../../services/dashboardService";
 import type { DashboardResumo } from "../../interfaces/Dashboard";
 
 const RESUMO_VAZIO: DashboardResumo = {
@@ -26,8 +25,9 @@ function mesAtual(): string {
 export default function Dashboard() {
   const [anoMes, setAnoMes] = useState(mesAtual());
   const [empresa, setEmpresa] = useState("");
-  const [nomesDeEmpresas, setNomesDeEmpresas] = useState<string[]>([]);
-  const [resumo, setResumo] = useState<DashboardResumo>(RESUMO_VAZIO);
+  const [porEmpresa, setPorEmpresa] = useState<Record<string, DashboardResumo>>({});
+  const [atualizadoEm, setAtualizadoEm] = useState<Date | null>(null);
+  const [recarregar, setRecarregar] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -42,45 +42,42 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    listarEmpresas()
-      .then((lista) => {
-        const nomes = [...new Set(lista.filter((e) => e.ativo).map((e) => e.nome))].sort((a, b) =>
-          a.localeCompare(b, "pt-BR")
-        );
-        setNomesDeEmpresas(nomes);
-      })
-      .catch(() => setNomesDeEmpresas([]));
-  }, []);
-
-  const carregarResumo = useCallback(async () => {
+    const controller = new AbortController();
     setIsLoading(true);
     setErro(null);
+    setPorEmpresa({});
+    setAtualizadoEm(null);
+    if (!anoMes) { setIsLoading(false); return; }
+    obterResumoEmpresas(anoMes, controller.signal)
+      .then((dados) => {
+        if (controller.signal.aborted) return;
+        setPorEmpresa(dados);
+        setAtualizadoEm(new Date());
+      })
+      .catch((falha) => {
+        if (!controller.signal.aborted) setErro(extrairMensagemDeErro(falha, "Falha ao carregar o dashboard."));
+      })
+      .finally(() => { if (!controller.signal.aborted) setIsLoading(false); });
+    return () => controller.abort();
+  }, [anoMes, recarregar]);
 
-    try {
-      setResumo(await obterResumoDashboard(anoMes, empresa));
-    } catch (erroCapturado) {
-      setErro(extrairMensagemDeErro(erroCapturado, "Não foi possível carregar o resumo do dashboard."));
-      setResumo(RESUMO_VAZIO);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [anoMes, empresa]);
-
-  useEffect(() => {
-    void carregarResumo();
-  }, [carregarResumo]);
-
-  const barras = useMemo(
-    () =>
-      [
-        { label: "Backlog", value: resumo.backlogTotal, tipo: "total" },
-        { label: "Finalizado", value: resumo.fechados, tipo: "diminuicao" },
-        { label: "Conferido", value: resumo.conferidos, tipo: "diminuicao" },
-        { label: "Preparado", value: resumo.preparados, tipo: "diminuicao" },
-        { label: "Pendente", value: resumo.pendentes, tipo: "total" },
-      ] as const,
-    [resumo]
-  );
+  const nomesDeEmpresas = useMemo(() => Object.keys(porEmpresa).sort((a, b) => a.localeCompare(b, "pt-BR")), [porEmpresa]);
+  const selecionadas = useMemo(() => nomesDeEmpresas
+    .filter((nome) => !empresa || nome === empresa)
+    .map((nome) => ({ nome, ...porEmpresa[nome] })), [nomesDeEmpresas, empresa, porEmpresa]);
+  const resumo = useMemo(() => selecionadas.reduce((total, item) => ({
+    backlogTotal: total.backlogTotal + item.backlogTotal,
+    preparados: total.preparados + item.preparados,
+    conferidos: total.conferidos + item.conferidos,
+    fechados: total.fechados + item.fechados,
+    pendentes: total.pendentes + item.pendentes,
+  }), RESUMO_VAZIO), [selecionadas]);
+  const empresasComContas = selecionadas.filter((item) => item.backlogTotal > 0);
+  const restaPreparar = empresasComContas.filter((item) => item.pendentes > 0);
+  const aConferir = empresasComContas.filter((item) => item.pendentes + item.preparados > 0);
+  const meta = empresasComContas.length;
+  const preparadas = meta - restaPreparar.length;
+  const conferidas = meta - aConferir.length;
 
   return (
     <AppLayout>
@@ -123,62 +120,36 @@ export default function Dashboard() {
           <KpiCard label="Finalizados" value={resumo.fechados} icon={<CheckCheck size={20} />} tone="green" isLoading={isLoading} />
         </section>
 
-        <section className="sp-dashboard__charts">
-          <div className="sp-card sp-card--chart">
-            <h2 className="sp-card__title">Backlog de Atividades: Total vs. Realizado</h2>
-            {isLoading ? (
-              <div className="sp-card__loading">
-                <LoadingSpinner size={26} color="var(--color-green)" />
-              </div>
-            ) : (
-              <WaterfallChart data={barras} />
-            )}
+        <section className="sp-dashboard__companies" aria-label="Andamento por empresa" aria-busy={isLoading}>
+          <div className="sp-dashboard__companies-heading">
+            <div><h2>Conciliação por empresa</h2><p>Todas as contas e filiais ativas devem concluir a etapa. Empresas sem contas ficam fora da meta.</p></div>
+            <span>Atualizado em: {atualizadoEm ? atualizadoEm.toLocaleString("pt-BR") : "—"}</span>
+            <Button variant="secondary" icon={<RefreshCw size={16} />} isLoading={isLoading} disabled={!anoMes} onClick={() => setRecarregar((valor) => valor + 1)}>Atualizar</Button>
           </div>
-
-          <div className="sp-dashboard__donuts">
-            <div className="sp-card sp-card--chart">
-              <h2 className="sp-card__title">% Finalizado</h2>
-              {isLoading ? (
-                <div className="sp-card__loading">
-                  <LoadingSpinner size={26} color="var(--color-green)" />
-                </div>
-              ) : (
-                <MetricDonut label="Finalizado" value={resumo.fechados} total={resumo.backlogTotal} />
-              )}
+          {isLoading ? <div className="sp-card__loading"><LoadingSpinner size={26} /></div> : erro ?
+            <p role="status">Não foi possível carregar a visão por empresa.</p> : (
+            <div className="sp-dashboard__company-grid">
+              <aside className="sp-dashboard__company-metrics">
+                <div className="sp-dashboard__company-goal"><span>Meta de empresas</span><strong>{meta}</strong></div>
+                <div className="sp-card"><h3>{preparadas} preparadas</h3><MetricDonut label="Preparadas" value={preparadas} total={meta} /></div>
+                <div className="sp-card"><h3>{conferidas} conferidas</h3><MetricDonut label="Conferidas" value={conferidas} total={meta} /></div>
+              </aside>
+              {[
+                { titulo: "Resta preparar", lista: restaPreparar },
+                { titulo: "A conferir", lista: aConferir },
+              ].map(({ titulo, lista }) => (
+                <section className="sp-dashboard__company-list" key={titulo} aria-label={titulo}>
+                  <header><h3>{titulo}</h3><strong>{lista.length}</strong></header>
+                  <div className="sp-dashboard__company-table">
+                    <table><thead><tr><th>Empresa</th></tr></thead><tbody>
+                      {lista.map((item) => <tr key={item.nome}><td>{item.nome}</td></tr>)}
+                      {lista.length === 0 && <tr><td>{meta === 0 ? "Nenhuma empresa com contas neste filtro." : "Nenhuma empresa pendente nesta etapa."}</td></tr>}
+                    </tbody></table>
+                  </div>
+                </section>
+              ))}
             </div>
-
-            <div className="sp-card sp-card--chart">
-              <h2 className="sp-card__title">% Conferido</h2>
-              {isLoading ? (
-                <div className="sp-card__loading">
-                  <LoadingSpinner size={26} color="var(--color-green)" />
-                </div>
-              ) : (
-                <MetricDonut
-                  label="Conferido"
-                  value={resumo.conferidos}
-                  total={resumo.backlogTotal}
-                  color="var(--color-green)"
-                />
-              )}
-            </div>
-
-            <div className="sp-card sp-card--chart">
-              <h2 className="sp-card__title">% Preparado</h2>
-              {isLoading ? (
-                <div className="sp-card__loading">
-                  <LoadingSpinner size={26} color="var(--color-green)" />
-                </div>
-              ) : (
-                <MetricDonut
-                  label="Preparado"
-                  value={resumo.preparados}
-                  total={resumo.backlogTotal}
-                  color="var(--color-warning)"
-                />
-              )}
-            </div>
-          </div>
+          )}
         </section>
       </main>
     </AppLayout>

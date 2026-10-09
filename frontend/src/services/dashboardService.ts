@@ -1,6 +1,11 @@
 import api from "./api";
 import type { DashboardResumo } from "../interfaces/Dashboard";
 
+export async function obterResumoEmpresas(anoMes: string, signal?: AbortSignal): Promise<Record<string, DashboardResumo>> {
+  const { data } = await api.get<Record<string, DashboardResumo>>("/dashboard/empresas", { params: { anoMes }, signal });
+  return data;
+}
+
 export async function obterResumoDashboard(anoMes: string, empresa: string): Promise<DashboardResumo> {
   const { data } = await api.get<DashboardResumo>("/dashboard/resumo", {
     params: { anoMes, empresa: empresa || undefined },

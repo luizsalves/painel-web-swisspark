@@ -17,13 +17,15 @@ public class ContasContabeisTotvsService(
 
     public async Task<List<EmpresaContabilViewModel>> ListarEmpresasAsync(CancellationToken cancellationToken)
     {
-        const string chave = ChaveCache + ":empresas";
+        const string chave = ChaveCache + ":empresas:nomes:v2";
         if (cache.TryGetValue(chave, out List<EmpresaContabilViewModel>? emCache) && emCache is not null)
             return emCache;
 
         var linhas = await contaContabilRepository.ListarEmpresasAsync(cancellationToken);
-        var resultado = linhas.GroupBy(e => e.CodColigada)
-            .Select(g => new EmpresaContabilViewModel(g.Key, g.First().Nome)).ToList();
+        // O mesmo código pode ter nomes diferentes nas bases e nas SCPs.
+        // Remover apenas duplicatas exatas, sem esconder os demais nomes.
+        var resultado = linhas.Select(e => new EmpresaContabilViewModel(e.CodColigada, e.Nome))
+            .Distinct().OrderBy(e => e.Nome).ThenBy(e => e.CodColigada).ToList();
         cache.Set(chave, resultado, DuracaoCache);
         return resultado;
     }

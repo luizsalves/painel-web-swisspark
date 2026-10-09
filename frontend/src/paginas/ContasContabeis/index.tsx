@@ -1,3 +1,4 @@
+import { chaveEmpresaContabil, coligadaDaEmpresa } from "../../utils/empresaContabil";
 import { useEffect, useMemo, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import AppHeader from "../../componentes/layout/AppHeader";
@@ -54,7 +55,7 @@ export default function ContasContabeis() {
 
   // Os nomes identificam as empresas; os códigos das filiais vêm da CPARTIDA.
   const empresasPorColigada = useMemo(() => {
-    return new Map(empresas.map((empresa) => [empresa.codColigada, empresa.nome]));
+    return new Map([...empresas].reverse().map((empresa) => [empresa.codColigada, empresa.nome]));
   }, [empresas]);
 
   const filiais = useMemo(() =>
@@ -70,7 +71,7 @@ export default function ContasContabeis() {
     if (empresaSelecionada === null) return;
     let cancelado = false;
     setCarregandoFiliais(true);
-    listarColigadasFiliaisContabeis(empresaSelecionada === "" ? undefined : Number(empresaSelecionada))
+    listarColigadasFiliaisContabeis(empresaSelecionada === "" ? undefined : coligadaDaEmpresa(empresaSelecionada))
       .then((lista) => { if (!cancelado) setColigadasFiliais(lista); })
       .catch((erro) => { if (!cancelado) setErroDaLista(extrairMensagemDeErro(erro, "Erro ao carregar as filiais.")); })
       .finally(() => { if (!cancelado) setCarregandoFiliais(false); });
@@ -88,7 +89,7 @@ export default function ContasContabeis() {
     setCarregandoOpcoes(true);
     setOpcoesCarregadas(false);
     listarContasContabeis({
-      codColigada: empresaSelecionada === "" ? undefined : Number(empresaSelecionada),
+      codColigada: empresaSelecionada === "" ? undefined : coligadaDaEmpresa(empresaSelecionada),
       codFilial: filialSelecionada === "" ? undefined : Number(filialSelecionada),
     })
       .then((lista) => {
@@ -219,7 +220,7 @@ export default function ContasContabeis() {
             options={[
               ...(empresaSelecionada === null ? [{ value: "__pendente__", label: "Selecione uma empresa" }] : []),
               { value: "", label: "Todas as empresas" },
-              ...empresas.map((empresa) => ({ value: String(empresa.codColigada), label: empresa.nome })),
+              ...empresas.map((empresa) => ({ value: chaveEmpresaContabil(empresa), label: empresa.nome })),
             ]}
           />
           <p className="sp-contas__coligada" aria-live="polite">

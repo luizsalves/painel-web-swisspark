@@ -10,6 +10,15 @@ namespace PainelWebSwissPark.Api.Controllers;
 [ExigeModulo(Modulos.Conciliacao)]
 public class DashboardController(IDashboardService dashboardService) : ControllerBase
 {
+    [HttpGet("empresas")]
+    public async Task<IActionResult> GetEmpresas([FromQuery] string anoMes, CancellationToken cancellationToken)
+    {
+        if (!DateOnly.TryParseExact(anoMes + "-01", "yyyy-MM-dd",
+            System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out _))
+            return BadRequest("Período inválido. Use AAAA-MM.");
+        return Ok(await dashboardService.ObterResumoPorEmpresaAsync(anoMes, cancellationToken));
+    }
+
     /// <summary>
     /// GET /api/dashboard/resumo?anoMes=2026-01&amp;empresa=... — backlog de
     /// conciliação do período: das combinações de filial ativa x conta

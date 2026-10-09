@@ -1,3 +1,4 @@
+import { chaveEmpresaContabil, coligadaDaEmpresa } from "../../utils/empresaContabil";
 import { useEffect, useMemo, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import AppLayout from "../../componentes/layout/AppLayout";
@@ -52,7 +53,7 @@ export default function Balancete() {
     if (empresa === null) return;
     let cancelado = false;
     setCarregandoFiliais(true);
-    listarFiliaisBalancete(empresa ? Number(empresa) : undefined)
+    listarFiliaisBalancete(empresa ? coligadaDaEmpresa(empresa) : undefined)
       .then((lista) => { if (!cancelado) setFiliais(lista); })
       .catch((falha) => { if (!cancelado) setErro(extrairMensagemDeErro(falha, "Não foi possível carregar as filiais.")); })
       .finally(() => { if (!cancelado) setCarregandoFiliais(false); });
@@ -64,7 +65,7 @@ export default function Balancete() {
     let cancelado = false;
     setCarregandoContas(true);
     listarContasBalancete({
-      codColigada: empresa ? Number(empresa) : undefined,
+      codColigada: empresa ? coligadaDaEmpresa(empresa) : undefined,
       codFilial: filial ? Number(filial) : undefined,
     })
       .then((lista) => { if (!cancelado) setContas(lista); })
@@ -74,7 +75,7 @@ export default function Balancete() {
   }, [empresa, filial]);
 
   const opcoesEmpresa = useMemo<SearchableSelectOption[]>(
-    () => [{ value: "", label: "Todas" }, ...empresas.map((item) => ({ value: String(item.codColigada), label: item.nome }))],
+    () => [{ value: "", label: "Todas" }, ...empresas.map((item) => ({ value: chaveEmpresaContabil(item), label: item.nome }))],
     [empresas]
   );
   const opcoesFilial = useMemo<SearchableSelectOption[]>(
@@ -140,7 +141,7 @@ export default function Balancete() {
     try {
       const resultado = await carregarBalancete({
         anoMes: periodo,
-        codColigada: empresa ? Number(empresa) : undefined,
+        codColigada: empresa ? coligadaDaEmpresa(empresa) : undefined,
         codFilial: filial ? Number(filial) : undefined,
         codConta: conta || undefined,
       });
@@ -172,7 +173,7 @@ export default function Balancete() {
           <div className="sp-balance__codes">
             <div className="sp-balance__field sp-balance__field--code">
               <span>Cód. Coligada</span>
-              <strong className="sp-balance__readonly">{empresa === null ? "—" : empresa || "Todas"}</strong>
+              <strong className="sp-balance__readonly">{empresa === null ? "—" : empresa ? coligadaDaEmpresa(empresa) : "Todas"}</strong>
             </div>
             <div className="sp-balance__field sp-balance__field--code">
               <span>Cód. Reduzido</span>

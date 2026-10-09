@@ -1,3 +1,4 @@
+import { chaveEmpresaContabil, coligadaDaEmpresa } from "../../utils/empresaContabil";
 import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
@@ -26,12 +27,10 @@ import StatusBadge from "../../componentes/ui/StatusBadge";
 import SearchableSelect from "../../componentes/ui/SearchableSelect";
 import type { SearchableSelectOption } from "../../componentes/ui/SearchableSelect";
 import api, { extrairMensagemDeErro } from "../../services/api";
-import { listarEmpresas } from "../../services/empresasService";
-import { listarColigadasFiliaisContabeis, listarContasContabeis } from "../../services/contasContabeisService";
+import { listarEmpresasBalancete, listarFiliaisBalancete, listarContasBalancete } from "../../services/balanceteService";
 import { useAuth } from "../../contexts/AuthContext";
 import { MODULO_CONCILIACAO } from "../../interfaces/Auth";
-import type { Empresa } from "../../interfaces/Empresa";
-import type { ColigadaFilialContabil, ContaContabilTotvs } from "../../interfaces/ContaContabil";
+import type { ColigadaFilialContabil, ContaContabilTotvs, EmpresaContabil } from "../../interfaces/ContaContabil";
 import type { LancamentoTotvs } from "../../interfaces/LancamentoTotvs";
 import type { FechamentoValidacaoStatus } from "../../interfaces/FechamentoValidacao";
 
@@ -101,7 +100,8 @@ function formatPeriod(value: string) {
 function dedupeContasPorCodigo(lista: ContaContabilTotvs[]): ContaContabilTotvs[] {
   const porCodigo = new Map<string, ContaContabilTotvs>();
   for (const conta of lista) {
-    if (!porCodigo.has(conta.codConta)) porCodigo.set(conta.codConta, conta);
+    if (!porCodigo.has(conta.codConta) || (!porCodigo.get(conta.codConta)?.descricao && conta.descricao))
+      porCodigo.set(conta.codConta, conta);
   }
   return [...porCodigo.values()].sort((a, b) => a.codConta.localeCompare(b.codConta));
 }
@@ -152,18 +152,13 @@ export default function Fechamentos() {
     { id: "history-2", label: "Dados do razão carregados", date: "04/02/2026 16:42" },
   ]);
 
-  const [empresas, setEmpresas] = useState<Empresa[]>([]);
+  const [empresas, setEmpresas] = useState<EmpresaContabil[]>([]);
   const [isLoadingEmpresas, setIsLoadingEmpresas] = useState(true);
   const [erroEmpresas, setErroEmpresas] = useState<string | null>(null);
 
   useEffect(() => {
-    listarEmpresas()
-      .then((lista) => {
-        // Empresa/filial desativada na tela de Empresas não aparece em nenhum
-        // combobox aqui.
-        const ativas = lista.filter((empresa) => empresa.ativo);
-        setEmpresas(ativas);
-      })
+    listarEmpresasBalancete()
+      .then((lista) => setEmpresas(lista.filter((empresa) => empresa.codColigada !== 0)))
       .catch(() => setErroEmpresas("Não foi possível carregar a lista de empresas."))
       .finally(() => setIsLoadingEmpresas(false));
   }, []);
@@ -179,11 +174,10 @@ export default function Fechamentos() {
   useEffect(() => {
     if (!empresaEscolhida) return;
     let cancelado = false;
-    const coligadas = [...new Set(empresas.filter((empresa) => empresa.nome === company).map((empresa) => empresa.codColigada))];
-    const codColigada = company && coligadas.length === 1 ? coligadas[0] : undefined;
+    const codColigada = company ? coligadaDaEmpresa(company) : undefined;
     setIsLoadingFiliais(true);
     setFiliaisCarregadas(false);
-    listarColigadasFiliaisContabeis(codColigada)
+    listarFiliaisBalancete(codColigada)
       .then((lista) => {
         if (!cancelado) {
           setFiliaisMovimentadas(lista);
@@ -193,73 +187,52 @@ export default function Fechamentos() {
       .catch(() => { if (!cancelado) setErroEmpresas("Não foi possível carregar as filiais."); })
       .finally(() => { if (!cancelado) setIsLoadingFiliais(false); });
     return () => { cancelado = true; };
-  }, [empresaEscolhida, company, empresas]);
+  }, [empresaEscolhida, company]);
 
-  // Uma "empresa" é identificada pelo NOME (razão social) — se repete em todas
-  // as filiais dela, inclusive entre bases diferentes. NOMEFANTASIA já varia
-  // por unidade, por isso não serve pra agrupar.
-  const empresasDistintas = useMemo(() => {
-    const nomes = new Set<string>();
-    return empresas.filter((empresa) => {
-      if (nomes.has(empresa.nome)) return false;
-      nomes.add(empresa.nome);
-      return true;
-    });
-  }, [empresas]);
-
+  // Os combos usam a mesma origem e os mesmos códigos do Balancete.
   const opcoesEmpresa = useMemo<SearchableSelectOption[]>(
-    () => [{ value: "", label: "Todas" }, ...empresasDistintas.map((empresa) => ({ value: empresa.nome, label: empresa.nome }))],
-    [empresasDistintas]
-  );
-
-  // Os códigos de filial aparecem só após a consulta da CPARTIDA para a empresa escolhida.
-  const filiaisDaEmpresa = useMemo(
-    () => empresas.filter((empresa) =>
-      (!company || empresa.nome === company) &&
-      filiaisMovimentadas.some((linha) => linha.codColigada === empresa.codColigada && linha.codFilial === empresa.codFilial)),
-    [empresas, company, filiaisMovimentadas]
+    () => [{ value: "", label: "Todas" }, ...empresas.map((empresa) => ({ value: chaveEmpresaContabil(empresa), label: empresa.nome }))],
+    [empresas]
   );
 
   const opcoesFilial = useMemo<SearchableSelectOption[]>(
     () => [
       { value: "", label: "Todas" },
-      ...filiaisDaEmpresa.map((empresa) => ({
-        value: empresa.id,
-        label: String(empresa.codFilial),
-      })),
+      ...[...new Set(filiaisMovimentadas.map((filial) => filial.codFilial))].sort((a, b) => a - b)
+        .map((codigo) => ({ value: String(codigo), label: String(codigo) })),
     ],
-    [filiaisDaEmpresa]
+    [filiaisMovimentadas]
   );
 
-  const filialSelecionada = useMemo(
-    () => empresas.find((empresa) => empresa.id === filialId),
-    [empresas, filialId]
-  );
+  // O fechamento exige uma empresa e uma filial específicas para formar sua chave.
+  const filialSelecionada = useMemo(() => {
+    if (!company || !filialId) return undefined;
+    const empresa = empresas.find((item) => chaveEmpresaContabil(item) === company);
+    const filial = filiaisMovimentadas.find((item) =>
+      item.codColigada === coligadaDaEmpresa(company) && item.codFilial === Number(filialId));
+    return empresa && filial ? { ...filial, nome: empresa.nome } : undefined;
+  }, [empresas, company, filialId, filiaisMovimentadas]);
 
   // A conta é consultada apenas após a escolha explícita de empresa e filial.
   useEffect(() => {
     if (!empresaEscolhida || !filialEscolhida || !filiaisCarregadas) return;
     let cancelado = false;
-    const coligadasDaEmpresa = new Set(filiaisDaEmpresa.map((empresa) => empresa.codColigada));
-    const codColigada = filialSelecionada?.codColigada ??
-      (company && coligadasDaEmpresa.size === 1 ? [...coligadasDaEmpresa][0] : undefined);
     setIsLoadingContas(true);
     setContasCarregadas(false);
-    listarContasContabeis({
-      codColigada,
-      codFilial: filialSelecionada?.codFilial,
+    listarContasBalancete({
+      codColigada: company ? coligadaDaEmpresa(company) : undefined,
+      codFilial: filialId ? Number(filialId) : undefined,
     })
       .then((lista) => {
         if (!cancelado) {
-          // Conta desativada não aparece; "Todas" mantém só as coligadas da empresa.
-          setContas(lista.filter((conta) => conta.ativo && (!company || coligadasDaEmpresa.has(conta.codColigada))));
+          setContas(lista);
           setContasCarregadas(true);
         }
       })
       .catch(() => { if (!cancelado) setErroContas("Não foi possível carregar o plano de contas."); })
       .finally(() => { if (!cancelado) setIsLoadingContas(false); });
     return () => { cancelado = true; };
-  }, [empresaEscolhida, filialEscolhida, filiaisCarregadas, company, filialSelecionada, filiaisDaEmpresa]);
+  }, [empresaEscolhida, filialEscolhida, filiaisCarregadas, company, filialId]);
 
   const contasDaColigada = useMemo(() => dedupeContasPorCodigo(contas), [contas]);
 
@@ -299,6 +272,15 @@ export default function Fechamentos() {
       })),
     [linhasDetalhe]
   );
+
+  const totaisRelatorio = useMemo(() => ledgerEntries.reduce(
+    (totais, entry) => {
+      if (entry.type === "Débito") totais.debito += entry.value;
+      else totais.credito += entry.value;
+      return totais;
+    },
+    { debito: 0, credito: 0 }
+  ), [ledgerEntries]);
 
   const [filtroData, setFiltroData] = useState("");
   const [filtroIdPartida, setFiltroIdPartida] = useState("");
@@ -592,22 +574,52 @@ export default function Fechamentos() {
     );
   };
 
-  const handleExportExcel = () => {
-    if (!loadedSelection) return;
-    const header = "Data;IdPartida;Histórico;Valor;Tipo";
-    const rows = filteredEntries.map((entry) =>
-      [entry.date, entry.idPartida, entry.history, currencyFormatter.format(entry.value), entry.type].join(";")
-    );
-    const blob = new Blob([`﻿${[header, ...rows].join("\n")}`], {
-      type: "text/csv;charset=utf-8",
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `fechamento-${loadedSelection.period}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-    showFeedback("Arquivo para Excel gerado.");
+  const [exportandoExcel, setExportandoExcel] = useState(false);
+
+  const handleExportExcel = async () => {
+    if (!loadedSelection || exportandoExcel) return;
+    setExportandoExcel(true);
+    try {
+      const resposta = await api.post<Blob>("/fechamentos/exportar-excel", {
+        empresa: loadedSelection.empresa,
+        periodo: loadedSelection.period,
+        codColigada: loadedSelection.codColigada,
+        codFilial: loadedSelection.codFilial,
+        codConta: loadedSelection.codConta,
+        descricaoConta: loadedSelection.descricaoConta,
+        reduzido: codigoReduzido,
+        preparadoPor: validacao?.preparadoPorNome,
+        conferidoPor: validacao?.conferidoPorNome,
+        finalizadoPor: validacao?.fechadoPorNome,
+        preparadoEm: formatarData(validacao?.preparadoEm ?? null),
+        conferidoEm: formatarData(validacao?.conferidoEm ?? null),
+        finalizadoEm: formatarData(validacao?.fechadoEm ?? null),
+        saldoAnterior: previousBalance,
+        saldoRazao: ledgerBalance,
+        composicaoSaldo: ledgerBalance - difference,
+        diferenca: difference,
+        pendencia: hasPending,
+        status: statusAtual,
+        responsavel: responsavelAtual?.nome,
+        lancamentos: ledgerEntries.map((entry) => ({
+          data: entry.date, idPartida: entry.idPartida, historico: entry.history,
+          valor: entry.value, tipo: entry.type,
+        })),
+      }, { responseType: "blob" });
+      const url = URL.createObjectURL(resposta.data);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `fechamento-${loadedSelection.period}.xls`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      showFeedback("Arquivo Excel gerado.");
+    } catch {
+      showFeedback("Falha ao gerar o Excel. Tente novamente.");
+    } finally {
+      setExportandoExcel(false);
+    }
   };
 
   const handleSaveNote = () => {
@@ -643,6 +655,12 @@ export default function Fechamentos() {
               <div className="sp-closing__print-account"><span>Conta contábil</span><strong>{loadedSelection.codConta}{loadedSelection.descricaoConta ? ` — ${loadedSelection.descricaoConta}` : ""}</strong></div>
             </div>
 
+            <div className="sp-closing__print-responsaveis" aria-label="Responsáveis pelo fechamento">
+              <div><span>Preparado por</span><strong>{validacao?.preparadoPorNome || "—"}</strong><small>Em: {formatarData(validacao?.preparadoEm ?? null) || "—"}</small></div>
+              <div><span>Conferido por</span><strong>{validacao?.conferidoPorNome || "—"}</strong><small>Em: {formatarData(validacao?.conferidoEm ?? null) || "—"}</small></div>
+              <div><span>Finalizado por</span><strong>{validacao?.fechadoPorNome || "—"}</strong><small>Em: {formatarData(validacao?.fechadoEm ?? null) || "—"}</small></div>
+            </div>
+
             <section className="sp-closing__print-section" aria-label="Resumo do período">
               <h2>Resumo do período</h2>
               <div className="sp-closing__print-metrics">
@@ -676,6 +694,10 @@ export default function Fechamentos() {
                   ))}
                 </tbody>
               </table>
+              <div className="sp-closing__print-totals" aria-label="Totais dos lançamentos">
+                <div><span>Total de débitos</span><strong>{formatCurrency(totaisRelatorio.debito)}</strong></div>
+                <div><span>Total de créditos</span><strong>{formatCurrency(totaisRelatorio.credito)}</strong></div>
+              </div>
             </section>
           </article>
         )}
@@ -702,7 +724,7 @@ export default function Fechamentos() {
           <div className="sp-closing__codes">
             <div className="sp-closing__field sp-closing__field--codigo">
               <span>Cód. Coligada</span>
-              <strong className="sp-closing__readonly">{filialSelecionada?.codColigada ?? "—"}</strong>
+              <strong className="sp-closing__readonly">{empresaEscolhida ? (company ? coligadaDaEmpresa(company) : "Todas") : "—"}</strong>
             </div>
             <div className="sp-closing__field sp-closing__field--reduzido">
               <span>Cód. Reduzido</span>
@@ -750,7 +772,7 @@ export default function Fechamentos() {
             icon={<RefreshCw size={18} />}
             isLoading={isLoading}
             disabled={!filialSelecionada || !accountId || !period}
-            title={!filialSelecionada || !accountId || !period ? "Escolha uma filial e uma conta específicas, depois o mês, para carregar." : undefined}
+            title={!filialSelecionada || !accountId || !period ? "Escolha uma empresa, uma filial e uma conta específicas, depois o mês, para carregar." : undefined}
             onClick={handleLoadData}
           >
             Carregar Dados
@@ -800,6 +822,35 @@ export default function Fechamentos() {
 
         <div className="sp-closing__workspace">
           <section className="sp-closing__content">
+            <section className="sp-closing__flow" aria-label="Etapas do fechamento">
+              <div className="sp-closing__flow-heading">
+                <strong>Fluxo do fechamento</strong>
+                <span>{!loadedSelection ? "Carregue um fechamento para acompanhar" : erroValidacao ? "Status indisponível" : statusAtual === "Fechado" ? "Finalizado" : statusAtual}</span>
+              </div>
+              <ol className="sp-closing__flow-steps">
+                {[
+                  { status: "Pendente", label: "Pendente", icon: FileText, nome: null, data: null },
+                  { status: "Preparado", label: "Preparado", icon: ClipboardCheck, nome: validacao?.preparadoPorNome, data: validacao?.preparadoEm },
+                  { status: "Conferido", label: "Conferido", icon: CheckCircle2, nome: validacao?.conferidoPorNome, data: validacao?.conferidoEm },
+                  { status: "Fechado", label: "Finalizado", icon: LockKeyhole, nome: validacao?.fechadoPorNome, data: validacao?.fechadoEm },
+                ].map((etapa, indice) => {
+                  const atual = loadedSelection && validacao && !erroValidacao
+                    ? ["Pendente", "Preparado", "Conferido", "Fechado"].indexOf(statusAtual) : -1;
+                  const atingida = indice <= atual;
+                  const Icon = etapa.icon;
+                  return (
+                    <li key={etapa.status}
+                      className={`sp-closing__flow-step${atingida ? " sp-closing__flow-step--done" : ""}${indice === atual ? " sp-closing__flow-step--current" : ""}`}
+                      aria-current={indice === atual ? "step" : undefined}>
+                      <div className="sp-closing__flow-icon"><Icon size={24} aria-hidden="true" /></div>
+                      <strong>{etapa.label}</strong>
+                      <span>{atingida && etapa.nome ? etapa.nome : indice === 0 ? (atingida ? "Fechamento iniciado" : "Aguardando consulta") : "Aguardando"}</span>
+                      {atingida && etapa.data && <small>{formatarData(etapa.data)}</small>}
+                    </li>
+                  );
+                })}
+              </ol>
+            </section>
             <div className="sp-closing__tabs" role="tablist" aria-label="Detalhes do fechamento">
               {TAB_ITEMS.map((tab) => {
                 const Icon = tab.icon;
@@ -992,7 +1043,7 @@ export default function Fechamentos() {
               Reverter
             </Button>
             <div className="sp-closing__actions-divider" />
-            <Button variant="secondary" icon={<FileSpreadsheet size={19} />} disabled={!loadedSelection} onClick={handleExportExcel}>Gerar Excel</Button>
+            <Button variant="secondary" icon={<FileSpreadsheet size={19} />} disabled={!loadedSelection} isLoading={exportandoExcel} onClick={handleExportExcel}>Gerar Excel</Button>
             <Button variant="secondary" icon={<FileText size={19} />} disabled={!loadedSelection} onClick={() => window.print()}>Gerar PDF</Button>
           </aside>
         </div>

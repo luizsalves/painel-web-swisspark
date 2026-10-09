@@ -62,6 +62,41 @@
   gap: 20px;
 }
 
+.sp-dashboard__companies-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.sp-dashboard__companies-heading > div { flex: 1; min-width: 240px; }
+.sp-dashboard__companies-heading h2 { font-size: 20px; margin: 0 0 6px; }
+.sp-dashboard__companies-heading p,
+.sp-dashboard__companies-heading > span { font-size: 12px; color: var(--color-text-secondary); }
+.sp-dashboard__company-grid { display: grid; grid-template-columns: 240px minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.sp-dashboard__company-metrics { display: grid; gap: 16px; }
+.sp-dashboard__company-metrics h3 { font-size: 15px; margin-bottom: 12px; }
+.sp-dashboard__company-goal { background: #087f70; color: white; padding: 20px; border-radius: 14px; text-align: center; }
+.sp-dashboard__company-goal span { display: block; font-size: 14px; }
+.sp-dashboard__company-goal strong { display: block; font-size: 36px; }
+.sp-dashboard__company-list { border: 1px solid var(--color-border); background: white; border-radius: 14px; overflow: hidden; }
+.sp-dashboard__company-list header { display: flex; align-items: center; justify-content: space-between; padding: 20px; background: #e5f2ef; color: #005844; }
+.sp-dashboard__company-list h3 { margin: 0; font-size: 16px; }
+.sp-dashboard__company-list header strong { font-size: 28px; }
+.sp-dashboard__company-table { max-height: 620px; overflow: auto; }
+.sp-dashboard__company-table table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.sp-dashboard__company-table th { position: sticky; top: 0; background: #005844; color: white; text-align: left; padding: 12px 16px; }
+.sp-dashboard__company-table td { padding: 12px 16px; border-bottom: 1px solid var(--color-border); overflow-wrap: anywhere; }
+.sp-dashboard__company-table tr:nth-child(even) { background: #f5f9f8; }
+@media (max-width: 1100px) {
+  .sp-dashboard__company-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sp-dashboard__company-metrics { grid-column: 1 / -1; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .sp-dashboard__company-goal { align-content: center; }
+}
+@media (max-width: 640px) {
+  .sp-dashboard__company-grid, .sp-dashboard__company-metrics { grid-template-columns: 1fr; }
+}
+
 .sp-dashboard__donuts {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

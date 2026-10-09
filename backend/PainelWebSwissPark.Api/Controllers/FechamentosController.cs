@@ -2,6 +2,7 @@ using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
 using PainelWebSwissPark.Api.Authorization;
 using PainelWebSwissPark.Api.Entities;
+using PainelWebSwissPark.Api.DTOs.Requests;
 using PainelWebSwissPark.Api.Services.BusinessLogic;
 
 namespace PainelWebSwissPark.Api.Controllers;
@@ -13,6 +14,12 @@ namespace PainelWebSwissPark.Api.Controllers;
 [ExigeModulo(Modulos.Conciliacao)]
 public class FechamentosController(IFechamentosService fechamentosService) : ControllerBase
 {
+    // Exporta o retrato carregado no PDF, sem alterar o fechamento.
+    [HttpPost("exportar-excel")]
+    [RequestSizeLimit(30_000_000)]
+    public IActionResult ExportarExcel([FromBody] ExportarFechamentoRequest request) =>
+        File(FechamentoExcel.Gerar(request), "application/vnd.ms-excel", $"fechamento-{request.Periodo}.xls");
+
     /// <summary>
     /// GET /api/fechamentos?empresaId=1&amp;contaContabilId=1&amp;periodo=2026-01
     /// </summary>
