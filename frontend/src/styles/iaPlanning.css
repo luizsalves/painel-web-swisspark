@@ -494,3 +494,5 @@
 .ia-dif__valor--pos dd { color: #c53030; } .ia-dif__valor--neg dd { color: #c56a00; }
 
 @media (max-width: 1450px) { .ia-dif { grid-template-columns: 1fr; } .ia-dif__card { max-height: 360px; } }
+
+.ia-dif__pendente { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; min-height: 220px; padding: 24px; border: 1px dashed #c9d9f2; border-radius: 14px; text-align: center; color: #4a5a8a; font-size: 14px; line-height: 1.5; }

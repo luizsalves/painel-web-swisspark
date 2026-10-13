@@ -2,6 +2,8 @@
 import Select from "../ui/Select";
 import UserMenu from "./UserMenu";
 import PageTitle from "../ui/PageTitle";
+import BotaoFiltros from "../filtros/BotaoFiltros";
+import type { CampoFiltro } from "../../utils/filtrosPainel";
 
 interface SelectOption {
   value: string;
@@ -17,6 +19,8 @@ interface AppHeaderProps {
   companyOptions?: SelectOption[];
   onPeriodChange?: (value: string) => void;
   onCompanyChange?: (value: string) => void;
+  /** Filtros globais que a tela usa; quando informado, aparece o botão que abre a gaveta. */
+  camposFiltro?: CampoFiltro[];
 }
 
 export default function AppHeader({
@@ -28,6 +32,7 @@ export default function AppHeader({
   companyOptions,
   onPeriodChange,
   onCompanyChange,
+  camposFiltro,
 }: AppHeaderProps) {
   return (
     <header className="sp-header">
@@ -50,6 +55,8 @@ export default function AppHeader({
             onChange={(event) => onCompanyChange(event.target.value)}
           />
         )}
+
+        {camposFiltro && <BotaoFiltros campos={camposFiltro} />}
 
         <button className="sp-header__icon-btn" aria-label="Notificações">
           <Bell size={19} />
