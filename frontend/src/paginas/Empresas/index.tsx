@@ -21,6 +21,14 @@ import type { CampoFiltro } from "../../utils/filtrosPainel";
 
 const CAMPOS_FILTRO: CampoFiltro[] = ["empresa"];
 
+type Situacao = "todas" | "ativas" | "desativadas";
+
+const SITUACOES: { id: Situacao; rotulo: string }[] = [
+  { id: "todas", rotulo: "Todas" },
+  { id: "ativas", rotulo: "Ativas" },
+  { id: "desativadas", rotulo: "Desativadas" },
+];
+
 function ordenarPorNome(empresas: Empresa[]): Empresa[] {
   return [...empresas].sort(
     (a, b) =>
@@ -36,6 +44,8 @@ export default function Empresas() {
   const [carregando, setCarregando] = useState(true);
   const [erroDaLista, setErroDaLista] = useState<string | null>(null);
   const [busca, setBusca] = useState("");
+  // A situação é só desta tela; os filtros da gaveta valem para o painel todo.
+  const [situacao, setSituacao] = useState<Situacao>("todas");
 
   const [alvoDaConfirmacao, setAlvoDaConfirmacao] = useState<Empresa | null>(null);
   const [erroDaConfirmacao, setErroDaConfirmacao] = useState<string | null>(null);
@@ -74,7 +84,7 @@ export default function Empresas() {
     return mapa;
   }, [contas]);
 
-  const listaFiltrada = useMemo(() => {
+  const listaDaBusca = useMemo(() => {
     // A empresa da gaveta restringe à coligada; a busca refina por texto.
     const daColigada = coligadaFiltrada === null
       ? empresas
@@ -90,6 +100,14 @@ export default function Empresas() {
         empresa.cidade.toLocaleLowerCase("pt-BR").includes(termo)
     );
   }, [empresas, busca, coligadaFiltrada]);
+  const totalPorSituacao: Record<Situacao, number> = {
+    todas: listaDaBusca.length,
+    ativas: listaDaBusca.filter((empresa) => empresa.ativo).length,
+    desativadas: listaDaBusca.filter((empresa) => !empresa.ativo).length,
+  };
+  const listaFiltrada = situacao === "todas"
+    ? listaDaBusca
+    : listaDaBusca.filter((empresa) => empresa.ativo === (situacao === "ativas"));
 
   function guardarNaLista(salva: Empresa) {
     setEmpresas((atuais) =>
@@ -164,7 +182,17 @@ export default function Empresas() {
       />
 
       <main className="sp-management">
-        <ResumoFiltros campos={CAMPOS_FILTRO} />
+        <ResumoFiltros campos={CAMPOS_FILTRO} acoes={(
+          <div className="sp-filtros__segmented sp-management__situacao" role="radiogroup" aria-label="Situação das empresas">
+            {SITUACOES.map((item) => (
+              <button key={item.id} type="button" role="radio" aria-checked={situacao === item.id}
+                className={situacao === item.id ? "sp-filtros__segment sp-filtros__segment--active" : "sp-filtros__segment"}
+                onClick={() => setSituacao(item.id)}>
+                {item.rotulo}{!carregando && ` (${totalPorSituacao[item.id]})`}
+              </button>
+            ))}
+          </div>
+        )} />
 
         <div className="sp-management__toolbar">
           <div className="sp-management__search">

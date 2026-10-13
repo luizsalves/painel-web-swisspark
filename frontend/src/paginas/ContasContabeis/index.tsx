@@ -19,6 +19,14 @@ import type { CampoFiltro } from "../../utils/filtrosPainel";
 
 const CAMPOS_FILTRO: CampoFiltro[] = ["empresa", "filial", "conta"];
 
+type Situacao = "todas" | "ativas" | "desativadas";
+
+const SITUACOES: { id: Situacao; rotulo: string }[] = [
+  { id: "todas", rotulo: "Todas" },
+  { id: "ativas", rotulo: "Ativas" },
+  { id: "desativadas", rotulo: "Desativadas" },
+];
+
 function ordenarPorConta(contas: ContaContabilTotvs[]): ContaContabilTotvs[] {
   return [...contas].sort(
     (a, b) => a.codColigada - b.codColigada || a.codConta.localeCompare(b.codConta, "pt-BR")
@@ -43,10 +51,20 @@ export default function ContasContabeis() {
   });
   const erroDaLista = error ? extrairMensagemDeErro(error, "Erro ao carregar as contas contábeis.") : null;
 
-  const contas = useMemo(
+  const contasDoFiltro = useMemo(
     () => todasAsContas.filter((conta) => !filtros.conta || conta.codConta === filtros.conta),
     [todasAsContas, filtros.conta]
   );
+  // A situação é só desta tela; os filtros da gaveta valem para o painel todo.
+  const [situacao, setSituacao] = useState<Situacao>("todas");
+  const totalPorSituacao: Record<Situacao, number> = {
+    todas: contasDoFiltro.length,
+    ativas: contasDoFiltro.filter((conta) => conta.ativo).length,
+    desativadas: contasDoFiltro.filter((conta) => !conta.ativo).length,
+  };
+  const contas = situacao === "todas"
+    ? contasDoFiltro
+    : contasDoFiltro.filter((conta) => conta.ativo === (situacao === "ativas"));
   const empresasPorColigada = useMemo(() => {
     return new Map([...empresas].reverse().map((empresa) => [empresa.codColigada, empresa.nome]));
   }, [empresas]);
@@ -139,6 +157,15 @@ export default function ContasContabeis() {
       <main className="sp-management">
         <ResumoFiltros campos={CAMPOS_FILTRO} acoes={(
           <>
+            <div className="sp-filtros__segmented sp-management__situacao" role="radiogroup" aria-label="Situação das contas">
+              {SITUACOES.map((item) => (
+                <button key={item.id} type="button" role="radio" aria-checked={situacao === item.id}
+                  className={situacao === item.id ? "sp-filtros__segment sp-filtros__segment--active" : "sp-filtros__segment"}
+                  onClick={() => setSituacao(item.id)}>
+                  {item.rotulo}{!isPending && ` (${totalPorSituacao[item.id]})`}
+                </button>
+              ))}
+            </div>
             {!isPending && <span className="sp-management__count">{contas.length} {contas.length === 1 ? "conta" : "contas"}</span>}
             <Button variant="secondary" icon={<RefreshCw size={16} />} isLoading={isFetching} onClick={() => void refetch()}>
               Atualizar
