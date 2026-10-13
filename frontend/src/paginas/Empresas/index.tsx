@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import AppHeader from "../../componentes/layout/AppHeader";
 import AppLayout from "../../componentes/layout/AppLayout";
+import ResumoFiltros from "../../componentes/filtros/ResumoFiltros";
 import Button from "../../componentes/ui/Button";
 import Input from "../../componentes/ui/Input";
 import LoadingSpinner from "../../componentes/ui/LoadingSpinner";
@@ -9,11 +10,16 @@ import Modal from "../../componentes/ui/Modal";
 import StatusBadge from "../../componentes/ui/StatusBadge";
 import Table from "../../componentes/ui/Table";
 import type { TableColumn } from "../../componentes/ui/Table";
+import { useFiltros } from "../../contexts/FiltrosContext";
 import { extrairMensagemDeErro } from "../../services/api";
 import { alterarStatusEmpresa, listarEmpresas } from "../../services/empresasService";
 import { listarContasContabeis } from "../../services/contasContabeisService";
 import type { Empresa } from "../../interfaces/Empresa";
 import type { ContaContabilTotvs } from "../../interfaces/ContaContabil";
+import { coligadaDaEmpresa } from "../../utils/empresaContabil";
+import type { CampoFiltro } from "../../utils/filtrosPainel";
+
+const CAMPOS_FILTRO: CampoFiltro[] = ["empresa"];
 
 function ordenarPorNome(empresas: Empresa[]): Empresa[] {
   return [...empresas].sort(
@@ -23,6 +29,8 @@ function ordenarPorNome(empresas: Empresa[]): Empresa[] {
 }
 
 export default function Empresas() {
+  const { filtros } = useFiltros();
+  const coligadaFiltrada = filtros.empresa ? coligadaDaEmpresa(filtros.empresa) : null;
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [contas, setContas] = useState<ContaContabilTotvs[]>([]);
   const [carregando, setCarregando] = useState(true);
@@ -67,17 +75,21 @@ export default function Empresas() {
   }, [contas]);
 
   const listaFiltrada = useMemo(() => {
+    // A empresa da gaveta restringe à coligada; a busca refina por texto.
+    const daColigada = coligadaFiltrada === null
+      ? empresas
+      : empresas.filter((empresa) => empresa.codColigada === coligadaFiltrada);
     const termo = busca.trim().toLocaleLowerCase("pt-BR");
-    if (!termo) return empresas;
+    if (!termo) return daColigada;
 
-    return empresas.filter(
+    return daColigada.filter(
       (empresa) =>
         empresa.nome.toLocaleLowerCase("pt-BR").includes(termo) ||
         empresa.nomeFantasia.toLocaleLowerCase("pt-BR").includes(termo) ||
         empresa.cgc.includes(termo) ||
         empresa.cidade.toLocaleLowerCase("pt-BR").includes(termo)
     );
-  }, [empresas, busca]);
+  }, [empresas, busca, coligadaFiltrada]);
 
   function guardarNaLista(salva: Empresa) {
     setEmpresas((atuais) =>
@@ -148,9 +160,12 @@ export default function Empresas() {
       <AppHeader
         title="Empresas"
         subtitle="Consulte as empresas cadastradas no painel de conciliação"
+        camposFiltro={CAMPOS_FILTRO}
       />
 
       <main className="sp-management">
+        <ResumoFiltros campos={CAMPOS_FILTRO} />
+
         <div className="sp-management__toolbar">
           <div className="sp-management__search">
             <Input

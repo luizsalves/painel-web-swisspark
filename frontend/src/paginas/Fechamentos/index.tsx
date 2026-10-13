@@ -1,5 +1,5 @@
-import { chaveEmpresaContabil, coligadaDaEmpresa } from "../../utils/empresaContabil";
-import { useEffect, useMemo, useState } from "react";
+import { coligadaDaEmpresa } from "../../utils/empresaContabil";
+import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -21,18 +21,22 @@ import {
 } from "lucide-react";
 import AppLayout from "../../componentes/layout/AppLayout";
 import AppHeader from "../../componentes/layout/AppHeader";
+import ResumoFiltros from "../../componentes/filtros/ResumoFiltros";
 import Button from "../../componentes/ui/Button";
 import Modal from "../../componentes/ui/Modal";
 import StatusBadge from "../../componentes/ui/StatusBadge";
-import SearchableSelect from "../../componentes/ui/SearchableSelect";
-import type { SearchableSelectOption } from "../../componentes/ui/SearchableSelect";
 import api, { extrairMensagemDeErro } from "../../services/api";
-import { listarEmpresasBalancete, listarFiliaisBalancete, listarContasBalancete } from "../../services/balanceteService";
 import { useAuth } from "../../contexts/AuthContext";
+import { useFiltros } from "../../contexts/FiltrosContext";
 import { MODULO_CONCILIACAO } from "../../interfaces/Auth";
-import type { ColigadaFilialContabil, ContaContabilTotvs, EmpresaContabil } from "../../interfaces/ContaContabil";
 import type { LancamentoTotvs } from "../../interfaces/LancamentoTotvs";
 import type { FechamentoValidacaoStatus } from "../../interfaces/FechamentoValidacao";
+import { mesDosFiltros } from "../../utils/filtrosPainel";
+import type { CampoFiltro } from "../../utils/filtrosPainel";
+
+const CAMPOS_FILTRO: CampoFiltro[] = ["empresa", "filial", "conta", "mes"];
+// O fechamento é por filial e conta: "Todas" não forma a chave.
+const FILTROS_OBRIGATORIOS: CampoFiltro[] = ["empresa", "filial", "conta"];
 
 type ClosingTab = "entries" | "pendings" | "notes" | "history";
 
@@ -96,16 +100,6 @@ function formatPeriod(value: string) {
   return new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" }).format(new Date(year, month - 1, 1));
 }
 
-/** Uma linha por código de conta — o mesmo CODCONTA pode se repetir entre coligadas. */
-function dedupeContasPorCodigo(lista: ContaContabilTotvs[]): ContaContabilTotvs[] {
-  const porCodigo = new Map<string, ContaContabilTotvs>();
-  for (const conta of lista) {
-    if (!porCodigo.has(conta.codConta) || (!porCodigo.get(conta.codConta)?.descricao && conta.descricao))
-      porCodigo.set(conta.codConta, conta);
-  }
-  return [...porCodigo.values()].sort((a, b) => a.codConta.localeCompare(b.codConta));
-}
-
 function formatarData(valor: string | null): string {
   if (!valor) return "";
   return new Date(valor).toLocaleString("pt-BR", {
@@ -129,13 +123,18 @@ export default function Fechamentos() {
     meuPerfilNaConciliacao === "Administrador";
   const podePrepararOuFechar = podeConferir || meuPerfilNaConciliacao === "Analista";
 
-  const [company, setCompany] = useState("");
-  const [empresaEscolhida, setEmpresaEscolhida] = useState(false);
-  const [filialId, setFilialId] = useState("");
-  const [filialEscolhida, setFilialEscolhida] = useState(false);
-  const [accountId, setAccountId] = useState("");
-  const [contaEscolhida, setContaEscolhida] = useState(false);
-  const [period, setPeriod] = useState("");
+  const { filtros } = useFiltros();
+  const period = mesDosFiltros(filtros);
+  const accountId = filtros.conta;
+  // O fechamento exige uma empresa, uma filial e uma conta específicas para formar sua chave.
+  const filialSelecionada = filtros.empresa && filtros.filial
+    ? { codColigada: coligadaDaEmpresa(filtros.empresa), codFilial: Number(filtros.filial), nome: filtros.empresaNome }
+    : undefined;
+  const filtrosCompletos = Boolean(filialSelecionada && accountId);
+  const chaveFiltros = JSON.stringify([filialSelecionada?.codColigada, filialSelecionada?.codFilial, accountId, period]);
+  // Uma carga que termina depois de uma troca de filtro é descartada.
+  const chaveFiltrosRef = useRef(chaveFiltros);
+  useEffect(() => { chaveFiltrosRef.current = chaveFiltros; }, [chaveFiltros]);
   const [loadedSelection, setLoadedSelection] = useState<LoadedSelection | null>(null);
   const [hasPending, setHasPending] = useState(true);
   const [activeTab, setActiveTab] = useState<ClosingTab>("entries");
@@ -152,98 +151,6 @@ export default function Fechamentos() {
     { id: "history-2", label: "Dados do razão carregados", date: "04/02/2026 16:42" },
   ]);
 
-  const [empresas, setEmpresas] = useState<EmpresaContabil[]>([]);
-  const [isLoadingEmpresas, setIsLoadingEmpresas] = useState(true);
-  const [erroEmpresas, setErroEmpresas] = useState<string | null>(null);
-
-  useEffect(() => {
-    listarEmpresasBalancete()
-      .then((lista) => setEmpresas(lista.filter((empresa) => empresa.codColigada !== 0)))
-      .catch(() => setErroEmpresas("Não foi possível carregar a lista de empresas."))
-      .finally(() => setIsLoadingEmpresas(false));
-  }, []);
-
-  const [contas, setContas] = useState<ContaContabilTotvs[]>([]);
-  const [isLoadingContas, setIsLoadingContas] = useState(false);
-  const [contasCarregadas, setContasCarregadas] = useState(false);
-  const [erroContas, setErroContas] = useState<string | null>(null);
-  const [filiaisMovimentadas, setFiliaisMovimentadas] = useState<ColigadaFilialContabil[]>([]);
-  const [isLoadingFiliais, setIsLoadingFiliais] = useState(false);
-  const [filiaisCarregadas, setFiliaisCarregadas] = useState(false);
-
-  useEffect(() => {
-    if (!empresaEscolhida) return;
-    let cancelado = false;
-    const codColigada = company ? coligadaDaEmpresa(company) : undefined;
-    setIsLoadingFiliais(true);
-    setFiliaisCarregadas(false);
-    listarFiliaisBalancete(codColigada)
-      .then((lista) => {
-        if (!cancelado) {
-          setFiliaisMovimentadas(lista);
-          setFiliaisCarregadas(true);
-        }
-      })
-      .catch(() => { if (!cancelado) setErroEmpresas("Não foi possível carregar as filiais."); })
-      .finally(() => { if (!cancelado) setIsLoadingFiliais(false); });
-    return () => { cancelado = true; };
-  }, [empresaEscolhida, company]);
-
-  // Os combos usam a mesma origem e os mesmos códigos do Balancete.
-  const opcoesEmpresa = useMemo<SearchableSelectOption[]>(
-    () => [{ value: "", label: "Todas" }, ...empresas.map((empresa) => ({ value: chaveEmpresaContabil(empresa), label: empresa.nome }))],
-    [empresas]
-  );
-
-  const opcoesFilial = useMemo<SearchableSelectOption[]>(
-    () => [
-      { value: "", label: "Todas" },
-      ...[...new Set(filiaisMovimentadas.map((filial) => filial.codFilial))].sort((a, b) => a - b)
-        .map((codigo) => ({ value: String(codigo), label: String(codigo) })),
-    ],
-    [filiaisMovimentadas]
-  );
-
-  // O fechamento exige uma empresa e uma filial específicas para formar sua chave.
-  const filialSelecionada = useMemo(() => {
-    if (!company || !filialId) return undefined;
-    const empresa = empresas.find((item) => chaveEmpresaContabil(item) === company);
-    const filial = filiaisMovimentadas.find((item) =>
-      item.codColigada === coligadaDaEmpresa(company) && item.codFilial === Number(filialId));
-    return empresa && filial ? { ...filial, nome: empresa.nome } : undefined;
-  }, [empresas, company, filialId, filiaisMovimentadas]);
-
-  // A conta é consultada apenas após a escolha explícita de empresa e filial.
-  useEffect(() => {
-    if (!empresaEscolhida || !filialEscolhida || !filiaisCarregadas) return;
-    let cancelado = false;
-    setIsLoadingContas(true);
-    setContasCarregadas(false);
-    listarContasBalancete({
-      codColigada: company ? coligadaDaEmpresa(company) : undefined,
-      codFilial: filialId ? Number(filialId) : undefined,
-    })
-      .then((lista) => {
-        if (!cancelado) {
-          setContas(lista);
-          setContasCarregadas(true);
-        }
-      })
-      .catch(() => { if (!cancelado) setErroContas("Não foi possível carregar o plano de contas."); })
-      .finally(() => { if (!cancelado) setIsLoadingContas(false); });
-    return () => { cancelado = true; };
-  }, [empresaEscolhida, filialEscolhida, filiaisCarregadas, company, filialId]);
-
-  const contasDaColigada = useMemo(() => dedupeContasPorCodigo(contas), [contas]);
-
-  const opcoesConta = useMemo<SearchableSelectOption[]>(
-    () => [
-      { value: "", label: "Todas" },
-      ...contasDaColigada.map((conta) => ({ value: conta.codConta, label: conta.descricao ? `${conta.codConta} - ${conta.descricao}` : conta.codConta })),
-    ],
-    [contasDaColigada]
-  );
-
   const [lancamentos, setLancamentos] = useState<LancamentoTotvs[]>([]);
   const [erroLancamentos, setErroLancamentos] = useState<string | null>(null);
 
@@ -252,12 +159,8 @@ export default function Fechamentos() {
   const linhasDetalhe = useMemo(() => lancamentos.filter((l) => l.data !== null), [lancamentos]);
   const linhaResumo = useMemo(() => lancamentos.find((l) => l.data === null), [lancamentos]);
   const codigoReduzido = useMemo(
-    () => {
-      const daConta = contasDaColigada.find((conta) => conta.codConta === accountId)?.reduzido.trim();
-      if (daConta && daConta !== "-") return daConta;
-      return lancamentos.map((linha) => linha.reduzido.trim()).find((valor) => valor && valor !== "-") ?? "—";
-    },
-    [accountId, contasDaColigada, lancamentos]
+    () => lancamentos.map((linha) => linha.reduzido.trim()).find((valor) => valor && valor !== "-") ?? "—",
+    [lancamentos]
   );
 
   const ledgerEntries = useMemo<LedgerEntry[]>(
@@ -400,58 +303,20 @@ export default function Fechamentos() {
     ]);
   };
 
-  const handleCompanyChange = (value: string) => {
+  // Filtros novos invalidam o que estava carregado (ajuste durante a renderização,
+  // para a tela nunca mostrar lançamentos de outra conta ou mês).
+  const [chaveCarregada, setChaveCarregada] = useState(chaveFiltros);
+  if (chaveCarregada !== chaveFiltros) {
+    setChaveCarregada(chaveFiltros);
     setLoadedSelection(null);
-    setCompany(value);
-    setEmpresaEscolhida(true);
-    setFilialId("");
-    setFilialEscolhida(false);
-    setFiliaisMovimentadas([]);
-    setFiliaisCarregadas(false);
-    setAccountId("");
-    setContaEscolhida(false);
-    setContas([]);
-    setContasCarregadas(false);
-    setIsLoadingContas(false);
-    setErroEmpresas(null);
-    setErroContas(null);
-    setPeriod("");
     setLancamentos([]);
     setValidacao(null);
     setErroLancamentos(null);
     setErroValidacao(null);
-  };
-
-  const handleFilialChange = (value: string) => {
-    setLoadedSelection(null);
-    setFilialId(value);
-    setFilialEscolhida(true);
-    setAccountId("");
-    setContaEscolhida(false);
-    setContas([]);
-    setContasCarregadas(false);
-    setIsLoadingContas(false);
-    setErroContas(null);
-    setPeriod("");
-    setLancamentos([]);
-    setValidacao(null);
-    setErroLancamentos(null);
-    setErroValidacao(null);
-  };
-
-  const handleAccountChange = (value: string) => {
-    setLoadedSelection(null);
-    setAccountId(value);
-    setContaEscolhida(true);
-    setPeriod("");
-    setLancamentos([]);
-    setValidacao(null);
-    setErroLancamentos(null);
-    setErroValidacao(null);
-  };
+  }
 
   const handleLoadData = async () => {
-    if (!empresaEscolhida || !filialEscolhida || !contaEscolhida || !filialSelecionada || !accountId || !period) return;
+    if (!filialSelecionada || !accountId || !period) return;
 
     const chave = {
       codColigada: filialSelecionada.codColigada,
@@ -460,6 +325,7 @@ export default function Fechamentos() {
       codConta: accountId,
     };
 
+    const chaveDaCarga = chaveFiltros;
     setLoadedSelection(null);
     setIsLoading(true);
     try {
@@ -467,6 +333,7 @@ export default function Fechamentos() {
         api.get<LancamentoTotvs[]>("/lancamentos", { params: chave }),
         api.get<FechamentoValidacaoStatus>("/fechamento-validacao", { params: chave }),
       ]);
+      if (chaveFiltrosRef.current !== chaveDaCarga) return;
 
       setLancamentos(lancamentosResposta.data);
       setErroLancamentos(null);
@@ -477,7 +344,7 @@ export default function Fechamentos() {
         codColigada: filialSelecionada.codColigada,
         codFilial: filialSelecionada.codFilial,
         codConta: accountId,
-        descricaoConta: contasDaColigada.find((conta) => conta.codConta === accountId)?.descricao ?? "",
+        descricaoConta: filtros.contaDescricao,
         period,
       });
       setPage(1);
@@ -490,12 +357,21 @@ export default function Fechamentos() {
 
       addHistory("Dados do razão atualizados");
     } catch {
+      if (chaveFiltrosRef.current !== chaveDaCarga) return;
       setLancamentos([]);
       setErroLancamentos("Não foi possível carregar os lançamentos.");
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Com empresa, filial e conta escolhidas, o fechamento abre sozinho.
+  const carregarAoTrocarFiltros = useEffectEvent(() => {
+    if (filtrosCompletos) void handleLoadData();
+  });
+  useEffect(() => {
+    carregarAoTrocarFiltros();
+  }, [chaveFiltros]);
 
   const recarregarValidacao = async () => {
     const chave = chaveAtual();
@@ -636,6 +512,7 @@ export default function Fechamentos() {
       <AppHeader
         title="Fechamento Mensal"
         subtitle="Concilie saldos, trate pendências e conclua o período contábil."
+        camposFiltro={CAMPOS_FILTRO}
       />
       <main className="sp-closing">
         {loadedSelection && (
@@ -708,76 +585,16 @@ export default function Fechamentos() {
           </div>
         )}
 
-        <section className="sp-closing__filters" aria-label="Filtros do fechamento">
-          <label className="sp-closing__field">
-            <span>Empresa</span>
-            <SearchableSelect
-              value={empresaEscolhida ? company : "__pendente__"}
-              options={opcoesEmpresa}
-              onChange={handleCompanyChange}
-              disabled={isLoadingEmpresas || !!erroEmpresas}
-              placeholder={isLoadingEmpresas ? "Carregando empresas..." : erroEmpresas ?? "Selecione uma empresa"}
-              ariaLabel="Empresa"
-            />
-          </label>
-
-          <div className="sp-closing__codes">
-            <div className="sp-closing__field sp-closing__field--codigo">
-              <span>Cód. Coligada</span>
-              <strong className="sp-closing__readonly">{empresaEscolhida ? (company ? coligadaDaEmpresa(company) : "Todas") : "—"}</strong>
-            </div>
-            <div className="sp-closing__field sp-closing__field--reduzido">
-              <span>Cód. Reduzido</span>
-              <strong className="sp-closing__readonly">{codigoReduzido}</strong>
-            </div>
-          </div>
-
-          <label className="sp-closing__field sp-closing__field--filial">
-            <span>Filial</span>
-            <SearchableSelect
-              value={filialEscolhida ? filialId : "__pendente__"}
-              options={opcoesFilial}
-              onChange={handleFilialChange}
-              disabled={!empresaEscolhida || isLoadingFiliais || !filiaisCarregadas || !!erroEmpresas}
-              placeholder={isLoadingFiliais ? "Carregando filiais..." : "Selecione uma filial"}
-              ariaLabel="Filial"
-            />
-          </label>
-
-          <label className="sp-closing__field sp-closing__field--account">
-            <span>Conta Contábil</span>
-            <SearchableSelect
-              value={contaEscolhida ? accountId : "__pendente__"}
-              options={opcoesConta}
-              onChange={handleAccountChange}
-              disabled={!filialEscolhida || isLoadingContas || !contasCarregadas || !!erroContas}
-              placeholder={isLoadingContas ? "Carregando contas..." : erroContas ?? "Selecione uma conta"}
-              ariaLabel="Conta Contábil"
-            />
-          </label>
-
-          <label className="sp-closing__field">
-            <span>Período (Mês/Ano)</span>
-            <input type="month" value={period} disabled={!contaEscolhida || !contasCarregadas}
-              onChange={(event) => {
-                setPeriod(event.target.value);
-                setLoadedSelection(null);
-                setLancamentos([]);
-                setValidacao(null);
-              }} />
-          </label>
-
-          <Button
-            className="sp-closing__load"
-            icon={<RefreshCw size={18} />}
-            isLoading={isLoading}
-            disabled={!filialSelecionada || !accountId || !period}
-            title={!filialSelecionada || !accountId || !period ? "Escolha uma empresa, uma filial e uma conta específicas, depois o mês, para carregar." : undefined}
-            onClick={handleLoadData}
-          >
-            Carregar Dados
-          </Button>
-        </section>
+        <ResumoFiltros campos={CAMPOS_FILTRO} obrigatorios={FILTROS_OBRIGATORIOS} acoes={filtrosCompletos && (
+          <>
+            <span className="sp-closing__codigos">
+              Coligada <strong>{filialSelecionada?.codColigada}</strong> · Reduzido <strong>{codigoReduzido}</strong>
+            </span>
+            <Button variant="secondary" icon={<RefreshCw size={16} />} isLoading={isLoading} onClick={() => void handleLoadData()}>
+              Atualizar
+            </Button>
+          </>
+        )} />
 
         {erroLancamentos && (
           <span className="sp-closing__feedback sp-closing__feedback--error" role="alert">

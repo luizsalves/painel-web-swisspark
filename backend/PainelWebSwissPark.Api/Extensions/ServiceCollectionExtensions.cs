@@ -50,6 +50,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<BalanceteTotvsRepository>();
         services.AddScoped<IBalanceteService, BalanceteService>();
 
+        services.AddScoped<IndicadoresTotvsRepository>();
+        services.AddScoped<IIndicadoresService, IndicadoresService>();
+        services.AddScoped<IBalancoService, BalancoService>();
+
         services.AddScoped<ITotvsConsultaRepository, TotvsConsultaRepository>();
         services.AddScoped<ITotvsConsultaService, TotvsConsultaService>();
 

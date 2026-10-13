@@ -977,3 +977,13 @@
     color: #526579;
   }
 }
+
+.sp-closing__codigos {
+  color: var(--color-text-secondary);
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+.sp-closing__codigos strong {
+  color: var(--color-text);
+}

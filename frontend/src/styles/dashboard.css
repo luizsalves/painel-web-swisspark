@@ -97,6 +97,23 @@
   .sp-dashboard__company-grid, .sp-dashboard__company-metrics { grid-template-columns: 1fr; }
 }
 
+/* Empresas com "+": a linha aberta mostra as contas da empresa logo abaixo. */
+.sp-dashboard__company-table .sp-dashboard__num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.sp-dashboard__company-row--aberta td { background: #e5f2ef; font-weight: 700; }
+.sp-dashboard__company-table tr.sp-dashboard__company-expansion > td { padding: 0 0 0 46px; background: #fafcfb; }
+.sp-dashboard__accounts { border-left: 3px solid #e5f2ef; }
+.sp-dashboard__accounts-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 16px; }
+.sp-dashboard__accounts-toolbar .sp-abas { border-bottom: 0; }
+.sp-dashboard__accounts-toolbar .sp-field { width: min(300px, 100%); }
+.sp-dashboard__accounts-table { max-height: 420px; overflow: auto; }
+.sp-dashboard__company-table .sp-dashboard__accounts-table th { background: #e5f2ef; color: #005844; padding: 9px 16px; white-space: nowrap; }
+.sp-dashboard__accounts-table .sp-badge { white-space: nowrap; }
+.sp-dashboard__company-table .sp-dashboard__accounts-table td { padding: 9px 16px; background: none; }
+.sp-dashboard__accounts-message { display: flex; padding: 16px; font-size: 13px; }
+.sp-dashboard__accounts-message--erro { color: var(--color-red); }
+.sp-dashboard__account-code { font-weight: 700; white-space: nowrap; }
+.sp-dashboard__muted { color: var(--color-text-secondary); white-space: nowrap; }
+
 .sp-dashboard__donuts {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

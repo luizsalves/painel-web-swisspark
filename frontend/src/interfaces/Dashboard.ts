@@ -21,3 +21,20 @@ export interface DashboardResumo {
   fechados: number;
   pendentes: number;
 }
+
+export type StatusFechamentoConta = "Pendente" | "Preparado" | "Conferido" | "Fechado";
+
+/** Uma conta de uma filial no período (GET /api/dashboard/contas), com o status atual. */
+export interface DashboardConta {
+  codColigada: number;
+  codFilial: number;
+  /** "1 - Nome fantasia". */
+  filial: string;
+  codConta: string;
+  reduzido: string;
+  descricao: string;
+  status: StatusFechamentoConta;
+  /** Nulos enquanto a conta está pendente. */
+  ultimaAcaoPor: string | null;
+  ultimaAcaoEm: string | null;
+}

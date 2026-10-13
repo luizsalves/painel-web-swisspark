@@ -2,6 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Cpu, Sparkles, BarChart3, FileText, CheckCircle2, ClipboardList, Settings2, X, ChevronDown, ArrowUp, AlertTriangle, Layers } from "lucide-react";
 import AppLayout from "../../componentes/layout/AppLayout";
 import UserMenu from "../../componentes/layout/UserMenu";
+import BotaoFiltros from "../../componentes/filtros/BotaoFiltros";
+import ResumoFiltros from "../../componentes/filtros/ResumoFiltros";
+import Button from "../../componentes/ui/Button";
+import { useFiltros } from "../../contexts/FiltrosContext";
 
 import LoadingSpinner from "../../componentes/ui/LoadingSpinner";
 
@@ -10,10 +14,13 @@ import { obterDiferencas } from "../../services/diferencasService";
 import type { Diferencas } from "../../interfaces/Diferencas";
 import { extrairMensagemDeErro } from "../../services/api";
 import { obterResumoDashboard, obterUltimoPeriodoComDados } from "../../services/dashboardService";
-import { listarEmpresas } from "../../services/empresasService";
 import { perguntarCfoTati } from "../../services/cfoTatiService";
 import type { DashboardResumo } from "../../interfaces/Dashboard";
 import type { MensagemCfoTati } from "../../interfaces/CfoTati";
+import { mesDosFiltros } from "../../utils/filtrosPainel";
+import type { CampoFiltro } from "../../utils/filtrosPainel";
+
+const CAMPOS_FILTRO: CampoFiltro[] = ["empresa", "mes"];
 
 const RESUMO_VAZIO: DashboardResumo = {
   backlogTotal: 0,
@@ -28,10 +35,6 @@ const SUGESTOES_RAPIDAS = [
   "Como está a conciliação do período?",
   "Crie um gráfico por empresa",
 ];
-
-function mesAtual(): string {
-  return new Date().toISOString().slice(0, 7);
-}
 
 function horarioAtual(): string {
   return new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
@@ -163,32 +166,21 @@ function GraficoTatiCard({ grafico, onRemover }: { grafico: GraficoTati; onRemov
 }
 
 export default function IaPlanning() {
-  const [anoMes, setAnoMes] = useState(mesAtual());
+  const { filtros } = useFiltros();
+  const anoMes = mesDosFiltros(filtros);
+  // O resumo e a Tati identificam a empresa pelo nome (GFILIAL.NOME), o mesmo da gaveta.
+  const empresa = filtros.empresa ? filtros.empresaNome.trim() : "";
+  const [ultimoPeriodo, setUltimoPeriodo] = useState<string | null>(null);
   const [periodoDefinido, setPeriodoDefinido] = useState(false);
-  const [empresa, setEmpresa] = useState("");
-  const [nomesDeEmpresas, setNomesDeEmpresas] = useState<string[]>([]);
   const [resumo, setResumo] = useState<DashboardResumo>(RESUMO_VAZIO);
   const [isLoading, setIsLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
   useEffect(() => {
     obterUltimoPeriodoComDados()
-      .then((ultimoPeriodo) => {
-        if (ultimoPeriodo) setAnoMes(ultimoPeriodo);
-      })
+      .then(setUltimoPeriodo)
       .catch(() => {})
       .finally(() => setPeriodoDefinido(true));
-  }, []);
-
-  useEffect(() => {
-    listarEmpresas()
-      .then((lista) => {
-        const nomes = [...new Set(lista.filter((e) => e.ativo).map((e) => e.nome))].sort((a, b) =>
-          a.localeCompare(b, "pt-BR")
-        );
-        setNomesDeEmpresas(nomes);
-      })
-      .catch(() => setNomesDeEmpresas([]));
   }, []);
 
   const carregarResumo = useCallback(async () => {
@@ -209,36 +201,37 @@ export default function IaPlanning() {
     void carregarResumo();
   }, [carregarResumo]);
 
-  const [diferencas, setDiferencas] = useState<Diferencas | null>(null);
-  const [carregandoDiferencas, setCarregandoDiferencas] = useState(true);
-  const [erroDiferencas, setErroDiferencas] = useState<string | null>(null);
+  // O cálculo de diferenças cruza as quatro bases e leva minutos; só o último
+  // mês com dados vem pré-calculado. Os demais esperam a pessoa pedir.
+  const chaveDiferencas = `${anoMes}|${empresa}`;
+  const [diferencasPedidas, setDiferencasPedidas] = useState<string | null>(null);
+  const calcularDiferencas = periodoDefinido && (anoMes === ultimoPeriodo || diferencasPedidas === chaveDiferencas);
+  const [resultadoDiferencas, setResultadoDiferencas] = useState<
+    { chave: string; dados: Diferencas | null; erro: string | null } | null
+  >(null);
+  const diferencasAtuais = resultadoDiferencas?.chave === chaveDiferencas ? resultadoDiferencas : null;
+  const diferencas = diferencasAtuais?.dados ?? null;
+  const erroDiferencas = diferencasAtuais?.erro ?? null;
+  const carregandoDiferencas = calcularDiferencas && !diferencasAtuais;
 
   useEffect(() => {
-    // Espera o último período com dados: sem isso, abriria calculando o mês
-    // atual (cálculo de minutos no backend) só para trocar logo em seguida.
-    if (!periodoDefinido) return;
+    if (!calcularDiferencas) return;
 
     let cancelado = false;
-    setCarregandoDiferencas(true);
-    setErroDiferencas(null);
-
+    const chave = `${anoMes}|${empresa}`;
     obterDiferencas(anoMes, empresa)
       .then((resultado) => {
-        if (!cancelado) setDiferencas(resultado);
+        if (!cancelado) setResultadoDiferencas({ chave, dados: resultado, erro: null });
       })
       .catch((erroCapturado) => {
         if (cancelado) return;
-        setDiferencas(null);
-        setErroDiferencas(extrairMensagemDeErro(erroCapturado, "Não foi possível calcular as diferenças."));
-      })
-      .finally(() => {
-        if (!cancelado) setCarregandoDiferencas(false);
+        setResultadoDiferencas({ chave, dados: null, erro: extrairMensagemDeErro(erroCapturado, "Não foi possível calcular as diferenças.") });
       });
 
     return () => {
       cancelado = true;
     };
-  }, [anoMes, empresa, periodoDefinido]);
+  }, [anoMes, empresa, calcularDiferencas]);
 
   const barras = useMemo(
     () =>
@@ -316,30 +309,14 @@ export default function IaPlanning() {
   return (
     <AppLayout className="sp-planning-shell">
       <header className="ia-topbar">
+        <BotaoFiltros campos={CAMPOS_FILTRO} />
         <UserMenu />
         <div className="ia-brand"><span className="ia-chip"><Cpu size={42} /><b>AI</b></span><div><strong>IA Planning</strong><small>Inteligência financeira</small></div></div>
       </header>
       <main className="sp-dashboard ia-page">
         <div className="ia-intro">
           <div className="ia-heading"><h1>Visão financeira <span>Swiss Park</span></h1><h2>Conciliação contábil com inteligência artificial</h2><p>Acompanhe o status das conciliações, identifique pendências e obtenha insights com a CFO Tati.</p></div>
-        <section className="sp-dashboard__filters" aria-label="Filtros da IA Planning">
-          <label className="sp-dashboard__field">
-            <span>Período (Mês/Ano)</span>
-            <input type="month" value={anoMes} onChange={(event) => setAnoMes(event.target.value)} />
-          </label>
-
-          <label className="sp-dashboard__field">
-            <span>Empresa</span>
-            <select value={empresa} onChange={(event) => setEmpresa(event.target.value)}>
-              <option value="">Todas</option>
-              {nomesDeEmpresas.map((nome) => (
-                <option key={nome} value={nome}>
-                  {nome}
-                </option>
-              ))}
-            </select>
-          </label>
-        </section>
+        <ResumoFiltros campos={CAMPOS_FILTRO} />
 
         </div>
         {erro && (
@@ -359,7 +336,9 @@ export default function IaPlanning() {
             {
               label: "Empresas com diferença",
               value: carregandoDiferencas || !diferencas ? null : diferencas.totalEmpresas,
-              detail: carregandoDiferencas
+              detail: !calcularDiferencas
+                ? "Não calculado para este mês"
+                : carregandoDiferencas
                 ? "Calculando…"
                 : diferencas
                   ? `${diferencas.totalContas} contas · ${formatarMoedaCompacta(diferencas.valorTotal)}`
@@ -431,7 +410,14 @@ export default function IaPlanning() {
               )}
             </div>
 
-            <PainelDiferencas diferencas={diferencas} carregando={carregandoDiferencas} erro={erroDiferencas} />
+            {calcularDiferencas || !periodoDefinido ? (
+              <PainelDiferencas diferencas={diferencas} carregando={carregandoDiferencas || !periodoDefinido} erro={erroDiferencas} />
+            ) : (
+              <div className="ia-dif__pendente">
+                <span>As diferenças de {formatarPeriodo(anoMes)} ainda não foram calculadas. O cálculo cruza as quatro bases do TOTVS e pode levar alguns minutos.</span>
+                <Button variant="secondary" onClick={() => setDiferencasPedidas(chaveDiferencas)}>Calcular diferenças</Button>
+              </div>
+            )}
             </>
             )}
           </div>

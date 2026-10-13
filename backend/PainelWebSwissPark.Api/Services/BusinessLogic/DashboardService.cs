@@ -34,6 +34,59 @@ public class DashboardService(
             .ToDictionary(g => g.Key, g => Somar(g.ToList(), contasPorColigada, statusAtualPorChave));
     }
 
+    public async Task<List<DashboardContaViewModel>> ObterContasDaEmpresaAsync(
+        string anoMes, string empresa, CancellationToken cancellationToken)
+    {
+        var empresas = await empresasService.ListarAsync(cancellationToken);
+        var filiaisAtivas = empresas.Where(e => e.Ativo && e.Nome.Trim() == empresa.Trim()).ToList();
+        if (filiaisAtivas.Count == 0) return [];
+
+        var coligadas = filiaisAtivas.Select(f => f.CodColigada).ToHashSet();
+        var contas = await contasContabeisService.ListarAsync(cancellationToken);
+        var historico = await fechamentoValidacaoRepository.ListarPorAnoMesAsync(anoMes, cancellationToken);
+
+        // Mesma regra do resumo: a linha mais recente de cada chave é o status atual.
+        var ultimaPorChave = historico
+            .Where(f => coligadas.Contains(f.CodColigada))
+            .GroupBy(f => (f.CodColigada, f.CodFilial, f.CodConta))
+            .ToDictionary(g => g.Key, g => g.OrderByDescending(f => f.RealizadoEm).First());
+        var nomes = await fechamentoValidacaoRepository.ObterNomesAsync(
+            ultimaPorChave.Values.Select(f => f.RealizadoPor).Distinct().ToList(), cancellationToken);
+
+        var contasPorColigada = contas
+            .Where(c => c.Ativo && coligadas.Contains(c.CodColigada))
+            .GroupBy(c => c.CodColigada)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        var resultado = new List<DashboardContaViewModel>();
+        foreach (var filial in filiaisAtivas)
+        {
+            if (!contasPorColigada.TryGetValue(filial.CodColigada, out var contasDaColigada)) continue;
+
+            foreach (var conta in contasDaColigada)
+            {
+                var ultima = ultimaPorChave.GetValueOrDefault((filial.CodColigada, filial.CodFilial, conta.CodConta));
+                resultado.Add(new DashboardContaViewModel
+                {
+                    CodColigada = filial.CodColigada,
+                    CodFilial = filial.CodFilial,
+                    Filial = filial.NomeFilial,
+                    CodConta = conta.CodConta,
+                    Reduzido = conta.Reduzido,
+                    Descricao = conta.Descricao,
+                    Status = ultima?.Status ?? StatusFechamento.Pendente,
+                    UltimaAcaoPor = ultima is null ? null : nomes.GetValueOrDefault(ultima.RealizadoPor),
+                    UltimaAcaoEm = ultima?.RealizadoEm,
+                });
+            }
+        }
+
+        return resultado
+            .OrderBy(c => c.CodConta, StringComparer.Ordinal)
+            .ThenBy(c => c.CodFilial)
+            .ToList();
+    }
+
     private async Task<(
         List<EmpresaViewModel> Empresas,
         Dictionary<short, List<string>> ContasPorColigada,

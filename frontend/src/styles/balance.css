@@ -243,3 +243,38 @@
     flex-direction: column;
   }
 }
+
+.sp-abas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.sp-abas__botao {
+  margin-bottom: -1px;
+  padding: 10px 16px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--color-text-secondary);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.sp-abas__botao:hover {
+  color: var(--color-text);
+}
+
+.sp-abas__botao:focus-visible {
+  outline: 2px solid var(--color-green);
+  outline-offset: 2px;
+}
+
+.sp-abas__botao--ativa,
+.sp-abas__botao--ativa:hover {
+  border-bottom-color: var(--color-green);
+  color: var(--color-green);
+}

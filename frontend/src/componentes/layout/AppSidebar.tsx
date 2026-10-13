@@ -5,6 +5,7 @@ import {
   BookText,
   Users,
   BarChart3,
+  Gauge,
   AlertTriangle,
   Settings,
   ShieldCheck,
@@ -36,6 +37,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { label: "Produtividade", icon: LayoutDashboard, path: "/dashboard", modulo: MODULO_CONCILIACAO },
   { label: "Balancete", icon: BarChart3, path: "/balancete" },
+  { label: "Indicadores", icon: Gauge, path: "/indicadores" },
   { label: "Fechamentos", icon: CalendarCheck2, path: "/fechamentos", modulo: MODULO_CONCILIACAO },
   { label: "Empresas", icon: Building2, path: "/empresas", modulo: MODULO_CONCILIACAO },
   { label: "Contas Contábeis", icon: BookText, path: "/contas", modulo: MODULO_CONCILIACAO },
