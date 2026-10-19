@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { BookText, Building2, CalendarDays, CalendarRange, X } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { BookText, Building2, CalendarDays, CalendarRange, ListChecks, X } from "lucide-react";
 import Button from "../ui/Button";
 import SearchableSelect from "../ui/SearchableSelect";
 import type { SearchableSelectOption } from "../ui/SearchableSelect";
@@ -7,8 +8,9 @@ import { useFiltros } from "../../contexts/FiltrosContext";
 import type { ColigadaFilialContabil, ContaContabilTotvs, EmpresaContabil } from "../../interfaces/ContaContabil";
 import { extrairMensagemDeErro } from "../../services/api";
 import { listarContasBalancete, listarEmpresasBalancete, listarFiliaisBalancete } from "../../services/balanceteService";
+import { obterContasDaEmpresa } from "../../services/dashboardService";
 import { chaveEmpresaContabil, coligadaDaEmpresa } from "../../utils/empresaContabil";
-import { MESES, descreverMes, descreverPeriodo, filtrosPadrao } from "../../utils/filtrosPainel";
+import { MESES, STATUS_FILTRO, descreverMes, descreverPeriodo, filtrosPadrao, mesDosFiltros } from "../../utils/filtrosPainel";
 import type { CampoFiltro, FiltrosPainel } from "../../utils/filtrosPainel";
 
 const ATALHOS_PERIODO: { rotulo: string; inicial: number; final: number }[] = [
@@ -119,8 +121,40 @@ function ConteudoFiltros({ inicial, camposDaTela, empresas, erro, onFechar, onAp
     return () => { cancelado = true; };
   }, [rascunho.empresa, rascunho.filial]);
 
+  // Tela de um único mês: a grade escolhe o mês final; o inicial só recua se
+  // ficar depois dele. Assim o período das outras telas não se perde.
+  const mesUnico = camposDaTela.includes("mes") && !camposDaTela.includes("periodo");
+
+  // Numa tela de um mês só (Fechamento), com um status escolhido, a lista de contas
+  // fica só com as que estão nele no mês — o status vem do dashboard, que cruza o
+  // cadastro com o histórico do fechamento. Nas telas de período o status muda de
+  // um mês para outro, e o filtro vale para cada mês na própria tela.
+  const empresaDoStatus = mesUnico && rascunho.status && rascunho.empresa ? rascunho.empresaNome.trim() : "";
+  const anoMesRascunho = mesDosFiltros(rascunho);
+  const contasDoStatus = useQuery({
+    queryKey: ["dashboard-contas", anoMesRascunho, anoMesRascunho, empresaDoStatus, 0],
+    queryFn: ({ signal }) => obterContasDaEmpresa(anoMesRascunho, anoMesRascunho, empresaDoStatus, signal),
+    enabled: Boolean(empresaDoStatus),
+    // Sempre relê: quem acabou de preparar uma conta quer a próxima da lista, não ela.
+    staleTime: 0,
+  });
+  const codigosDoStatus = useMemo(() => {
+    if (!empresaDoStatus || contasDoStatus.isFetching || !contasDoStatus.data) return null;
+    const coligada = coligadaDaEmpresa(rascunho.empresa ?? "");
+    return new Set(contasDoStatus.data
+      .filter((conta) => conta.status === rascunho.status
+        && (!rascunho.filial || (conta.codColigada === coligada && String(conta.codFilial) === rascunho.filial)))
+      .map((conta) => conta.codConta));
+  }, [empresaDoStatus, contasDoStatus.isFetching, contasDoStatus.data, rascunho.empresa, rascunho.filial, rascunho.status]);
+
+  // Uma conta fora do status escolhido sai do filtro, como acontece ao trocar a filial.
+  if (codigosDoStatus && rascunho.conta && !codigosDoStatus.has(rascunho.conta)) {
+    setRascunho((atual) => ({ ...atual, conta: "", contaDescricao: "" }));
+  }
+
   const carregandoFiliais = rascunho.empresa !== null && filiais?.chave !== chaveFiliais;
-  const carregandoContas = rascunho.empresa !== null && contas?.chave !== chaveContas;
+  const carregandoContas = rascunho.empresa !== null
+    && (contas?.chave !== chaveContas || (Boolean(empresaDoStatus) && contasDoStatus.isFetching));
 
   // O código aparece porque o mesmo nome se repete (SCPs são filiais da mesma coligada).
   // "Todas" (vazio) deixa a empresa nula: as telas que exigem uma empresa pedem a escolha.
@@ -146,13 +180,11 @@ function ConteudoFiltros({ inicial, camposDaTela, empresas, erro, onFechar, onAp
   }, [contas, chaveContas]);
   const opcoesConta = useMemo<SearchableSelectOption[]>(() => [
     { value: "", label: "Todas" },
-    ...[...contasUnicas.values()].sort((a, b) => a.codConta.localeCompare(b.codConta))
+    ...[...contasUnicas.values()]
+      .filter((item) => !codigosDoStatus || codigosDoStatus.has(item.codConta))
+      .sort((a, b) => a.codConta.localeCompare(b.codConta))
       .map((item) => ({ value: item.codConta, label: item.descricao ? `${item.codConta} - ${item.descricao}` : item.codConta })),
-  ], [contasUnicas]);
-
-  // Tela de um único mês: a grade escolhe o mês final; o inicial só recua se
-  // ficar depois dele. Assim o período das outras telas não se perde.
-  const mesUnico = camposDaTela.includes("mes") && !camposDaTela.includes("periodo");
+  ], [contasUnicas, codigosDoStatus]);
 
   const anos = useMemo(() => {
     const atual = new Date().getFullYear();
@@ -240,8 +272,30 @@ function ConteudoFiltros({ inicial, camposDaTela, empresas, erro, onFechar, onAp
                 disabled={rascunho.empresa === null || carregandoContas}
                 placeholder={rascunho.empresa === null ? "Escolha a empresa primeiro" : carregandoContas ? "Carregando contas..." : "Todas"}
                 ariaLabel="Conta contábil" />
+              {contasDoStatus.isError && empresaDoStatus && (
+                <small className="sp-filtros__unused">Não foi possível filtrar as contas pelo status; a lista mostra todas.</small>
+              )}
               <AvisoNaoUsado campo="conta" campos={camposDaTela} />
             </label>
+          </section>
+
+          <section className="sp-filtros__section">
+            <h3><ListChecks size={16} /> Status do fechamento</h3>
+            <div className="sp-filtros__shortcuts" role="radiogroup" aria-label="Status do fechamento">
+              {[{ valor: "" as const, rotulo: "Todos" }, ...STATUS_FILTRO].map((opcao) => (
+                <button key={opcao.rotulo} type="button" role="radio" aria-checked={rascunho.status === opcao.valor}
+                  className={rascunho.status === opcao.valor ? "sp-filtros__chip sp-filtros__chip--active" : "sp-filtros__chip"}
+                  onClick={() => setRascunho((atual) => ({ ...atual, status: opcao.valor }))}>
+                  {opcao.rotulo}
+                </button>
+              ))}
+            </div>
+            <p className="sp-filtros__hint">
+              {mesUnico
+                ? "Situação da conta no mês escolhido. Com uma empresa, a lista de contas acima mostra só as desse status."
+                : "Situação da conta em cada mês do período."}
+            </p>
+            <AvisoNaoUsado campo="status" campos={camposDaTela} />
           </section>
 
           <section className="sp-filtros__section">

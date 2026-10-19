@@ -1,19 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Cpu, Sparkles, BarChart3, FileText, CheckCircle2, ClipboardList, Settings2, X, ChevronDown, ArrowUp, AlertTriangle, Layers } from "lucide-react";
+import { Cpu, Sparkles, BarChart3, FileText, CheckCircle2, ClipboardList, Settings2, X, ChevronDown, ArrowUp, Layers } from "lucide-react";
 import AppLayout from "../../componentes/layout/AppLayout";
 import UserMenu from "../../componentes/layout/UserMenu";
 import BotaoFiltros from "../../componentes/filtros/BotaoFiltros";
 import ResumoFiltros from "../../componentes/filtros/ResumoFiltros";
-import Button from "../../componentes/ui/Button";
 import { useFiltros } from "../../contexts/FiltrosContext";
 
 import LoadingSpinner from "../../componentes/ui/LoadingSpinner";
 
-import PainelDiferencas from "./PainelDiferencas";
-import { obterDiferencas } from "../../services/diferencasService";
-import type { Diferencas } from "../../interfaces/Diferencas";
 import { extrairMensagemDeErro } from "../../services/api";
-import { obterResumoDashboard, obterUltimoPeriodoComDados } from "../../services/dashboardService";
+import { obterResumoDashboard } from "../../services/dashboardService";
 import { perguntarCfoTati } from "../../services/cfoTatiService";
 import type { DashboardResumo } from "../../interfaces/Dashboard";
 import type { MensagemCfoTati } from "../../interfaces/CfoTati";
@@ -38,12 +34,6 @@ const SUGESTOES_RAPIDAS = [
 
 function horarioAtual(): string {
   return new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-}
-
-const MOEDA_COMPACTA = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", notation: "compact", maximumFractionDigits: 1 });
-
-function formatarMoedaCompacta(valor: number): string {
-  return MOEDA_COMPACTA.format(valor);
 }
 
 function formatarPercentual(valor: number, total: number): string {
@@ -170,18 +160,9 @@ export default function IaPlanning() {
   const anoMes = mesDosFiltros(filtros);
   // O resumo e a Tati identificam a empresa pelo nome (GFILIAL.NOME), o mesmo da gaveta.
   const empresa = filtros.empresa ? filtros.empresaNome.trim() : "";
-  const [ultimoPeriodo, setUltimoPeriodo] = useState<string | null>(null);
-  const [periodoDefinido, setPeriodoDefinido] = useState(false);
   const [resumo, setResumo] = useState<DashboardResumo>(RESUMO_VAZIO);
   const [isLoading, setIsLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
-
-  useEffect(() => {
-    obterUltimoPeriodoComDados()
-      .then(setUltimoPeriodo)
-      .catch(() => {})
-      .finally(() => setPeriodoDefinido(true));
-  }, []);
 
   const carregarResumo = useCallback(async () => {
     setIsLoading(true);
@@ -200,38 +181,6 @@ export default function IaPlanning() {
   useEffect(() => {
     void carregarResumo();
   }, [carregarResumo]);
-
-  // O cálculo de diferenças cruza as quatro bases e leva minutos; só o último
-  // mês com dados vem pré-calculado. Os demais esperam a pessoa pedir.
-  const chaveDiferencas = `${anoMes}|${empresa}`;
-  const [diferencasPedidas, setDiferencasPedidas] = useState<string | null>(null);
-  const calcularDiferencas = periodoDefinido && (anoMes === ultimoPeriodo || diferencasPedidas === chaveDiferencas);
-  const [resultadoDiferencas, setResultadoDiferencas] = useState<
-    { chave: string; dados: Diferencas | null; erro: string | null } | null
-  >(null);
-  const diferencasAtuais = resultadoDiferencas?.chave === chaveDiferencas ? resultadoDiferencas : null;
-  const diferencas = diferencasAtuais?.dados ?? null;
-  const erroDiferencas = diferencasAtuais?.erro ?? null;
-  const carregandoDiferencas = calcularDiferencas && !diferencasAtuais;
-
-  useEffect(() => {
-    if (!calcularDiferencas) return;
-
-    let cancelado = false;
-    const chave = `${anoMes}|${empresa}`;
-    obterDiferencas(anoMes, empresa)
-      .then((resultado) => {
-        if (!cancelado) setResultadoDiferencas({ chave, dados: resultado, erro: null });
-      })
-      .catch((erroCapturado) => {
-        if (cancelado) return;
-        setResultadoDiferencas({ chave, dados: null, erro: extrairMensagemDeErro(erroCapturado, "Não foi possível calcular as diferenças.") });
-      });
-
-    return () => {
-      cancelado = true;
-    };
-  }, [anoMes, empresa, calcularDiferencas]);
 
   const barras = useMemo(
     () =>
@@ -327,38 +276,21 @@ export default function IaPlanning() {
 
         <section className="sp-dashboard__kpis" aria-label="Indicadores gerais">
           {[
-            { label: "Backlog", value: resumo.backlogTotal, detail: "Total de contas do período", Icon: Layers, tone: "backlog", comPercentual: true },
-            { label: "Pendentes", value: resumo.pendentes, detail: "Sem nenhuma ação", Icon: FileText, tone: "pendente", comPercentual: true },
-            { label: "Preparadas", value: resumo.preparados, detail: "Contas prontas", Icon: ClipboardList, tone: "preparado", comPercentual: true },
-            { label: "Conferidas", value: resumo.conferidos, detail: "Contas revisadas", Icon: Settings2, tone: "conferido", comPercentual: true },
-            { label: "Finalizadas", value: resumo.fechados, detail: "Contas fechadas", Icon: CheckCircle2, tone: "finalizado", comPercentual: true },
-            // "—" enquanto calcula ou se falhar: 0 daria a impressão de que nenhuma empresa tem diferença.
-            {
-              label: "Empresas com diferença",
-              value: carregandoDiferencas || !diferencas ? null : diferencas.totalEmpresas,
-              detail: !calcularDiferencas
-                ? "Não calculado para este mês"
-                : carregandoDiferencas
-                ? "Calculando…"
-                : diferencas
-                  ? `${diferencas.totalContas} contas · ${formatarMoedaCompacta(diferencas.valorTotal)}`
-                  : "Não foi possível calcular",
-              Icon: AlertTriangle,
-              tone: "diferenca",
-              comPercentual: false,
-            },
-          ].map(({ label, value, detail, Icon, tone, comPercentual }) => (
+            { label: "Backlog", value: resumo.backlogTotal, detail: "Total de contas do período", Icon: Layers, tone: "backlog" },
+            { label: "Pendentes", value: resumo.pendentes, detail: "Sem nenhuma ação", Icon: FileText, tone: "pendente" },
+            { label: "Preparadas", value: resumo.preparados, detail: "Contas prontas", Icon: ClipboardList, tone: "preparado" },
+            { label: "Conferidas", value: resumo.conferidos, detail: "Contas revisadas", Icon: Settings2, tone: "conferido" },
+            { label: "Finalizadas", value: resumo.fechados, detail: "Contas fechadas", Icon: CheckCircle2, tone: "finalizado" },
+          ].map(({ label, value, detail, Icon, tone }) => (
             <div key={label} className={`ia-kpi ia-kpi--${tone}`}>
               <span className="ia-kpi__icon"><Icon size={25} /></span>
               <div>
-                <strong>{isLoading || value === null ? "—" : value.toLocaleString("pt-BR")}</strong>
+                <strong>{isLoading ? "—" : value.toLocaleString("pt-BR")}</strong>
                 <span>{label}</span>
-                {comPercentual && (
-                  <em className="ia-kpi__percentual">
-                    {isLoading || value === null ? "—" : formatarPercentual(value, resumo.backlogTotal)}
-                    <small> do backlog</small>
-                  </em>
-                )}
+                <em className="ia-kpi__percentual">
+                  {isLoading ? "—" : formatarPercentual(value, resumo.backlogTotal)}
+                  <small> do backlog</small>
+                </em>
                 <small>{detail}</small>
               </div>
               <div className="ia-kpi__decoration" aria-hidden="true"><i /><i /><i /><i /><i /></div>
@@ -409,15 +341,6 @@ export default function IaPlanning() {
                 </div>
               )}
             </div>
-
-            {calcularDiferencas || !periodoDefinido ? (
-              <PainelDiferencas diferencas={diferencas} carregando={carregandoDiferencas || !periodoDefinido} erro={erroDiferencas} />
-            ) : (
-              <div className="ia-dif__pendente">
-                <span>As diferenças de {formatarPeriodo(anoMes)} ainda não foram calculadas. O cálculo cruza as quatro bases do TOTVS e pode levar alguns minutos.</span>
-                <Button variant="secondary" onClick={() => setDiferencasPedidas(chaveDiferencas)}>Calcular diferenças</Button>
-              </div>
-            )}
             </>
             )}
           </div>

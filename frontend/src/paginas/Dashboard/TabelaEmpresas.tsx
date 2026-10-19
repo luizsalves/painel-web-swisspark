@@ -1,6 +1,7 @@
 import { Fragment, useState } from "react";
 import type { ReactNode } from "react";
 import ContasDaEmpresa from "./ContasDaEmpresa";
+import type { FiltroContas } from "./filtroContas";
 import type { DashboardResumo, StatusFechamentoConta } from "../../interfaces/Dashboard";
 
 export interface ResumoDaEmpresa extends DashboardResumo {
@@ -18,13 +19,17 @@ interface TabelaEmpresasProps {
   colunas: ColunaEmpresa[];
   /** Etapas das contas que o "+" mostra; sem informar, todas. */
   etapas?: StatusFechamentoConta[];
-  anoMes: string;
+  /** Filtros da gaveta aplicados às contas que o "+" mostra. */
+  filtro?: FiltroContas;
+  /** Período (AAAA-MM, inclusive) das contas que o "+" mostra. */
+  inicio: string;
+  fim: string;
   versao: number;
   vazio: string;
 }
 
 /** Empresas com um "+" que abre as contas de cada uma, como no Balancete. */
-export default function TabelaEmpresas({ empresas, colunas, etapas, anoMes, versao, vazio }: TabelaEmpresasProps) {
+export default function TabelaEmpresas({ empresas, colunas, etapas, filtro, inicio, fim, versao, vazio }: TabelaEmpresasProps) {
   const [abertas, setAbertas] = useState<Record<string, boolean>>({});
 
   return (
@@ -57,7 +62,7 @@ export default function TabelaEmpresas({ empresas, colunas, etapas, anoMes, vers
                 {aberta && (
                   <tr className="sp-dashboard__company-expansion">
                     <td colSpan={colunas.length + 1}>
-                      <ContasDaEmpresa empresa={empresa.nome} anoMes={anoMes} versao={versao} etapas={etapas} />
+                      <ContasDaEmpresa empresa={empresa.nome} inicio={inicio} fim={fim} versao={versao} etapas={etapas} filtro={filtro} />
                     </td>
                   </tr>
                 )}

@@ -59,7 +59,6 @@ public static class ServiceCollectionExtensions
 
         services.AddScoped<IDiferencasTotvsRepository, DiferencasTotvsRepository>();
         services.AddScoped<IDiferencasService, DiferencasService>();
-        services.AddHostedService<PreCalculoDiferencasService>();
 
         return services;
     }

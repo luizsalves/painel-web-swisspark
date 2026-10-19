@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
-import { BookText, Building2, CalendarRange, MapPin } from "lucide-react";
+import { BookText, Building2, CalendarRange, ListChecks, MapPin } from "lucide-react";
 import { useFiltros } from "../../contexts/FiltrosContext";
 import { coligadaDaEmpresa } from "../../utils/empresaContabil";
-import { descreverMes, descreverPeriodo } from "../../utils/filtrosPainel";
+import { descreverMes, descreverPeriodo, descreverStatus } from "../../utils/filtrosPainel";
 import type { CampoFiltro } from "../../utils/filtrosPainel";
 
 interface ResumoFiltrosProps {
@@ -64,6 +64,13 @@ export default function ResumoFiltros({ campos, obrigatorios = [], acoes }: Resu
             <CalendarRange size={14} />
             <span>Período</span>
             <strong>{descreverPeriodo(filtros)}</strong>
+          </button>
+        )}
+        {campos.includes("status") && (
+          <button type="button" className="sp-filtros-resumo__chip" onClick={abrirGaveta}>
+            <ListChecks size={14} />
+            <span>Status</span>
+            <strong>{descreverStatus(filtros)}</strong>
           </button>
         )}
       </div>

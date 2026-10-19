@@ -7,6 +7,9 @@ import StatusBadge from "../../componentes/ui/StatusBadge";
 import { extrairMensagemDeErro } from "../../services/api";
 import { obterContasDaEmpresa } from "../../services/dashboardService";
 import type { StatusFechamentoConta } from "../../interfaces/Dashboard";
+import { MESES } from "../../utils/filtrosPainel";
+import { SEM_FILTRO, contaPassaNoFiltro } from "./filtroContas";
+import type { FiltroContas } from "./filtroContas";
 
 export const ETAPAS: { id: StatusFechamentoConta; rotulo: string; plural: string; tom: "red" | "orange" | "green-light" | "green" }[] = [
   { id: "Pendente", rotulo: "Pendente", plural: "Pendentes", tom: "red" },
@@ -15,30 +18,45 @@ export const ETAPAS: { id: StatusFechamentoConta; rotulo: string; plural: string
   { id: "Fechado", rotulo: "Finalizada", plural: "Finalizadas", tom: "green" },
 ];
 
+// Uma empresa grande no ano inteiro passa de dezenas de milhares de linhas;
+// a tabela mostra as primeiras e a busca e os filtros chegam nas demais.
+const LIMITE_DE_LINHAS = 500;
+
 function normalizar(texto: string) {
   return texto.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 }
 
+/** "2025-03" → "Mar/2025". */
+function descreverAnoMes(anoMes: string) {
+  const [ano, mes] = anoMes.split("-").map(Number);
+  return `${MESES[mes - 1] ?? mes}/${ano}`;
+}
+
 interface ContasDaEmpresaProps {
   empresa: string;
-  anoMes: string;
+  /** Período (AAAA-MM, inclusive); com mais de um mês, cada conta aparece uma vez por mês. */
+  inicio: string;
+  fim: string;
   versao: number;
   /** Só as contas nessas etapas; sem informar, todas. */
   etapas?: StatusFechamentoConta[];
+  /** Filtros da gaveta (filial, conta, status). */
+  filtro?: FiltroContas;
 }
 
 /** Contas da empresa no período com a situação de cada uma — o que abre no "+" da empresa. */
-export default function ContasDaEmpresa({ empresa, anoMes, versao, etapas }: ContasDaEmpresaProps) {
+export default function ContasDaEmpresa({ empresa, inicio, fim, versao, etapas, filtro = SEM_FILTRO }: ContasDaEmpresaProps) {
   const [filtroEtapa, setFiltroEtapa] = useState<StatusFechamentoConta | null>(null);
   const [busca, setBusca] = useState("");
   // Mesma chave nas três tabelas: abrir a empresa em outra lista não busca de novo.
   const { data: todas = [], error, isLoading } = useQuery({
-    queryKey: ["dashboard-contas", anoMes, empresa, versao],
-    queryFn: ({ signal }) => obterContasDaEmpresa(anoMes, empresa, signal),
+    queryKey: ["dashboard-contas", inicio, fim, empresa, versao],
+    queryFn: ({ signal }) => obterContasDaEmpresa(inicio, fim, empresa, signal),
   });
 
   const opcoes = ETAPAS.filter((etapa) => !etapas || etapas.includes(etapa.id));
-  const contas = useMemo(() => todas.filter((conta) => !etapas || etapas.includes(conta.status)), [todas, etapas]);
+  const contas = useMemo(() => todas.filter((conta) => (!etapas || etapas.includes(conta.status))
+    && contaPassaNoFiltro(conta, filtro)), [todas, etapas, filtro]);
   const contagem = useMemo(() => {
     const total: Record<string, number> = {};
     for (const conta of contas) total[conta.status] = (total[conta.status] ?? 0) + 1;
@@ -48,7 +66,8 @@ export default function ContasDaEmpresa({ empresa, anoMes, versao, etapas }: Con
   // Conta pendente não tem ação registrada; a coluna só aparece se houver outras etapas.
   const mostrarSituacao = opcoes.length > 1;
   const mostrarUltimaAcao = opcoes.some((etapa) => etapa.id !== "Pendente");
-  const colunas = 2 + Number(variasFiliais) + Number(mostrarSituacao) + Number(mostrarUltimaAcao);
+  const variosMeses = inicio !== fim;
+  const colunas = 2 + Number(variosMeses) + Number(variasFiliais) + Number(mostrarSituacao) + Number(mostrarUltimaAcao);
 
   const termo = normalizar(busca.trim());
   const visiveis = contas.filter((conta) => (!filtroEtapa || conta.status === filtroEtapa)
@@ -86,18 +105,20 @@ export default function ContasDaEmpresa({ empresa, anoMes, versao, etapas }: Con
             <tr>
               <th>Conta</th>
               <th>Descrição</th>
+              {variosMeses && <th>Mês</th>}
               {variasFiliais && <th>Filial</th>}
               {mostrarSituacao && <th>Situação</th>}
               {mostrarUltimaAcao && <th>Última ação</th>}
             </tr>
           </thead>
           <tbody>
-            {visiveis.map((conta) => {
+            {visiveis.slice(0, LIMITE_DE_LINHAS).map((conta) => {
               const etapa = ETAPAS.find((item) => item.id === conta.status) ?? ETAPAS[0];
               return (
-                <tr key={`${conta.codFilial}:${conta.codConta}`}>
+                <tr key={`${conta.anoMes}:${conta.codFilial}:${conta.codConta}`}>
                   <td className="sp-dashboard__account-code">{conta.codConta}</td>
                   <td>{conta.descricao || "—"}</td>
+                  {variosMeses && <td>{descreverAnoMes(conta.anoMes)}</td>}
                   {variasFiliais && <td>{conta.filial}</td>}
                   {mostrarSituacao && <td><StatusBadge label={etapa.rotulo} tone={etapa.tom} /></td>}
                   {mostrarUltimaAcao && (
@@ -112,6 +133,11 @@ export default function ContasDaEmpresa({ empresa, anoMes, versao, etapas }: Con
             })}
             {visiveis.length === 0 && (
               <tr><td colSpan={colunas}>Nenhuma conta {filtroEtapa || termo ? "com esse filtro" : "nesta etapa"}.</td></tr>
+            )}
+            {visiveis.length > LIMITE_DE_LINHAS && (
+              <tr><td colSpan={colunas} className="sp-dashboard__muted">
+                Mostrando {LIMITE_DE_LINHAS} de {visiveis.length} linhas. Use a busca ou os filtros para encontrar as demais.
+              </td></tr>
             )}
           </tbody>
         </table>

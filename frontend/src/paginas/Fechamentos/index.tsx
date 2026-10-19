@@ -25,6 +25,7 @@ import ResumoFiltros from "../../componentes/filtros/ResumoFiltros";
 import Button from "../../componentes/ui/Button";
 import Modal from "../../componentes/ui/Modal";
 import StatusBadge from "../../componentes/ui/StatusBadge";
+import HistoricoLancamentos from "./HistoricoLancamentos";
 import api, { extrairMensagemDeErro } from "../../services/api";
 import { useAuth } from "../../contexts/AuthContext";
 import { useFiltros } from "../../contexts/FiltrosContext";
@@ -34,7 +35,8 @@ import type { FechamentoValidacaoStatus } from "../../interfaces/FechamentoValid
 import { mesDosFiltros } from "../../utils/filtrosPainel";
 import type { CampoFiltro } from "../../utils/filtrosPainel";
 
-const CAMPOS_FILTRO: CampoFiltro[] = ["empresa", "filial", "conta", "mes"];
+// O status não muda o fechamento aberto: ele só restringe a lista de contas da gaveta.
+const CAMPOS_FILTRO: CampoFiltro[] = ["empresa", "filial", "conta", "mes", "status"];
 // O fechamento é por filial e conta: "Todas" não forma a chave.
 const FILTROS_OBRIGATORIOS: CampoFiltro[] = ["empresa", "filial", "conta"];
 
@@ -47,12 +49,6 @@ interface LedgerEntry {
   history: string;
   value: number;
   type: "Débito" | "Crédito";
-}
-
-interface HistoryEntry {
-  id: string;
-  label: string;
-  date: string;
 }
 
 interface LoadedSelection {
@@ -146,10 +142,6 @@ export default function Fechamentos() {
   const [note, setNote] = useState("");
   const [savedNotes, setSavedNotes] = useState<string[]>([]);
   const [openEntryMenu, setOpenEntryMenu] = useState<string | null>(null);
-  const [historyEntries, setHistoryEntries] = useState<HistoryEntry[]>([
-    { id: "history-1", label: "Conciliação pré-conferida por Karime", date: "05/02/2026 07:00" },
-    { id: "history-2", label: "Dados do razão carregados", date: "04/02/2026 16:42" },
-  ]);
 
   const [lancamentos, setLancamentos] = useState<LancamentoTotvs[]>([]);
   const [erroLancamentos, setErroLancamentos] = useState<string | null>(null);
@@ -286,23 +278,6 @@ export default function Fechamentos() {
     window.setTimeout(() => setFeedback(""), 2800);
   };
 
-  const addHistory = (label: string) => {
-    setHistoryEntries((current) => [
-      {
-        id: `history-${Date.now()}`,
-        label,
-        date: new Date().toLocaleString("pt-BR", {
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      },
-      ...current,
-    ]);
-  };
-
   // Filtros novos invalidam o que estava carregado (ajuste durante a renderização,
   // para a tela nunca mostrar lançamentos de outra conta ou mês).
   const [chaveCarregada, setChaveCarregada] = useState(chaveFiltros);
@@ -354,8 +329,6 @@ export default function Fechamentos() {
       } else {
         showFeedback("Dados do fechamento carregados.");
       }
-
-      addHistory("Dados do razão atualizados");
     } catch {
       if (chaveFiltrosRef.current !== chaveDaCarga) return;
       setLancamentos([]);
@@ -383,8 +356,7 @@ export default function Fechamentos() {
 
   const executarAcao = async (
     acao: () => Promise<unknown>,
-    mensagemSucesso: string,
-    mensagemHistorico: string
+    mensagemSucesso: string
   ) => {
     setIsProcessandoAcao(true);
     try {
@@ -392,7 +364,6 @@ export default function Fechamentos() {
       await recarregarValidacao();
       setErroValidacao(null);
       showFeedback(mensagemSucesso);
-      addHistory(`${mensagemHistorico} por ${user?.name ?? "usuário"}`);
     } catch (erro) {
       setErroValidacao(extrairMensagemDeErro(erro));
     } finally {
@@ -411,8 +382,7 @@ export default function Fechamentos() {
           saldoAnterior: previousBalance,
           saldoAtual: ledgerBalance,
         }),
-      "Fechamento preparado.",
-      "Preparação realizada"
+      "Fechamento preparado."
     );
   };
 
@@ -422,8 +392,7 @@ export default function Fechamentos() {
 
     void executarAcao(
       () => api.post("/fechamento-validacao/conferir", chave),
-      "Fechamento conferido.",
-      "Conferência realizada"
+      "Fechamento conferido."
     );
   };
 
@@ -433,8 +402,7 @@ export default function Fechamentos() {
 
     void executarAcao(
       () => api.post("/fechamento-validacao/realizar-fechamento", { ...chave, saldoAtual: ledgerBalance }),
-      "Fechamento realizado com sucesso.",
-      "Fechamento realizado"
+      "Fechamento realizado com sucesso."
     );
     setIsCloseModalOpen(false);
   };
@@ -445,8 +413,7 @@ export default function Fechamentos() {
 
     void executarAcao(
       () => api.post("/fechamento-validacao/reverter", chave),
-      "Status revertido.",
-      "Status revertido"
+      "Status revertido."
     );
   };
 
@@ -503,7 +470,6 @@ export default function Fechamentos() {
     if (!trimmedNote) return;
     setSavedNotes((current) => [trimmedNote, ...current]);
     setNote("");
-    addHistory("Nova observação registrada por Karime");
     showFeedback("Observação salva.");
   };
 
@@ -602,43 +568,43 @@ export default function Fechamentos() {
           </span>
         )}
 
-        <section className="sp-closing__summary" aria-label="Resumo da conciliação">
-          <div className="sp-closing__metric">
-            <span>Saldo Anterior</span>
-            <strong>{formatCurrency(previousBalance)}</strong>
-          </div>
-          <div className="sp-closing__metric">
-            <span>Saldo Razão</span>
-            <strong>{formatCurrency(saldoRazaoExibido)}</strong>
-          </div>
-          <div className="sp-closing__metric">
-            <span>Composição do Saldo</span>
-            <strong>{formatCurrency(compositionBalance)}</strong>
-          </div>
-          <div className="sp-closing__metric sp-closing__metric--difference">
-            <span>Diferença</span>
-            <strong>{formatCurrency(difference)}</strong>
-          </div>
-          <label className="sp-closing__metric sp-closing__metric--select">
-            <span>Possui Pendência?</span>
-            <select value={hasPending ? "yes" : "no"} onChange={(event) => setHasPending(event.target.value === "yes")}>
-              <option value="yes">SIM</option>
-              <option value="no">NÃO</option>
-            </select>
-          </label>
-          <div className="sp-closing__metric">
-            <span>Status Atual</span>
-            <StatusBadge label={statusAtual} />
-          </div>
-          <div className="sp-closing__metric sp-closing__metric--responsible">
-            <span>Responsável</span>
-            <strong>{responsavelAtual?.nome ?? "—"}</strong>
-            <small>{responsavelAtual?.em ?? ""}</small>
-          </div>
-        </section>
-
         <div className="sp-closing__workspace">
           <section className="sp-closing__content">
+            {/* Na mesma coluna do fluxo, o resumo tem sempre a largura dele. */}
+            <section className="sp-closing__summary" aria-label="Resumo da conciliação">
+              <div className="sp-closing__metric">
+                <span>Saldo Anterior</span>
+                <strong>{formatCurrency(previousBalance)}</strong>
+              </div>
+              <div className="sp-closing__metric">
+                <span>Saldo Razão</span>
+                <strong>{formatCurrency(saldoRazaoExibido)}</strong>
+              </div>
+              <div className="sp-closing__metric">
+                <span>Composição do Saldo</span>
+                <strong>{formatCurrency(compositionBalance)}</strong>
+              </div>
+              <div className="sp-closing__metric sp-closing__metric--difference">
+                <span>Diferença</span>
+                <strong>{formatCurrency(difference)}</strong>
+              </div>
+              <label className="sp-closing__metric sp-closing__metric--select">
+                <span>Possui Pendência?</span>
+                <select value={hasPending ? "yes" : "no"} onChange={(event) => setHasPending(event.target.value === "yes")}>
+                  <option value="yes">SIM</option>
+                  <option value="no">NÃO</option>
+                </select>
+              </label>
+              <div className="sp-closing__metric">
+                <span>Status Atual</span>
+                <StatusBadge label={statusAtual} />
+              </div>
+              <div className="sp-closing__metric sp-closing__metric--responsible">
+                <span>Responsável</span>
+                <strong>{responsavelAtual?.nome ?? "—"}</strong>
+                <small>{responsavelAtual?.em ?? ""}</small>
+              </div>
+            </section>
             <section className="sp-closing__flow" aria-label="Etapas do fechamento">
               <div className="sp-closing__flow-heading">
                 <strong>Fluxo do fechamento</strong>
@@ -804,13 +770,20 @@ export default function Fechamentos() {
               </div>
             )}
 
-            {activeTab === "history" && (
-              <div className="sp-closing__history">
-                {historyEntries.map((entry) => (
-                  <div key={entry.id}><CheckCircle2 size={18} /><div><strong>{entry.label}</strong><span>{entry.date}</span></div></div>
-                ))}
+            {activeTab === "history" && (loadedSelection ? (
+              // A chave zera o período escolhido quando outro fechamento é aberto.
+              <HistoricoLancamentos
+                key={`${loadedSelection.codColigada}:${loadedSelection.codFilial}:${loadedSelection.codConta}:${loadedSelection.period}`}
+                codColigada={loadedSelection.codColigada}
+                codFilial={loadedSelection.codFilial}
+                codConta={loadedSelection.codConta}
+                anoMesFinal={loadedSelection.period}
+              />
+            ) : (
+              <div className="sp-closing__historico">
+                <p className="sp-closing__historico-mensagem">Carregue um fechamento para ver o histórico de lançamentos da conta.</p>
               </div>
-            )}
+            ))}
           </section>
 
           <aside className="sp-closing__actions" aria-label="Ações do fechamento">

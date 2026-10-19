@@ -26,6 +26,8 @@ export type StatusFechamentoConta = "Pendente" | "Preparado" | "Conferido" | "Fe
 
 /** Uma conta de uma filial no período (GET /api/dashboard/contas), com o status atual. */
 export interface DashboardConta {
+  /** Mês (AAAA-MM) a que o status se refere. */
+  anoMes: string;
   codColigada: number;
   codFilial: number;
   /** "1 - Nome fantasia". */

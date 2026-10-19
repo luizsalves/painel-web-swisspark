@@ -19,7 +19,6 @@ public class HarnessService(
     ConsultarBacklogPorEmpresa consultarBacklogPorEmpresa,
     ConsultarProdutividadeTime consultarProdutividadeTime,
     ConsultarFechamento consultarFechamento,
-    ConsultarDiferencas consultarDiferencas,
     ILogger<HarnessService> logger)
 {
     // Cada pergunta legítima resolve em 1-2 idas à ferramenta; isso é só um
@@ -60,7 +59,6 @@ public class HarnessService(
             ConsultarBacklogPorEmpresa.Definicao,
             ConsultarProdutividadeTime.Definicao,
             ConsultarFechamento.Definicao,
-            ConsultarDiferencas.Definicao,
         ];
 
         List<ChatMessage> mensagens = [new SystemChatMessage(systemPrompt)];
@@ -180,7 +178,6 @@ public class HarnessService(
             ConsultarBacklogPorEmpresa.NomeFerramenta => consultarBacklogPorEmpresa.ExecutarAsync(input, cancellationToken),
             ConsultarProdutividadeTime.NomeFerramenta => consultarProdutividadeTime.ExecutarAsync(input, cancellationToken),
             ConsultarFechamento.NomeFerramenta => consultarFechamento.ExecutarAsync(input, cancellationToken),
-            ConsultarDiferencas.NomeFerramenta => consultarDiferencas.ExecutarAsync(input, cancellationToken),
             _ => Task.FromResult($"Ferramenta desconhecida: {nome}"),
         };
 

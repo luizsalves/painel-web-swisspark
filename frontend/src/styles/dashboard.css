@@ -83,6 +83,8 @@
 .sp-dashboard__company-list header { display: flex; align-items: center; justify-content: space-between; padding: 20px; background: #e5f2ef; color: #005844; }
 .sp-dashboard__company-list h3 { margin: 0; font-size: 16px; }
 .sp-dashboard__company-list header strong { font-size: 28px; }
+/* Filtro de status: uma lista só, no lugar das duas de etapa. */
+.sp-dashboard__company-list--unica { grid-column: 2 / -1; }
 .sp-dashboard__company-table { max-height: 620px; overflow: auto; }
 .sp-dashboard__company-table table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .sp-dashboard__company-table th { position: sticky; top: 0; background: #005844; color: white; text-align: left; padding: 12px 16px; }
@@ -92,6 +94,7 @@
   .sp-dashboard__company-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .sp-dashboard__company-metrics { grid-column: 1 / -1; grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .sp-dashboard__company-goal { align-content: center; }
+  .sp-dashboard__company-list--unica { grid-column: 1 / -1; }
 }
 @media (max-width: 640px) {
   .sp-dashboard__company-grid, .sp-dashboard__company-metrics { grid-template-columns: 1fr; }

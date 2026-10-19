@@ -1,14 +1,22 @@
 import api from "./api";
 import type { DashboardConta, DashboardResumo } from "../interfaces/Dashboard";
 
-export async function obterResumoEmpresas(anoMes: string, signal?: AbortSignal): Promise<Record<string, DashboardResumo>> {
-  const { data } = await api.get<Record<string, DashboardResumo>>("/dashboard/empresas", { params: { anoMes }, signal });
+/** Resumo por empresa de `inicio` a `fim` (AAAA-MM, inclusive), somado mês a mês. */
+export async function obterResumoEmpresas(inicio: string, fim: string, signal?: AbortSignal): Promise<Record<string, DashboardResumo>> {
+  const { data } = await api.get<Record<string, DashboardResumo>>("/dashboard/periodo/empresas", {
+    params: { inicio, fim }, signal,
+  });
   return data;
 }
 
-/** Contas da empresa (nome, como vem em obterResumoEmpresas) no período, com o status de cada uma. */
-export async function obterContasDaEmpresa(anoMes: string, empresa: string, signal?: AbortSignal): Promise<DashboardConta[]> {
-  const { data } = await api.get<DashboardConta[]>("/dashboard/contas", { params: { anoMes, empresa }, signal });
+/**
+ * Contas da empresa (nome, como vem em obterResumoEmpresas) de `inicio` a `fim`:
+ * uma linha por mês, com o status da conta naquele mês.
+ */
+export async function obterContasDaEmpresa(inicio: string, fim: string, empresa: string, signal?: AbortSignal): Promise<DashboardConta[]> {
+  const { data } = await api.get<DashboardConta[]>("/dashboard/periodo/contas", {
+    params: { inicio, fim, empresa }, signal,
+  });
   return data;
 }
 

@@ -1,3 +1,5 @@
+import type { StatusFechamentoConta } from "../interfaces/Dashboard";
+
 /** Filtros principais do painel, compartilhados entre as telas. */
 export interface FiltrosPainel {
   /** Chave de chaveEmpresaContabil; nulo enquanto nenhuma empresa foi escolhida. */
@@ -12,6 +14,8 @@ export interface FiltrosPainel {
   /** 1 a 12, inclusive. */
   mesInicial: number;
   mesFinal: number;
+  /** Etapa do fechamento da conta no mês; vazio = todas. */
+  status: StatusFechamentoConta | "";
 }
 
 /**
@@ -19,16 +23,24 @@ export interface FiltrosPainel {
  * "periodo" é o intervalo de meses; "mes" é para telas de um único mês, que
  * usam o mês final do período.
  */
-export type CampoFiltro = "empresa" | "filial" | "conta" | "periodo" | "mes";
+export type CampoFiltro = "empresa" | "filial" | "conta" | "periodo" | "mes" | "status";
 
 export const MESES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+
+/** Opções do filtro de status, na ordem em que aparecem na gaveta. */
+export const STATUS_FILTRO: { valor: StatusFechamentoConta; rotulo: string }[] = [
+  { valor: "Preparado", rotulo: "Preparado" },
+  { valor: "Conferido", rotulo: "Conferido" },
+  { valor: "Pendente", rotulo: "Pendente" },
+  { valor: "Fechado", rotulo: "Finalizado" },
+];
 
 const CHAVE_ARMAZENAMENTO = "sp-filtros-painel";
 
 export function filtrosPadrao(): FiltrosPainel {
   return {
     empresa: null, empresaNome: "", filial: "", conta: "", contaDescricao: "",
-    ano: new Date().getFullYear() - 1, mesInicial: 1, mesFinal: 12,
+    ano: new Date().getFullYear() - 1, mesInicial: 1, mesFinal: 12, status: "",
   };
 }
 
@@ -47,6 +59,10 @@ export function descreverMes(filtros: FiltrosPainel) {
   return `${MESES[filtros.mesFinal - 1]} de ${filtros.ano}`;
 }
 
+export function descreverStatus(filtros: FiltrosPainel) {
+  return STATUS_FILTRO.find((opcao) => opcao.valor === filtros.status)?.rotulo ?? "Todos";
+}
+
 export function descreverPeriodo(filtros: FiltrosPainel) {
   if (filtros.mesInicial === 1 && filtros.mesFinal === 12) return `Ano de ${filtros.ano}`;
   const inicial = MESES[filtros.mesInicial - 1];
@@ -63,6 +79,7 @@ export function contarFiltrosAtivos(filtros: FiltrosPainel, campos: CampoFiltro[
     conta: filtros.conta !== "",
     periodo: filtros.ano !== padrao.ano || filtros.mesInicial !== 1 || filtros.mesFinal !== 12,
     mes: filtros.ano !== padrao.ano || filtros.mesFinal !== 12,
+    status: filtros.status !== "",
   };
   return campos.filter((campo) => ativos[campo]).length;
 }
@@ -82,6 +99,7 @@ export function lerFiltrosSalvos(): FiltrosPainel {
       ano: typeof salvo.ano === "number" ? salvo.ano : padrao.ano,
       mesInicial: mesValido(salvo.mesInicial) ? salvo.mesInicial! : 1,
       mesFinal: mesValido(salvo.mesFinal) ? salvo.mesFinal! : 12,
+      status: STATUS_FILTRO.find((opcao) => opcao.valor === salvo.status)?.valor ?? "",
     };
     return filtros.mesInicial <= filtros.mesFinal ? filtros : { ...filtros, mesInicial: 1, mesFinal: 12 };
   } catch {

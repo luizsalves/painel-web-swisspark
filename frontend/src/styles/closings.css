@@ -125,7 +125,9 @@
 
 .sp-closing__summary {
   display: grid;
-  grid-template-columns: 0.9fr 1fr 1.15fr 1fr 0.85fr 0.9fr 0.9fr;
+  /* Os valores dividem a sobra; pendência, status e responsável ficam no tamanho do conteúdo. */
+  grid-template-columns: repeat(4, minmax(0, 1fr)) repeat(3, auto);
+  margin-bottom: 18px;
   background: var(--color-white);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
@@ -135,13 +137,12 @@
 
 .sp-closing__metric {
   min-width: 0;
-  min-height: 126px;
-  padding: 22px 20px;
+  padding: 12px 14px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
-  gap: 12px;
+  gap: 6px;
   border-right: 1px solid var(--color-border);
 }
 
@@ -151,13 +152,14 @@
 
 .sp-closing__metric > span:first-child {
   color: var(--color-text);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
 }
 
 .sp-closing__metric strong {
   color: var(--color-green);
-  font-size: 20px;
+  /* Acompanha a largura da coluna do fechamento (cqi), não a da tela. */
+  font-size: clamp(15px, 1.4cqi, 18px);
   line-height: 1.2;
   white-space: nowrap;
 }
@@ -167,22 +169,27 @@
 }
 
 .sp-closing__metric--select select {
-  width: 100px;
-  height: 42px;
+  width: 90px;
+  height: 32px;
+  font-size: 13px;
 }
 
 .sp-closing__metric--responsible {
-  gap: 6px;
+  max-width: 200px;
+  gap: 2px;
 }
 
 .sp-closing__metric--responsible strong {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
   color: var(--color-text);
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .sp-closing__metric--responsible small {
   color: var(--color-text-secondary);
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .sp-closing__workspace {
@@ -194,6 +201,8 @@
 
 .sp-closing__content {
   min-width: 0;
+  /* O resumo quebra conforme a largura desta coluna, não a da tela. */
+  container-type: inline-size;
 }
 
 .sp-closing__flow {
@@ -326,7 +335,7 @@
 .sp-closing__table-card,
 .sp-closing__panel-list,
 .sp-closing__notes,
-.sp-closing__history {
+.sp-closing__historico {
   margin-top: 16px;
   background: var(--color-white);
   border: 1px solid var(--color-border);
@@ -581,39 +590,88 @@
   font-size: 13.5px;
 }
 
-.sp-closing__history {
-  padding: 10px 20px;
-}
-
-.sp-closing__history > div {
-  padding: 15px 0;
+/* Aba Histórico: partidas da conta mês a mês, com um período só desta aba. */
+.sp-closing__historico-filtros {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 14px;
+  padding: 16px;
   border-bottom: 1px solid var(--color-border);
 }
 
-.sp-closing__history > div:last-child {
-  border-bottom: none;
+.sp-closing__historico-filtros .sp-closing__field {
+  width: 150px;
 }
 
-.sp-closing__history svg {
-  color: var(--color-success);
+.sp-closing__historico-resumo {
+  flex: 1 1 240px;
+  margin: 0 0 13px;
+  color: var(--color-text-secondary);
+  font-size: 13px;
 }
 
-.sp-closing__history strong,
-.sp-closing__history span {
-  display: block;
+.sp-closing__historico-mes + .sp-closing__historico-mes {
+  border-top: 1px solid var(--color-border);
 }
 
-.sp-closing__history strong {
-  font-size: 13.5px;
+.sp-closing__historico-mes > header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 24px;
+  padding: 14px 16px;
+  background: var(--color-bg);
 }
 
-.sp-closing__history span {
-  margin-top: 3px;
+.sp-closing__historico-mes h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.sp-closing__historico-mes h3 small {
   color: var(--color-text-secondary);
   font-size: 12px;
+  font-weight: 600;
+}
+
+.sp-closing__historico-mes dl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 22px;
+  margin: 0;
+}
+
+.sp-closing__historico-mes dt {
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.sp-closing__historico-mes dd {
+  margin: 2px 0 0;
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.sp-closing__historico-mensagem {
+  display: flex;
+  justify-content: center;
+  margin: 0;
+  padding: 18px 16px;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.sp-closing__historico-mensagem--erro {
+  color: var(--color-error);
+}
+
+.sp-closing__table td.sp-closing__historico-limite {
+  color: var(--color-text-secondary);
+  white-space: normal;
 }
 
 .sp-closing__modal-copy {
@@ -634,15 +692,19 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+}
+
+/* Coluna estreita (notebook): o resumo quebra em duas linhas, valores em cima e status embaixo. */
+@container (max-width: 1150px) {
   .sp-closing__summary {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
-  .sp-closing__metric:nth-child(3) {
+  .sp-closing__metric:nth-child(4) {
     border-right: none;
   }
 
-  .sp-closing__metric:nth-child(-n + 3) {
+  .sp-closing__metric:nth-child(-n + 4) {
     border-bottom: 1px solid var(--color-border);
   }
 }
@@ -693,7 +755,7 @@
   }
 
   .sp-closing__metric,
-  .sp-closing__metric:nth-child(3) {
+  .sp-closing__metric:nth-child(4) {
     border-right: none;
     border-bottom: 1px solid var(--color-border);
   }
