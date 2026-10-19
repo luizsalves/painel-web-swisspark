@@ -318,6 +318,915 @@
 }
 
 /* ==========================================================================
+   Indicadores: visão do contador e visão da diretoria
+   Cores da seção 6.1 do esboço; o azul do esboço é a cor primária do sistema.
+   ========================================================================== */
+
+.sp-indicators {
+  --ind-bom-texto: #1b6b43;
+  --ind-bom-fundo: #e3f2e9;
+  --ind-bom-faixa: #b5dcc4;
+  --ind-atencao-texto: #7a4a00;
+  --ind-atencao-fundo: #fcefd6;
+  --ind-atencao-faixa: #f1d08e;
+  --ind-risco-texto: #a12a24;
+  --ind-risco-fundo: #fbe4e2;
+  --ind-risco-faixa: #ecb0aa;
+  --ind-verificar-texto: #4e5968;
+  --ind-verificar-fundo: #eef0f3;
+  --ind-verificar-faixa: #dde1e6;
+
+  --ind-primaria: var(--color-green);
+  --ind-primaria-clara: color-mix(in srgb, var(--color-green) 40%, #ffffff);
+  --ind-sparkline: #4e5968;
+  --ind-cascata-negativo: #a12a24;
+  --ind-cascata-reduz: #e39a93;
+  --ind-cascata-zero: #9aa3ae;
+  --ind-caixa-positivo: #3e9a6a;
+  --ind-caixa-negativo: #d9665e;
+  --ind-caixa-neutro: #aeb6c0;
+  --ind-trilho: #f0f2f5;
+  --ind-aumenta-lucro: #7cc29a;
+  --ind-reduz-lucro: #e08a82;
+  --ind-tendencia-anterior: #9aa3ae;
+  --ind-grade: #e9ecef;
+  --ind-vence-curto: #d9665e;
+  --ind-vence-longo: #3e9a6a;
+  --ind-pontos-fundo: #fff8eb;
+  --ind-pontos-borda: #f0d9a8;
+  --ind-pontos-titulo: #7a4a00;
+  --ind-pontos-texto: #4a3b1c;
+  --ind-aviso-fundo: #eef3fa;
+  --ind-aviso-borda: #c9d8ec;
+  --ind-aviso-texto: #1d3f6e;
+  --ind-vazio-borda: #cbd1d8;
+  --ind-vazio-texto: #4e5968;
+  --ind-linha: #eef0f3;
+  --ind-linha-forte: #cbd1d8;
+  --ind-texto-medio: #3d4754;
+}
+
+.sp-ind-negativo {
+  color: var(--ind-risco-texto);
+}
+
+.sp-ind-positivo {
+  color: var(--ind-bom-texto);
+}
+
+.sp-ind-vazio {
+  color: var(--color-text-secondary);
+}
+
+/* Links sublinhados, como no esboço */
+.sp-ind-link,
+.sp-ind-pontos__link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ind-primaria);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.sp-ind-link:hover,
+.sp-ind-pontos__link:hover {
+  color: var(--color-green-dark);
+}
+
+.sp-ind-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-white);
+  box-shadow: var(--shadow-xs);
+}
+
+/* Barra de filtros: "Comparar com" ao lado do Atualizar */
+.sp-ind-comparar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.sp-ind-comparar select {
+  height: 40px;
+  max-width: 330px;
+  padding: 0 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Abas */
+.sp-ind-abas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.sp-ind-abas__aba {
+  min-height: 44px;
+  margin-bottom: -1px;
+  padding: 0 16px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--color-text-secondary);
+  font: inherit;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.sp-ind-abas__aba:hover {
+  color: var(--color-text);
+}
+
+.sp-ind-abas__aba--ativa,
+.sp-ind-abas__aba--ativa:hover {
+  border-bottom-color: var(--ind-primaria);
+  color: var(--ind-primaria);
+  font-weight: 600;
+}
+
+/* Avisos */
+.sp-ind-aviso {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border: 1px solid var(--ind-aviso-borda);
+  border-radius: 8px;
+  background: var(--ind-aviso-fundo);
+  color: var(--ind-aviso-texto);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.sp-ind-pontos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 28px;
+  padding: 14px 18px;
+  border: 1px solid var(--ind-pontos-borda);
+  border-radius: 10px;
+  background: var(--ind-pontos-fundo);
+  color: var(--ind-pontos-texto);
+  font-size: 14px;
+}
+
+.sp-ind-pontos strong {
+  color: var(--ind-pontos-titulo);
+  font-weight: 600;
+}
+
+.sp-ind-pontos__link {
+  margin-left: auto;
+}
+
+/* Pílula de status */
+.sp-ind-pill {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.sp-ind-pill--grande {
+  padding: 5px 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.sp-ind-pill--fixa {
+  flex: none;
+  width: 74px;
+  padding: 3px 0;
+  font-weight: 600;
+  text-align: center;
+}
+
+.sp-ind-pill--bom { background: var(--ind-bom-fundo); color: var(--ind-bom-texto); }
+.sp-ind-pill--atencao { background: var(--ind-atencao-fundo); color: var(--ind-atencao-texto); }
+.sp-ind-pill--risco { background: var(--ind-risco-fundo); color: var(--ind-risco-texto); }
+.sp-ind-pill--verificar { background: var(--ind-verificar-fundo); color: var(--ind-verificar-texto); }
+
+.sp-ind-variacao { font-weight: 500; }
+.sp-ind-variacao--melhorou { color: var(--ind-bom-texto); }
+.sp-ind-variacao--piorou { color: var(--ind-risco-texto); }
+.sp-ind-variacao--estavel { color: var(--color-text-secondary); }
+
+/* Cards de resumo do contador */
+.sp-ind-resumos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 16px;
+}
+
+.sp-ind-resumo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 18px 20px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-white);
+  box-shadow: var(--shadow-xs);
+}
+
+.sp-ind-resumo__topo,
+.sp-ind-pilar__topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.sp-ind-resumo__valor {
+  font-size: 30px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.sp-ind-resumo__detalhe,
+.sp-ind-resumo__comparacao {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+/* Tabela de indicadores */
+.sp-ind-tabela {
+  padding: 8px 24px 18px;
+}
+
+.sp-ind-tabela__rolagem {
+  overflow-x: auto;
+}
+
+.sp-ind-tabela__conteudo {
+  min-width: 1040px;
+}
+
+.sp-ind-tabela__linha {
+  display: grid;
+  grid-template-columns: minmax(230px, 2fr) 150px 92px 92px 104px 92px 104px 92px;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--ind-linha);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.sp-ind-tabela__linha--cabecalho {
+  padding: 14px 0 12px;
+  border-top: 0;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.sp-ind-tabela__grupo {
+  scroll-margin-top: 90px;
+}
+
+.sp-ind-tabela__titulo-grupo {
+  padding: 22px 0 6px;
+  color: var(--ind-primaria);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.sp-ind-num {
+  text-align: right;
+}
+
+.sp-ind-tabela__nome {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sp-ind-tabela__nome > div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+
+.sp-ind-tabela__nome small {
+  color: var(--ind-atencao-texto);
+  font-size: 12px;
+}
+
+.sp-ind-tabela__info {
+  display: inline-flex;
+  color: #6b7684;
+  cursor: help;
+}
+
+.sp-ind-tabela__info:focus-visible {
+  border-radius: 50%;
+  outline: 2px solid var(--ind-primaria);
+  outline-offset: 2px;
+}
+
+.sp-ind-tabela__atual {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+}
+
+.sp-ind-tabela__atual strong {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.sp-ind-tabela__atual small {
+  color: var(--color-text-secondary);
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+
+.sp-ind-tabela__comparacao {
+  color: var(--ind-texto-medio);
+}
+
+.sp-ind-tabela__rodape {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  padding-top: 16px;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
+
+/* Régua de faixas: 150 × 16 px, trilho de 8 px */
+.sp-ind-regua {
+  position: relative;
+  width: 150px;
+  height: 16px;
+}
+
+.sp-ind-regua__trilho {
+  position: absolute;
+  top: 4px;
+  right: 0;
+  left: 0;
+  display: flex;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 4px;
+}
+
+.sp-ind-regua__faixa { height: 8px; }
+.sp-ind-regua__faixa--bom { background: var(--ind-bom-faixa); }
+.sp-ind-regua__faixa--atencao { background: var(--ind-atencao-faixa); }
+.sp-ind-regua__faixa--risco { background: var(--ind-risco-faixa); }
+
+.sp-ind-regua__marcador {
+  position: absolute;
+  top: 0;
+  width: 3px;
+  height: 16px;
+  margin-left: -1px;
+  border-radius: 2px;
+  background: var(--color-text);
+}
+
+.sp-ind-regua-nota {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
+
+.sp-ind-sparkline polyline {
+  stroke: var(--ind-sparkline);
+}
+
+/* Base de cálculo */
+.sp-ind-base {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 24px;
+}
+
+.sp-ind-base__alternar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 48px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sp-ind-base__alternar > span:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sp-ind-base__alternar strong {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.sp-ind-base__alternar small {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.sp-ind-base__acao {
+  color: var(--ind-primaria);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.sp-ind-base__colunas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
+  gap: 32px;
+  padding: 4px 0 14px;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.sp-ind-base__coluna {
+  display: flex;
+  flex-direction: column;
+}
+
+.sp-ind-base__titulo {
+  padding-bottom: 6px;
+  color: var(--ind-primaria);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.sp-ind-base__linha {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-top: 1px solid var(--ind-linha);
+}
+
+.sp-ind-base__linha > span:last-child {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.sp-ind-base__linha--destaque,
+.sp-ind-base__linha--destaque > span:last-child {
+  font-weight: 600;
+}
+
+.sp-ind-base__obs {
+  margin-left: 6px;
+  font-size: 12px;
+}
+
+.sp-ind-base__obs--aviso { color: var(--ind-atencao-texto); }
+.sp-ind-base__obs--neutro { color: var(--color-text-secondary); }
+
+#ind-dfc {
+  scroll-margin-top: 90px;
+}
+
+/* Visão da diretoria: veredito e pilares */
+.sp-ind-veredito {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px 26px;
+}
+
+.sp-ind-veredito__topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.sp-ind-veredito__frase {
+  max-width: 920px;
+  margin: 0;
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.sp-ind-veredito__pilares {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 14px;
+}
+
+.sp-ind-pilar {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 16px 18px;
+  border: 1px solid #e9ecef;
+  border-radius: 10px;
+  background: #f7f8fa;
+}
+
+.sp-ind-pilar__topo {
+  align-self: stretch;
+}
+
+.sp-ind-pilar__valor {
+  font-size: 28px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.sp-ind-pilar__frase {
+  color: var(--ind-texto-medio);
+  font-size: 13px;
+}
+
+.sp-ind-pilar__detalhe {
+  padding-top: 4px;
+  font-size: 13px;
+}
+
+/* O que exige atenção */
+.sp-ind-alertas {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 22px 26px;
+}
+
+.sp-ind-alertas h2 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.sp-ind-alertas ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sp-ind-alertas li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 14px;
+  padding: 12px 0;
+  border-top: 1px solid var(--ind-linha);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.sp-ind-alertas li > span:last-child {
+  flex: 1 1 420px;
+  min-width: 0;
+}
+
+.sp-ind-alertas__vazio {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
+/* Grade de blocos da diretoria */
+.sp-ind-grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr));
+  gap: 24px;
+}
+
+.sp-ind-bloco {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  padding: 22px 26px;
+}
+
+.sp-ind-bloco--preparacao {
+  border-style: dashed;
+  border-color: var(--ind-vazio-borda);
+  box-shadow: none;
+}
+
+.sp-ind-bloco__cabecalho {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sp-ind-bloco__cabecalho h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.sp-ind-bloco__cabecalho span {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.sp-ind-bloco__leitura {
+  margin: 0;
+  color: var(--ind-texto-medio);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.sp-ind-sem-dados {
+  padding: 32px 20px;
+  border: 1px dashed var(--ind-vazio-borda);
+  border-radius: 10px;
+  color: var(--ind-vazio-texto);
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+/* Cascata da receita ao lucro: 250 px, barras com 80% da coluna */
+.sp-ind-cascata__grafico {
+  position: relative;
+  display: flex;
+  gap: 8px;
+  height: 250px;
+}
+
+.sp-ind-cascata__zero {
+  position: absolute;
+  right: 0;
+  left: 0;
+  height: 1px;
+  background: var(--ind-cascata-zero);
+}
+
+.sp-ind-cascata__coluna {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.sp-ind-cascata__barra {
+  position: absolute;
+  right: 10%;
+  left: 10%;
+  border-radius: 3px;
+}
+
+.sp-ind-cascata__barra--positivo { background: var(--ind-primaria); }
+.sp-ind-cascata__barra--negativo { background: var(--ind-cascata-negativo); }
+.sp-ind-cascata__barra--reduz { background: var(--ind-cascata-reduz); }
+.sp-ind-cascata__barra--aumenta { background: var(--ind-primaria-clara); }
+
+.sp-ind-cascata__valor {
+  position: absolute;
+  right: 0;
+  left: 0;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.sp-ind-cascata__rotulos {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.sp-ind-cascata__rotulos span {
+  flex: 1 1 0;
+  min-width: 0;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  line-height: 1.3;
+  text-align: center;
+}
+
+/* De onde veio o caixa */
+.sp-ind-caixa__saldo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 14px;
+}
+
+.sp-ind-caixa__saldo strong {
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.sp-ind-caixa__saldo span {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.sp-ind-caixa__inicio {
+  margin-top: -6px;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.sp-ind-barras {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 4px;
+}
+
+.sp-ind-barras__linha {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sp-ind-barras__topo {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.sp-ind-barras__topo strong {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.sp-ind-barras__valor--positivo { color: var(--ind-bom-texto); }
+.sp-ind-barras__valor--negativo { color: var(--ind-risco-texto); }
+.sp-ind-barras__valor--neutro { color: var(--ind-verificar-texto); }
+
+.sp-ind-trilho {
+  position: relative;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--ind-trilho);
+}
+
+.sp-ind-trilho__barra {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 8px;
+  border-radius: 4px;
+}
+
+.sp-ind-barras__barra--positivo { background: var(--ind-caixa-positivo); }
+.sp-ind-barras__barra--negativo { background: var(--ind-caixa-negativo); }
+.sp-ind-barras__barra--neutro { background: var(--ind-caixa-neutro); }
+
+/* Quanto a empresa deve */
+.sp-ind-lista {
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.sp-ind-lista > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--ind-linha);
+}
+
+.sp-ind-lista > div > span:last-child {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.sp-ind-lista .sp-ind-lista__total {
+  border-top-color: var(--ind-linha-forte);
+  font-weight: 600;
+}
+
+.sp-ind-lista--suave {
+  color: var(--ind-vazio-texto);
+}
+
+.sp-ind-lista--suave > div > span:last-child {
+  font-weight: 400;
+}
+
+.sp-ind-divida__leitura {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  font-size: 14px;
+}
+
+.sp-ind-divida__leitura strong {
+  font-weight: 600;
+}
+
+.sp-ind-divida__sem-passivo {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.sp-ind-vencimento {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.sp-ind-vencimento__titulo {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.sp-ind-vencimento__barra {
+  display: flex;
+  height: 14px;
+  overflow: hidden;
+  border-radius: 7px;
+  background: var(--ind-trilho);
+}
+
+.sp-ind-vencimento__curto { background: var(--ind-vence-curto); }
+.sp-ind-vencimento__longo { background: var(--ind-vence-longo); }
+
+.sp-ind-vencimento__rotulos {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+  color: var(--ind-texto-medio);
+  font-size: 13px;
+}
+
+.sp-ind-rodape {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+@media (max-width: 720px) {
+  .sp-ind-veredito,
+  .sp-ind-alertas,
+  .sp-ind-bloco {
+    padding: 18px 16px;
+  }
+
+  .sp-ind-tabela {
+    padding: 8px 16px 16px;
+  }
+
+  .sp-ind-veredito__frase {
+    font-size: 22px;
+  }
+
+  .sp-ind-pontos__link {
+    margin-left: 0;
+  }
+}
+
+/* ==========================================================================
    DFC impressa ("Gerar PDF" da aba Balanço DFC)
    ========================================================================== */
 
