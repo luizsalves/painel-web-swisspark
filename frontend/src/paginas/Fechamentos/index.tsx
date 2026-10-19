@@ -774,9 +774,12 @@ export default function Fechamentos() {
               // A chave zera o período escolhido quando outro fechamento é aberto.
               <HistoricoLancamentos
                 key={`${loadedSelection.codColigada}:${loadedSelection.codFilial}:${loadedSelection.codConta}:${loadedSelection.period}`}
+                empresa={loadedSelection.empresa}
                 codColigada={loadedSelection.codColigada}
                 codFilial={loadedSelection.codFilial}
                 codConta={loadedSelection.codConta}
+                descricaoConta={loadedSelection.descricaoConta}
+                reduzido={codigoReduzido}
                 anoMesFinal={loadedSelection.period}
               />
             ) : (

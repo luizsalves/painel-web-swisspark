@@ -611,6 +611,19 @@
   font-size: 13px;
 }
 
+.sp-closing__historico-exportar {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.sp-closing__historico-exportar [role="alert"] {
+  color: var(--color-error);
+  font-size: 12px;
+}
+
 .sp-closing__historico-mes + .sp-closing__historico-mes {
   border-top: 1px solid var(--color-border);
 }
