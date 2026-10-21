@@ -59,8 +59,8 @@ public class ConsultarIndicadores(
                 codFilial = new
                 {
                     type = "integer",
-                    description = "Código da filial — só quando o usuário pedir uma filial. Sem ele, entram todas as " +
-                        "filiais da coligada, como na tela com a filial \"Todas\".",
+                    description = "Código da filial — a que o usuário pedir ou, se ele não disser, a do contexto da tela. " +
+                        "Sem ele, entram todas as filiais da coligada, como na tela com a filial \"Todas\".",
                 },
             },
             required = new[] { "empresa", "anoMes" },
