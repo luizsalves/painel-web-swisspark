@@ -383,7 +383,7 @@ export default function IaPlanning() {
                       <div key={`${mensagem.horario}-${index}`} className="ia-ask__resposta">
                         <span className="ia-ask__rotulo">
                           <span className="ia-tati-avatar ia-ask__avatar" aria-hidden="true" />
-                          <Sparkles size={12} aria-hidden="true" /> Insight da Tati
+                          Tati
                         </span>
                         <div className="ia-ask__cartao">
                           <p>{renderizarTexto(corpo)}</p>
@@ -426,13 +426,17 @@ export default function IaPlanning() {
                   )}
                 </div>
 
-                <div className="ia-ask__sugestoes">
-                  {SUGESTOES_RAPIDAS.map((sugestao) => (
-                    <button key={sugestao} type="button" disabled={isEnviando} onClick={() => void enviarPergunta(sugestao)}>
-                      {sugestao}
-                    </button>
-                  ))}
-                </div>
+                {/* Como no ChatGPT, as sugestões aparecem só antes da primeira pergunta; depois,
+                    os próximos passos vêm nas opções numeradas de cada resposta. */}
+                {mensagens.length <= 1 && !isEnviando && (
+                  <div className="ia-ask__sugestoes">
+                    {SUGESTOES_RAPIDAS.map((sugestao) => (
+                      <button key={sugestao} type="button" onClick={() => void enviarPergunta(sugestao)}>
+                        {sugestao}
+                      </button>
+                    ))}
+                  </div>
+                )}
 
                 <form className="ia-ask__campo" onSubmit={handleSubmit}>
                   <input

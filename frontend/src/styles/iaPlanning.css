@@ -384,16 +384,20 @@
 .sp-tati-chat__ver-grafico { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; padding: 7px 12px; border: 1px solid #c9d6f5; border-radius: 10px; background: #f4f7ff; color: #1f3a8a; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .sp-tati-chat__ver-grafico:hover { background: #e3ebff; border-color: #4f6fe0; }
 
-/* Painel "Pergunte à Tati" — coluna da direita, com conversa, sugestões e campo de pergunta */
+/* Painel "Pergunte à Tati" — conversa, sugestões e campo de pergunta.
+   Na tela larga, como no ChatGPT: os gráficos ficam em cima e a conversa embaixo, em
+   largura total. A área ocupa a altura da tela; os gráficos têm altura fixa, a conversa
+   fica com o resto e rola por dentro, numa coluna central de leitura. */
 @media (min-width: 1101px) {
-  .sp-planning-shell .sp-ia-planning__workspace { grid-template-columns: minmax(0, 1fr) minmax(360px, 430px); }
-  /* O painel tem 75% da altura que vai até perto do fim da tela (no mínimo 420px),
-     para a conversa ter espaço mesmo quando o gráfico ao lado é baixo; se a coluna
-     dos gráficos for mais alta, o min-height 100% acompanha. A conversa rola dentro
-     do painel. */
-  .ia-ask { height: max(420px, calc((100vh - 240px) * 0.75)); min-height: 100%; }
-  .ia-ask--recolhido { height: auto; min-height: 0; align-self: start; }
-  .ia-graficos-tati { min-height: 470px; }
+  .sp-planning-shell .sp-ia-planning__workspace { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); height: max(700px, calc(100vh - 32px)); }
+  .sp-planning-shell .sp-ia-planning__workspace:has(.ia-ask--recolhido) { grid-template-rows: auto auto; height: auto; }
+  .ia-ask { min-height: 0; }
+  .ia-ask--recolhido { align-self: start; }
+  .ia-ask__mensagens { padding-inline: max(4px, calc((100% - 880px) / 2)); }
+  .ia-ask__sugestoes, .ia-ask__campo { width: min(880px, 100%); align-self: center; }
+  /* O mais novo primeiro, lado a lado, na mesma altura do gráfico do backlog. */
+  .ia-graficos-tati { flex: none; height: 300px; max-height: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); align-items: start; align-content: start; }
+  .ia-graficos-tati__vazio { grid-column: 1 / -1; min-height: 280px; }
 }
 
 .ia-ask { display: flex; flex-direction: column; gap: 12px; min-width: 0; padding: 16px; border-radius: 22px; background: linear-gradient(160deg, #1740d8 0%, #0d2ca8 45%, #081c74 100%); color: #e8eeff; box-shadow: 0 18px 40px #0b2a9e3d, inset 0 0 0 1px #ffffff1f; }
@@ -414,14 +418,16 @@
 .ia-ask__mensagens::-webkit-scrollbar-thumb { border-radius: 4px; background: #ffffff66; }
 .ia-ask__mensagens::-webkit-scrollbar-thumb:hover { background: #ffffff99; }
 .ia-ask__resposta, .ia-ask__pergunta, .ia-ask__digitando { flex-shrink: 0; }
+/* Como no ChatGPT, a conversa fica encostada no campo de pergunta e cresce para cima;
+   o margin-top auto (em vez de justify-content: flex-end) mantém a rolagem funcionando. */
+.ia-ask__mensagens > :first-child { margin-top: auto; }
 
-.ia-ask__pergunta { align-self: flex-end; max-width: 85%; padding: 10px 14px; border-radius: 14px 14px 4px 14px; background: #ffffff21; border: 1px solid #ffffff29; font-size: 13.5px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.ia-ask__pergunta { align-self: flex-end; max-width: 85%; padding: 10px 14px; border-radius: 18px; background: #ffffff1f; font-size: 13.5px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
 
-.ia-ask__resposta { display: flex; flex-direction: column; gap: 8px; }
-.ia-ask__rotulo { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px 4px 4px; border-radius: 999px; background: #ffffff14; border: 1px solid #ffffff21; color: #dfe7ff; font-size: 12px; font-weight: 600; }
-.ia-ask__rotulo svg { color: #ffd23f; }
+.ia-ask__resposta { display: flex; flex-direction: column; gap: 6px; }
+.ia-ask__rotulo { align-self: flex-start; display: inline-flex; align-items: center; gap: 7px; color: #c9d5ff; font-size: 12px; font-weight: 600; }
 .ia-ask .ia-ask__avatar { width: 22px; height: 22px; border-width: 1px; box-shadow: none; }
-.ia-ask__cartao { padding: 14px 16px 10px; border-radius: 14px; background: #06175acc; border: 1px solid #5b7cff59; box-shadow: inset 0 1px 0 #ffffff12; color: #eef2ff; font-size: 13.5px; line-height: 1.6; }
+.ia-ask__cartao { padding: 0 2px; color: #eef2ff; font-size: 13.5px; line-height: 1.6; }
 .ia-ask__cartao p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .ia-ask__cartao strong { color: #fff; }
 .ia-ask__base { display: block; margin-top: 10px; color: #ffd23f; font-size: 11.5px; }
