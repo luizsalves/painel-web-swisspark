@@ -1,5 +1,5 @@
 import api from "./api";
-import type { Dfc, Indicadores } from "../interfaces/Indicadores";
+import type { BaseCalculoMensal, Dfc, Indicadores } from "../interfaces/Indicadores";
 
 const RECURSO = "/indicadores";
 
@@ -10,6 +10,17 @@ export async function carregarIndicadores(params: {
   codFilial?: number;
 }): Promise<Indicadores> {
   const { data } = await api.get<Indicadores>(RECURSO, { params });
+  return data;
+}
+
+/** A base dos indicadores de cada mês de `inicio` a `fim` (AAAA-MM, inclusive; até 24 meses). */
+export async function carregarIndicadoresMensais(params: {
+  inicio: string;
+  fim: string;
+  codColigada: number;
+  codFilial?: number;
+}): Promise<BaseCalculoMensal[]> {
+  const { data } = await api.get<BaseCalculoMensal[]>(`${RECURSO}/mensal`, { params });
   return data;
 }
 

@@ -727,6 +727,105 @@
   stroke: var(--ind-sparkline);
 }
 
+/* Sem a coluna do mesmo período do ano anterior ("Comparar com" só o período anterior ou o ano anterior) */
+.sp-ind-tabela--sem-extra .sp-ind-tabela__conteudo {
+  min-width: 940px;
+}
+
+.sp-ind-tabela--sem-extra .sp-ind-tabela__linha {
+  grid-template-columns: minmax(230px, 2fr) 150px 92px 92px 104px 104px 92px;
+}
+
+/* Matriz dos últimos 12 meses */
+.sp-ind-matriz {
+  padding: 20px 24px;
+}
+
+.sp-ind-matriz__topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  margin-bottom: 12px;
+}
+
+.sp-ind-matriz__topo h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.sp-ind-matriz__topo span,
+.sp-ind-matriz__mensagem {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.sp-ind-matriz__rolagem {
+  overflow-x: auto;
+}
+
+.sp-ind-matriz__tabela {
+  width: 100%;
+  min-width: 1000px;
+  border-collapse: separate;
+  border-spacing: 4px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.sp-ind-matriz__tabela th {
+  padding: 4px;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.sp-ind-matriz__tabela th:first-child {
+  padding-right: 12px;
+  text-align: left;
+}
+
+.sp-ind-matriz__tabela tbody th {
+  color: var(--color-text);
+  font-size: 13px;
+}
+
+.sp-ind-matriz__tabela thead th.sp-ind-matriz__mes-atual {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.sp-ind-matriz__tabela td {
+  padding: 0;
+}
+
+.sp-ind-matriz__celula {
+  display: block;
+  padding: 7px 6px;
+  border-radius: 6px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.sp-ind-matriz__celula--bom { background: var(--ind-bom-fundo); color: var(--ind-bom-texto); }
+.sp-ind-matriz__celula--atencao { background: var(--ind-atencao-fundo); color: var(--ind-atencao-texto); }
+.sp-ind-matriz__celula--risco { background: var(--ind-risco-fundo); color: var(--ind-risco-texto); }
+.sp-ind-matriz__celula--verificar { background: var(--ind-verificar-fundo); color: var(--ind-verificar-texto); }
+.sp-ind-matriz__celula--vazia { color: var(--color-text-secondary); }
+
+.sp-ind-matriz__legenda {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  margin-top: 14px;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
+
 /* Base de cálculo */
 .sp-ind-base {
   display: flex;

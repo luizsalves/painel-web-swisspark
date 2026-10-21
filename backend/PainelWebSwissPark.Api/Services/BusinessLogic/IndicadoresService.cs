@@ -177,6 +177,23 @@ public class IndicadoresService(
         };
     }
 
+    /// <summary>
+    /// A mesma base de cálculo para quem já tem os saldos por conta — o
+    /// <see cref="IndicadoresMensaisService"/>, que monta um mês de cada vez.
+    /// </summary>
+    internal static BaseCalculoIndicadoresViewModel MontarBaseCalculo(IEnumerable<SaldoDaConta> contas) =>
+        MontarBaseCalculo(contas.ToDictionary(
+            conta => conta.CodConta,
+            conta => new Saldo
+            {
+                SaldoInicial = conta.SaldoInicial,
+                SaldoFinal = conta.SaldoFinal,
+                Debitos = conta.Debitos,
+                Creditos = conta.Creditos,
+                MovimentoSemApuracao = conta.MovimentoSemApuracao,
+            },
+            StringComparer.Ordinal));
+
     private static BaseCalculoIndicadoresViewModel MontarBaseCalculo(Dictionary<string, Saldo> saldos)
     {
         decimal Somar(string prefixo, Func<Saldo, decimal> valor) =>

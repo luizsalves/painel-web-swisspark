@@ -4,6 +4,7 @@ using OpenAI.Chat;
 using PainelWebSwissPark.Api.AgenteContabil.Ferramentas;
 using PainelWebSwissPark.Api.DTOs.Requests;
 using PainelWebSwissPark.Api.Exceptions;
+using PainelWebSwissPark.Api.Services.BusinessLogic;
 
 namespace PainelWebSwissPark.Api.AgenteContabil;
 
@@ -33,14 +34,9 @@ public class HarnessService(
 
     private static readonly Lazy<string> Instrucoes = new(CarregarInstrucoes);
 
-    public async Task<string> ExecutarAsync(
+    public Task<string> ExecutarAsync(
         string pergunta, string anoMes, string? empresa, List<MensagemChatDto> historico, CancellationToken cancellationToken)
     {
-        using var origemComTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        origemComTimeout.CancelAfter(TempoLimite);
-        var tokenComTimeout = origemComTimeout.Token;
-
-        var inicio = DateTime.UtcNow;
         logger.LogInformation(
             "CFO Tati: pergunta recebida (anoMes={AnoMes}, empresa={Empresa}, tamanhoHistorico={TamanhoHistorico})",
             anoMes, empresa ?? "todas", historico.Count);
@@ -49,6 +45,50 @@ public class HarnessService(
             $"Contexto atual da tela: período {anoMes}, empresa: " +
             $"{(string.IsNullOrWhiteSpace(empresa) ? "todas" : empresa)}. " +
             "Use esses valores ao chamar as ferramentas, a menos que o usuário peça outro período/empresa/conta.";
+
+        return ResponderAsync(pergunta, contexto, historico, cancellationToken);
+    }
+
+    /// <summary>A mesma conversa, com todos os filtros da tela (período, filial, conta e status) no contexto.</summary>
+    public Task<string> ExecutarComFiltrosAsync(PerguntarCfoTatiComFiltrosRequest pedido, CancellationToken cancellationToken)
+    {
+        var anoMesInicial = string.IsNullOrWhiteSpace(pedido.AnoMesInicial) ? pedido.AnoMes : pedido.AnoMesInicial;
+        logger.LogInformation(
+            "CFO Tati: pergunta recebida (período={Inicio} a {Fim}, empresa={Empresa}, filial={Filial}, conta={Conta}, " +
+            "status={Status}, tamanhoHistorico={TamanhoHistorico})",
+            anoMesInicial, pedido.AnoMes, pedido.Empresa ?? "todas", pedido.CodFilial,
+            pedido.CodConta ?? "todas", pedido.Status ?? "todos", pedido.Historico.Count);
+
+        // As ferramentas consultam um mês por vez; num período, o mês final é o padrão.
+        var periodo = anoMesInicial == pedido.AnoMes
+            ? $"período {pedido.AnoMes}"
+            : $"período de {anoMesInicial} a {pedido.AnoMes} (as ferramentas consultam um mês por vez: use {pedido.AnoMes}, " +
+              "o mês final, a menos que o usuário peça outro mês ou a evolução do período)";
+        var empresa = string.IsNullOrWhiteSpace(pedido.Empresa)
+            ? "todas"
+            : pedido.CodColigada is { } coligada ? $"{pedido.Empresa} (coligada {coligada})" : pedido.Empresa;
+        var filial = EmpresasConsolidadas.Consolida(pedido.Empresa)
+            ? "todas (a empresa fecha com as filiais consolidadas)"
+            : pedido.CodFilial?.ToString() ?? "todas";
+        var conta = string.IsNullOrWhiteSpace(pedido.CodConta) ? "todas" : pedido.CodConta;
+        var status = string.IsNullOrWhiteSpace(pedido.Status) ? "todos" : pedido.Status;
+
+        var contexto =
+            $"Contexto atual da tela: {periodo}, empresa: {empresa}, filial: {filial}, conta: {conta}, " +
+            $"status do fechamento: {status}. " +
+            "Use esses valores ao chamar as ferramentas, a menos que o usuário peça outro período/empresa/conta.";
+
+        return ResponderAsync(pedido.Pergunta, contexto, pedido.Historico, cancellationToken);
+    }
+
+    private async Task<string> ResponderAsync(
+        string pergunta, string contexto, List<MensagemChatDto> historico, CancellationToken cancellationToken)
+    {
+        using var origemComTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        origemComTimeout.CancelAfter(TempoLimite);
+        var tokenComTimeout = origemComTimeout.Token;
+
+        var inicio = DateTime.UtcNow;
 
         var systemPrompt = $"{Instrucoes.Value}\n\n## Contexto da conversa\n\n{contexto}";
 

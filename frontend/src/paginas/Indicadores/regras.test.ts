@@ -159,6 +159,13 @@ describe("formatação", () => {
     expect(formatarVariacao(84_100, 81_000, CONFIG_POR_CODIGO.ebitda)).toEqual({ texto: "+3,1 mil", sentido: "melhorou" });
   });
 
+  it("variação que arredonda para zero sai sem sinal", () => {
+    expect(formatarVariacao(0.041, 0.043, CONFIG_POR_CODIGO["liquidez-imediata"])).toEqual({ texto: "0,00", sentido: "estavel" });
+    expect(formatarVariacao(0.99521, 0.99518, CONFIG_POR_CODIGO["composicao-endividamento"]))
+      .toEqual({ texto: "0,00 p.p.", sentido: "estavel" });
+    expect(formatarVariacao(84_120, 84_100, CONFIG_POR_CODIGO.ebitda)).toEqual({ texto: "0,0 mil", sentido: "estavel" });
+  });
+
   it("sem base de comparação não há variação", () => {
     expect(formatarVariacao(1.02, null, CONFIG_POR_CODIGO["liquidez-corrente"])).toBeNull();
   });

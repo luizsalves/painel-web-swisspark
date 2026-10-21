@@ -1,5 +1,6 @@
-import { coligadaDaEmpresa } from "../../utils/empresaContabil";
+import { FILIAL_CONSOLIDADA, coligadaDaEmpresa } from "../../utils/empresaContabil";
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -26,9 +27,13 @@ import Button from "../../componentes/ui/Button";
 import Modal from "../../componentes/ui/Modal";
 import StatusBadge from "../../componentes/ui/StatusBadge";
 import HistoricoLancamentos from "./HistoricoLancamentos";
+import {
+  carregarLancamentos, descreverEmpresa, descreverFilial, descreverPartida, mesesDoPeriodo, resumirMeses,
+} from "./lancamentosDoFechamento";
 import api, { extrairMensagemDeErro } from "../../services/api";
 import { useAuth } from "../../contexts/AuthContext";
 import { useFiltros } from "../../contexts/FiltrosContext";
+import { useEmpresasConsolidadas } from "../../hooks/useEmpresasConsolidadas";
 import { MODULO_CONCILIACAO } from "../../interfaces/Auth";
 import type { LancamentoTotvs } from "../../interfaces/LancamentoTotvs";
 import type { FechamentoValidacaoStatus } from "../../interfaces/FechamentoValidacao";
@@ -39,6 +44,9 @@ import type { CampoFiltro } from "../../utils/filtrosPainel";
 const CAMPOS_FILTRO: CampoFiltro[] = ["empresa", "filial", "conta", "mes", "status"];
 // O fechamento é por filial e conta: "Todas" não forma a chave.
 const FILTROS_OBRIGATORIOS: CampoFiltro[] = ["empresa", "filial", "conta"];
+// Nas empresas de filiais consolidadas a filial é sempre a 0, então ela sai da faixa.
+const CAMPOS_FILTRO_CONSOLIDADO = CAMPOS_FILTRO.filter((campo) => campo !== "filial");
+const FILTROS_OBRIGATORIOS_CONSOLIDADO = FILTROS_OBRIGATORIOS.filter((campo) => campo !== "filial");
 
 type ClosingTab = "entries" | "pendings" | "notes" | "history";
 
@@ -123,8 +131,14 @@ export default function Fechamentos() {
   const period = mesDosFiltros(filtros);
   const accountId = filtros.conta;
   // O fechamento exige uma empresa, uma filial e uma conta específicas para formar sua chave.
-  const filialSelecionada = filtros.empresa && filtros.filial
-    ? { codColigada: coligadaDaEmpresa(filtros.empresa), codFilial: Number(filtros.filial), nome: filtros.empresaNome }
+  // Nas empresas de filiais consolidadas a filial é sempre a 0 (todas), qualquer que seja o filtro;
+  // até a lista dessas empresas chegar, nada abre, para não carregar uma filial só.
+  const consolidaFiliais = useEmpresasConsolidadas();
+  const consolidada = consolidaFiliais(filtros.empresa);
+  const codFilial = consolidada ? FILIAL_CONSOLIDADA
+    : consolidada === false && filtros.filial ? Number(filtros.filial) : undefined;
+  const filialSelecionada = filtros.empresa && codFilial !== undefined
+    ? { codColigada: coligadaDaEmpresa(filtros.empresa), codFilial, nome: filtros.empresaNome }
     : undefined;
   const filtrosCompletos = Boolean(filialSelecionada && accountId);
   const chaveFiltros = JSON.stringify([filialSelecionada?.codColigada, filialSelecionada?.codFilial, accountId, period]);
@@ -305,12 +319,12 @@ export default function Fechamentos() {
     setIsLoading(true);
     try {
       const [lancamentosResposta, validacaoResposta] = await Promise.all([
-        api.get<LancamentoTotvs[]>("/lancamentos", { params: chave }),
+        carregarLancamentos({ ...chave, empresa: filialSelecionada.nome }),
         api.get<FechamentoValidacaoStatus>("/fechamento-validacao", { params: chave }),
       ]);
       if (chaveFiltrosRef.current !== chaveDaCarga) return;
 
-      setLancamentos(lancamentosResposta.data);
+      setLancamentos(lancamentosResposta);
       setErroLancamentos(null);
       setValidacao(validacaoResposta.data);
       setErroValidacao(null);
@@ -324,7 +338,7 @@ export default function Fechamentos() {
       });
       setPage(1);
 
-      if (lancamentosResposta.data.length === 0) {
+      if (lancamentosResposta.length === 0) {
         showFeedback("Nenhum lançamento encontrado para essa combinação.");
       } else {
         showFeedback("Dados do fechamento carregados.");
@@ -418,36 +432,54 @@ export default function Fechamentos() {
   };
 
   const [exportandoExcel, setExportandoExcel] = useState(false);
+  const queryClient = useQueryClient();
 
+  // Só o Excel (o PDF continua só o mês): a aba RAZAO e uma aba por mês, de janeiro até
+  // o mês do fechamento. O mês aberto sai como está na tela; os anteriores são lidos
+  // agora, com a mesma consulta (e o mesmo cache) da aba Histórico.
   const handleExportExcel = async () => {
     if (!loadedSelection || exportandoExcel) return;
     setExportandoExcel(true);
     try {
-      const resposta = await api.post<Blob>("/fechamentos/exportar-excel", {
-        empresa: loadedSelection.empresa,
-        periodo: loadedSelection.period,
-        codColigada: loadedSelection.codColigada,
-        codFilial: loadedSelection.codFilial,
-        codConta: loadedSelection.codConta,
+      const { empresa, codColigada, codFilial, codConta, period } = loadedSelection;
+      const meses = mesesDoPeriodo(`${period.slice(0, 4)}-01`, period);
+      const anteriores = meses.slice(0, -1);
+      const [lancamentosAnteriores, validacoesAnteriores] = await Promise.all([
+        Promise.all(anteriores.map((anoMes) => queryClient.fetchQuery({
+          queryKey: ["lancamentos", codColigada, codFilial, codConta, anoMes],
+          queryFn: ({ signal }) => carregarLancamentos({ empresa, codColigada, codFilial, codConta, anoMes }, signal),
+        }))),
+        Promise.all(anteriores.map(async (anoMes) => (await api.get<FechamentoValidacaoStatus>(
+          "/fechamento-validacao", { params: { codColigada, codFilial, codConta, anoMes } })).data)),
+      ]);
+      const resumos = resumirMeses([...lancamentosAnteriores, lancamentos]);
+      const validacoes = [...validacoesAnteriores, validacao];
+
+      const resposta = await api.post<Blob>("/fechamentos/ano/exportar-excel", {
+        empresa: descreverEmpresa(empresa, codFilial),
+        codColigada,
+        codFilial,
+        codConta,
         descricaoConta: loadedSelection.descricaoConta,
         reduzido: codigoReduzido,
-        preparadoPor: validacao?.preparadoPorNome,
-        conferidoPor: validacao?.conferidoPorNome,
-        finalizadoPor: validacao?.fechadoPorNome,
-        preparadoEm: formatarData(validacao?.preparadoEm ?? null),
-        conferidoEm: formatarData(validacao?.conferidoEm ?? null),
-        finalizadoEm: formatarData(validacao?.fechadoEm ?? null),
-        saldoAnterior: previousBalance,
-        saldoRazao: ledgerBalance,
-        composicaoSaldo: ledgerBalance - difference,
-        diferenca: difference,
-        pendencia: hasPending,
-        status: statusAtual,
-        responsavel: responsavelAtual?.nome,
-        lancamentos: ledgerEntries.map((entry) => ({
-          data: entry.date, idPartida: entry.idPartida, historico: entry.history,
-          valor: entry.value, tipo: entry.type,
-        })),
+        meses: meses.map((anoMes, indice) => {
+          const { detalhe, ...resumo } = resumos[indice];
+          const doMes = validacoes[indice];
+          return {
+            anoMes,
+            ...resumo,
+            composicaoSaldo: resumo.saldoMes - difference,
+            // O "Possui pendência?" da tela é do mês aberto; nos outros vale a pendência registrada.
+            pendencia: anoMes === period ? hasPending : Boolean(doMes?.pendenciaTexto),
+            preparadoPor: doMes?.preparadoPorNome,
+            conferidoPor: doMes?.conferidoPorNome,
+            finalizadoPor: doMes?.fechadoPorNome,
+            preparadoEm: formatarData(doMes?.preparadoEm ?? null),
+            conferidoEm: formatarData(doMes?.conferidoEm ?? null),
+            finalizadoEm: formatarData(doMes?.fechadoEm ?? null),
+            lancamentos: detalhe.map(descreverPartida),
+          };
+        }),
       }, { responseType: "blob" });
       const url = URL.createObjectURL(resposta.data);
       const link = document.createElement("a");
@@ -494,7 +526,7 @@ export default function Fechamentos() {
 
             <div className="sp-closing__print-identification">
               <div><span>Empresa</span><strong>{loadedSelection.empresa}</strong></div>
-              <div><span>Coligada / Filial</span><strong>{loadedSelection.codColigada} / {loadedSelection.codFilial}</strong><small>Reduzido: {codigoReduzido}</small></div>
+              <div><span>Coligada / Filial</span><strong>{loadedSelection.codColigada} / {descreverFilial(loadedSelection.codFilial)}</strong><small>Reduzido: {codigoReduzido}</small></div>
               <div className="sp-closing__print-account"><span>Conta contábil</span><strong>{loadedSelection.codConta}{loadedSelection.descricaoConta ? ` — ${loadedSelection.descricaoConta}` : ""}</strong></div>
             </div>
 
@@ -551,10 +583,15 @@ export default function Fechamentos() {
           </div>
         )}
 
-        <ResumoFiltros campos={CAMPOS_FILTRO} obrigatorios={FILTROS_OBRIGATORIOS} acoes={filtrosCompletos && (
+        <ResumoFiltros
+          campos={consolidada ? CAMPOS_FILTRO_CONSOLIDADO : CAMPOS_FILTRO}
+          obrigatorios={consolidada ? FILTROS_OBRIGATORIOS_CONSOLIDADO : FILTROS_OBRIGATORIOS}
+          acoes={filtrosCompletos && (
           <>
             <span className="sp-closing__codigos">
-              Coligada <strong>{filialSelecionada?.codColigada}</strong> · Reduzido <strong>{codigoReduzido}</strong>
+              Coligada <strong>{filialSelecionada?.codColigada}</strong>
+              {consolidada && <> · <strong>Filiais consolidadas</strong></>}
+              {" "}· Reduzido <strong>{codigoReduzido}</strong>
             </span>
             <Button variant="secondary" icon={<RefreshCw size={16} />} isLoading={isLoading} onClick={() => void handleLoadData()}>
               Atualizar

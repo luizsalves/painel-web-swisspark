@@ -23,4 +23,17 @@ public class ChatEndpoint(HarnessService harnessService) : ControllerBase
 
         return Ok(new RespostaCfoTatiViewModel { Resposta = resposta });
     }
+
+    /// <summary>
+    /// POST /api/agente-contabil/chat/filtros — a mesma conversa, com todos os filtros da
+    /// tela (período, filial, conta e status) no contexto da Tati.
+    /// </summary>
+    [HttpPost("chat/filtros")]
+    public async Task<IActionResult> ChatComFiltros(
+        [FromBody] PerguntarCfoTatiComFiltrosRequest pedido, CancellationToken cancellationToken)
+    {
+        var resposta = await harnessService.ExecutarComFiltrosAsync(pedido, cancellationToken);
+
+        return Ok(new RespostaCfoTatiViewModel { Resposta = resposta });
+    }
 }

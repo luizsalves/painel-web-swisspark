@@ -4,8 +4,10 @@ import { FileSpreadsheet } from "lucide-react";
 import Button from "../../componentes/ui/Button";
 import LoadingSpinner from "../../componentes/ui/LoadingSpinner";
 import api, { extrairMensagemDeErro } from "../../services/api";
-import type { LancamentoTotvs } from "../../interfaces/LancamentoTotvs";
 import { MESES } from "../../utils/filtrosPainel";
+import {
+  carregarLancamentos, descreverEmpresa, descreverPartida, mesesDoPeriodo, resumirMeses, somarMeses,
+} from "./lancamentosDoFechamento";
 
 /** Quantos meses, contando o do fechamento, o histórico alcança: cada mês é uma consulta ao TOTVS. */
 const MAXIMO_DE_MESES = 12;
@@ -14,18 +16,6 @@ const LIMITE_DE_LINHAS_POR_MES = 300;
 
 const formatoMoeda = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const formatoMesLongo = new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" });
-
-function somarMeses(anoMes: string, meses: number) {
-  const [ano, mes] = anoMes.split("-").map(Number);
-  const total = ano * 12 + (mes - 1) + meses;
-  return `${Math.floor(total / 12)}-${String((total % 12) + 1).padStart(2, "0")}`;
-}
-
-function mesesDoPeriodo(inicio: string, fim: string) {
-  const meses: string[] = [];
-  for (let anoMes = inicio; anoMes <= fim; anoMes = somarMeses(anoMes, 1)) meses.push(anoMes);
-  return meses;
-}
 
 function descreverMesLongo(anoMes: string) {
   const [ano, mes] = anoMes.split("-").map(Number);
@@ -36,30 +26,6 @@ function descreverMesLongo(anoMes: string) {
 function descreverMesCurto(anoMes: string) {
   const [ano, mes] = anoMes.split("-").map(Number);
   return `${MESES[mes - 1]}/${ano}`;
-}
-
-/** A linha-resumo (data nula) traz os saldos; as demais são as partidas do mês. */
-function resumirMes(linhas: LancamentoTotvs[]) {
-  const detalhe = linhas.filter((linha) => linha.data !== null);
-  const resumo = linhas.find((linha) => linha.data === null);
-  return {
-    detalhe,
-    saldoAnterior: resumo?.saldoAnterior ?? 0,
-    saldoMes: resumo?.saldoRazao ?? 0,
-    debitos: detalhe.reduce((total, linha) => total + linha.debitos, 0),
-    creditos: detalhe.reduce((total, linha) => total + linha.creditos, 0),
-  };
-}
-
-/** Como a partida aparece na tabela (e no Excel): mesmo sinal da aba Lançamentos. */
-function descreverPartida(linha: LancamentoTotvs) {
-  return {
-    data: linha.data ? new Date(linha.data).toLocaleDateString("pt-BR") : "",
-    idPartida: linha.idPartida != null ? String(linha.idPartida) : "",
-    historico: linha.complemento || linha.reduzido || "",
-    valor: linha.debitos !== 0 ? linha.debitos : linha.creditos,
-    tipo: linha.debitos !== 0 ? "Débito" : "Crédito",
-  };
 }
 
 interface HistoricoLancamentosProps {
@@ -97,18 +63,15 @@ export default function HistoricoLancamentos({
   const consultas = useQueries({
     queries: meses.map((anoMes) => ({
       queryKey: ["lancamentos", codColigada, codFilial, codConta, anoMes],
-      queryFn: async ({ signal }: { signal: AbortSignal }) => {
-        const { data } = await api.get<LancamentoTotvs[]>("/lancamentos", {
-          params: { codColigada, codFilial, anoMes, codConta }, signal,
-        });
-        return data;
-      },
+      queryFn: ({ signal }: { signal: AbortSignal }) =>
+        carregarLancamentos({ empresa, codColigada, codFilial, codConta, anoMes }, signal),
     })),
   });
   const totalDeLancamentos = consultas.reduce(
     (total, consulta) => total + (consulta.data?.filter((linha) => linha.data !== null).length ?? 0), 0);
   const carregando = consultas.some((consulta) => consulta.isPending);
   const algumErro = consultas.some((consulta) => consulta.isError);
+  const resumos = resumirMeses(consultas.map((consulta) => consulta.data ?? []));
 
   // Exporta exatamente o que está carregado na tela — o backend só monta a planilha.
   async function exportarExcel() {
@@ -116,9 +79,9 @@ export default function HistoricoLancamentos({
     setErroExportacao(null);
     try {
       const resposta = await api.post<Blob>("/fechamentos/historico/exportar-excel", {
-        empresa, codColigada, codFilial, codConta, descricaoConta, reduzido,
+        empresa: descreverEmpresa(empresa, codFilial), codColigada, codFilial, codConta, descricaoConta, reduzido,
         meses: meses.map((anoMes, indice) => {
-          const { detalhe, ...resumo } = resumirMes(consultas[indice].data ?? []);
+          const { detalhe, ...resumo } = resumos[indice];
           return { anoMes, ...resumo, lancamentos: detalhe.map(descreverPartida) };
         }),
       }, { responseType: "blob" });
@@ -180,7 +143,7 @@ export default function HistoricoLancamentos({
 
       {meses.map((anoMes, indice) => {
         const consulta = consultas[indice];
-        const { detalhe, saldoAnterior, saldoMes, debitos, creditos } = resumirMes(consulta.data ?? []);
+        const { detalhe, saldoAnterior, saldoMes, debitos, creditos } = resumos[indice];
 
         return (
           <section key={anoMes} className="sp-closing__historico-mes" aria-label={descreverMesLongo(anoMes)}>

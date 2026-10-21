@@ -15,7 +15,9 @@ public static class FechamentoHistoricoExcel
 {
     // A = DATA, B = IDPARTIDA, C = HISTÓRICO, D = VALOR, E = TIPO.
     private const int ColA = 0, ColB = 1, ColC = 2, ColD = 3, ColE = 4;
-    private const short Menta = 40, Verde = 41, Grade = 42, VerdeEscuro = 43;
+    // VerdeEscuro fica fora dos índices do FechamentoExcel (43 e 44 lá são rosa e vermelho):
+    // no Excel do ano as duas planilhas dividem a mesma paleta.
+    private const short Menta = 40, Verde = 41, Grade = 42, VerdeEscuro = 45;
 
     private static readonly CultureInfo PtBr = CultureInfo.GetCultureInfo("pt-BR");
 
@@ -36,7 +38,15 @@ public static class FechamentoHistoricoExcel
     public static byte[] Gerar(ExportarHistoricoFechamentoRequest dados)
     {
         using var workbook = new HSSFWorkbook();
-        var sheet = workbook.CreateSheet("Histórico");
+        PreencherAba(workbook, workbook.CreateSheet("Histórico"), dados);
+        using var output = new MemoryStream();
+        workbook.Write(output, true);
+        return output.ToArray();
+    }
+
+    /// <summary>A aba do histórico; no Excel do ano (<see cref="FechamentoAnualExcel"/>) ela é a RAZAO.</summary>
+    internal static void PreencherAba(HSSFWorkbook workbook, ISheet sheet, ExportarHistoricoFechamentoRequest dados)
+    {
         sheet.DisplayGridlines = false;
         sheet.IsPrintGridlines = false;
         sheet.FitToPage = true;
@@ -199,9 +209,6 @@ public static class FechamentoHistoricoExcel
             LinhaDeResumo(rowIndex++, $"Saldo em {MesCurto(meses[^1].AnoMes)}", meses[^1].SaldoMes, forte: true);
         }
 
-        workbook.SetPrintArea(0, ColA, ColE, 0, Math.Max(0, rowIndex - 1));
-        using var output = new MemoryStream();
-        workbook.Write(output, true);
-        return output.ToArray();
+        workbook.SetPrintArea(workbook.GetSheetIndex(sheet), ColA, ColE, 0, Math.Max(0, rowIndex - 1));
     }
 }

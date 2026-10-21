@@ -34,6 +34,13 @@ export interface BaseCalculoIndicadores {
   ebitda: number;
 }
 
+/** A base de um mês (GET /api/indicadores/mensal): o balanço no último dia e o resultado do mês. */
+export interface BaseCalculoMensal {
+  /** AAAA-MM. */
+  anoMes: string;
+  baseCalculo: BaseCalculoIndicadores;
+}
+
 export interface DfcComposicao {
   codConta: string;
   descricao: string;

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Cpu, Sparkles, BarChart3, FileText, CheckCircle2, ClipboardList, Settings2, X, ChevronDown, ArrowUp, Layers } from "lucide-react";
 import AppLayout from "../../componentes/layout/AppLayout";
 import UserMenu from "../../componentes/layout/UserMenu";
@@ -9,22 +9,12 @@ import { useFiltros } from "../../contexts/FiltrosContext";
 import LoadingSpinner from "../../componentes/ui/LoadingSpinner";
 
 import { extrairMensagemDeErro } from "../../services/api";
-import { obterResumoDashboard } from "../../services/dashboardService";
 import { perguntarCfoTati } from "../../services/cfoTatiService";
-import type { DashboardResumo } from "../../interfaces/Dashboard";
 import type { MensagemCfoTati } from "../../interfaces/CfoTati";
-import { mesDosFiltros } from "../../utils/filtrosPainel";
-import type { CampoFiltro } from "../../utils/filtrosPainel";
-
-const CAMPOS_FILTRO: CampoFiltro[] = ["empresa", "mes"];
-
-const RESUMO_VAZIO: DashboardResumo = {
-  backlogTotal: 0,
-  preparados: 0,
-  conferidos: 0,
-  fechados: 0,
-  pendentes: 0,
-};
+import { coligadaDaEmpresa } from "../../utils/empresaContabil";
+import { descreverStatus } from "../../utils/filtrosPainel";
+// Os mesmos filtros (e a mesma conta) da Produtividade: as duas telas mostram os mesmos números.
+import { CAMPOS_FILTRO, CAMPOS_FILTRO_CONSOLIDADO, useResumoProdutividade } from "../Dashboard/useResumoProdutividade";
 
 const SUGESTOES_RAPIDAS = [
   "Quem mais fechou contas este mês?",
@@ -41,11 +31,15 @@ function formatarPercentual(valor: number, total: number): string {
   return `${((valor / total) * 100).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
 }
 
-function formatarPeriodo(anoMes: string): string {
+function formatarMes(anoMes: string): string {
   const data = new Date(`${anoMes}-01T12:00:00`);
   return Number.isNaN(data.getTime())
     ? anoMes
     : data.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+}
+
+function formatarPeriodo(inicio: string, fim: string): string {
+  return inicio === fim ? formatarMes(fim) : `${formatarMes(inicio)} a ${formatarMes(fim)}`;
 }
 
 function mensagemInicial(): MensagemCfoTati {
@@ -157,30 +151,13 @@ function GraficoTatiCard({ grafico, onRemover }: { grafico: GraficoTati; onRemov
 
 export default function IaPlanning() {
   const { filtros } = useFiltros();
-  const anoMes = mesDosFiltros(filtros);
   // O resumo e a Tati identificam a empresa pelo nome (GFILIAL.NOME), o mesmo da gaveta.
-  const empresa = filtros.empresa ? filtros.empresaNome.trim() : "";
-  const [resumo, setResumo] = useState<DashboardResumo>(RESUMO_VAZIO);
-  const [isLoading, setIsLoading] = useState(true);
-  const [erro, setErro] = useState<string | null>(null);
-
-  const carregarResumo = useCallback(async () => {
-    setIsLoading(true);
-    setErro(null);
-
-    try {
-      setResumo(await obterResumoDashboard(anoMes, empresa));
-    } catch (erroCapturado) {
-      setErro(extrairMensagemDeErro(erroCapturado, "Não foi possível carregar o resumo financeiro."));
-      setResumo(RESUMO_VAZIO);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [anoMes, empresa]);
-
-  useEffect(() => {
-    void carregarResumo();
-  }, [carregarResumo]);
+  const {
+    inicio, fim, empresa, consolidada, filtroContas, resumo, carregando: isLoading, erro,
+  } = useResumoProdutividade(filtros);
+  const camposFiltro = consolidada ? CAMPOS_FILTRO_CONSOLIDADO : CAMPOS_FILTRO;
+  // Com mais de um mês, cada conta entra uma vez por mês, como na Produtividade.
+  const variosMeses = inicio !== fim;
 
   const barras = useMemo(
     () =>
@@ -226,9 +203,25 @@ export default function IaPlanning() {
     setIsEnviando(true);
 
     try {
-      const resposta = await perguntarCfoTati({ pergunta: perguntaLimpa, anoMes, empresa: empresa || undefined, historico });
+      const resposta = await perguntarCfoTati({
+        pergunta: perguntaLimpa,
+        anoMes: fim,
+        anoMesInicial: variosMeses ? inicio : undefined,
+        empresa: empresa || undefined,
+        codColigada: filtros.empresa ? coligadaDaEmpresa(filtros.empresa) : undefined,
+        codFilial: filtroContas.codFilial,
+        codConta: filtroContas.codConta,
+        status: filtroContas.status,
+        historico,
+      });
       const horario = horarioAtual();
-      const contexto = `${formatarPeriodo(anoMes)} · ${empresa || "Todas as empresas"}`;
+      const contexto = [
+        formatarPeriodo(inicio, fim),
+        empresa || "Todas as empresas",
+        filtroContas.codFilial !== undefined && `filial ${filtroContas.codFilial}`,
+        filtroContas.codConta && `conta ${filtroContas.codConta}`,
+        filtroContas.status && descreverStatus(filtros),
+      ].filter(Boolean).join(" · ");
       setMensagens((atual) => [...atual, { autor: "tati", texto: resposta, horario, contexto }]);
 
       const { grafico } = lerRespostaTati(resposta);
@@ -265,7 +258,7 @@ export default function IaPlanning() {
       <main className="sp-dashboard ia-page">
         <div className="ia-intro">
           <div className="ia-heading"><h1>Visão financeira <span>Swiss Park</span></h1><h2>Conciliação contábil com inteligência artificial</h2><p>Acompanhe o status das conciliações, identifique pendências e obtenha insights com a CFO Tati.</p></div>
-        <ResumoFiltros campos={CAMPOS_FILTRO} />
+        <ResumoFiltros campos={camposFiltro} />
 
         </div>
         {erro && (
@@ -276,7 +269,8 @@ export default function IaPlanning() {
 
         <section className="sp-dashboard__kpis" aria-label="Indicadores gerais">
           {[
-            { label: "Backlog", value: resumo.backlogTotal, detail: "Total de contas do período", Icon: Layers, tone: "backlog" },
+            { label: "Backlog", value: resumo.backlogTotal, Icon: Layers, tone: "backlog",
+              detail: variosMeses ? "Fechamentos do período (conta × mês)" : "Total de contas do período" },
             { label: "Pendentes", value: resumo.pendentes, detail: "Sem nenhuma ação", Icon: FileText, tone: "pendente" },
             { label: "Preparadas", value: resumo.preparados, detail: "Contas prontas", Icon: ClipboardList, tone: "preparado" },
             { label: "Conferidas", value: resumo.conferidos, detail: "Contas revisadas", Icon: Settings2, tone: "conferido" },

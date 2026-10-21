@@ -5,6 +5,7 @@ import Button from "../ui/Button";
 import SearchableSelect from "../ui/SearchableSelect";
 import type { SearchableSelectOption } from "../ui/SearchableSelect";
 import { useFiltros } from "../../contexts/FiltrosContext";
+import { useEmpresasConsolidadas } from "../../hooks/useEmpresasConsolidadas";
 import type { ColigadaFilialContabil, ContaContabilTotvs, EmpresaContabil } from "../../interfaces/ContaContabil";
 import { extrairMensagemDeErro } from "../../services/api";
 import { listarContasBalancete, listarEmpresasBalancete, listarFiliaisBalancete } from "../../services/balanceteService";
@@ -130,6 +131,9 @@ function ConteudoFiltros({ inicial, camposDaTela, empresas, erro, onFechar, onAp
   // cadastro com o histórico do fechamento. Nas telas de período o status muda de
   // um mês para outro, e o filtro vale para cada mês na própria tela.
   const empresaDoStatus = mesUnico && rascunho.status && rascunho.empresa ? rascunho.empresaNome.trim() : "";
+  // Nas empresas de filiais consolidadas as contas do dashboard vêm todas na filial 0.
+  const consolidaFiliais = useEmpresasConsolidadas();
+  const empresaConsolidada = Boolean(consolidaFiliais(rascunho.empresa));
   const anoMesRascunho = mesDosFiltros(rascunho);
   const contasDoStatus = useQuery({
     queryKey: ["dashboard-contas", anoMesRascunho, anoMesRascunho, empresaDoStatus, 0],
@@ -143,9 +147,11 @@ function ConteudoFiltros({ inicial, camposDaTela, empresas, erro, onFechar, onAp
     const coligada = coligadaDaEmpresa(rascunho.empresa ?? "");
     return new Set(contasDoStatus.data
       .filter((conta) => conta.status === rascunho.status
-        && (!rascunho.filial || (conta.codColigada === coligada && String(conta.codFilial) === rascunho.filial)))
+        && (!rascunho.filial || empresaConsolidada
+          || (conta.codColigada === coligada && String(conta.codFilial) === rascunho.filial)))
       .map((conta) => conta.codConta));
-  }, [empresaDoStatus, contasDoStatus.isFetching, contasDoStatus.data, rascunho.empresa, rascunho.filial, rascunho.status]);
+  }, [empresaDoStatus, contasDoStatus.isFetching, contasDoStatus.data, rascunho.empresa, rascunho.filial, rascunho.status,
+    empresaConsolidada]);
 
   // Uma conta fora do status escolhido sai do filtro, como acontece ao trocar a filial.
   if (codigosDoStatus && rascunho.conta && !codigosDoStatus.has(rascunho.conta)) {
@@ -255,6 +261,11 @@ function ConteudoFiltros({ inicial, camposDaTela, empresas, erro, onFechar, onAp
                 onChange={(valor) => setRascunho((atual) => ({ ...atual, filial: valor, conta: "", contaDescricao: "" }))}
                 disabled={rascunho.empresa === null || carregandoFiliais}
                 placeholder={carregandoFiliais ? "Carregando filiais..." : "Todas"} ariaLabel="Filial" />
+              {empresaConsolidada && (
+                <small className="sp-filtros__unused">
+                  No Fechamento e na Produtividade esta empresa fecha com todas as filiais juntas; a filial vale para as outras telas.
+                </small>
+              )}
               <AvisoNaoUsado campo="filial" campos={camposDaTela} />
             </label>
           </section>

@@ -46,12 +46,16 @@ public static class ServiceCollectionExtensions
 
         services.AddScoped<ILancamentosTotvsRepository, LancamentosTotvsRepository>();
         services.AddScoped<ILancamentosTotvsService, LancamentosTotvsService>();
+        services.AddScoped<LancamentosConsolidadosTotvsRepository>();
+        services.AddScoped<ILancamentosConsolidadosService, LancamentosConsolidadosService>();
 
         services.AddScoped<BalanceteTotvsRepository>();
         services.AddScoped<IBalanceteService, BalanceteService>();
 
         services.AddScoped<IndicadoresTotvsRepository>();
         services.AddScoped<IIndicadoresService, IndicadoresService>();
+        services.AddScoped<IndicadoresMensaisTotvsRepository>();
+        services.AddScoped<IIndicadoresMensaisService, IndicadoresMensaisService>();
         services.AddScoped<IBalancoService, BalancoService>();
 
         services.AddScoped<ITotvsConsultaRepository, TotvsConsultaRepository>();
