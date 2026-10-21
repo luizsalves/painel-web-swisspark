@@ -30,6 +30,9 @@
     <None Update="AgenteContabil\Instrucoes\instrucoes-v1.md">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="AgenteContabil\Instrucoes\instrucoes-v2.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <!-- Base de conhecimento da CFO Tati: vai no prompt junto com as instruções. -->
     <None Update="AgenteContabil\Conhecimento\**\*.md">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

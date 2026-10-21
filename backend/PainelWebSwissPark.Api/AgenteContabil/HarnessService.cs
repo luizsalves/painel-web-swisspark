@@ -265,7 +265,8 @@ public class HarnessService(
 
     private static string CarregarInstrucoes()
     {
-        var caminho = Path.Combine(AppContext.BaseDirectory, "AgenteContabil", "Instrucoes", "instrucoes-v1.md");
+        // A v1 continua no build, sem mudança, para dar para voltar trocando só o nome aqui.
+        var caminho = Path.Combine(AppContext.BaseDirectory, "AgenteContabil", "Instrucoes", "instrucoes-v2.md");
 
         if (!File.Exists(caminho))
         {
