@@ -387,10 +387,11 @@
 /* Painel "Pergunte à Tati" — coluna da direita, com conversa, sugestões e campo de pergunta */
 @media (min-width: 1101px) {
   .sp-planning-shell .sp-ia-planning__workspace { grid-template-columns: minmax(0, 1fr) minmax(360px, 430px); }
-  /* O painel desce até perto do fim da tela (no mínimo 560px), para a conversa ter
-     espaço mesmo quando o gráfico ao lado é baixo; se a coluna dos gráficos for mais
-     alta, o min-height 100% acompanha. A conversa rola dentro do painel. */
-  .ia-ask { height: max(560px, calc(100vh - 240px)); min-height: 100%; }
+  /* O painel tem 75% da altura que vai até perto do fim da tela (no mínimo 420px),
+     para a conversa ter espaço mesmo quando o gráfico ao lado é baixo; se a coluna
+     dos gráficos for mais alta, o min-height 100% acompanha. A conversa rola dentro
+     do painel. */
+  .ia-ask { height: max(420px, calc((100vh - 240px) * 0.75)); min-height: 100%; }
   .ia-ask--recolhido { height: auto; min-height: 0; align-self: start; }
   .ia-graficos-tati { min-height: 470px; }
 }
