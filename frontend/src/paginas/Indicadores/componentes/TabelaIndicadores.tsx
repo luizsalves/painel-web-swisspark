@@ -1,7 +1,8 @@
 import { Info } from "lucide-react";
 import { idDoDetalhe } from "../ancoras";
 import { GRUPOS } from "../config";
-import { emOrdem, formatarValor } from "../regras";
+import type { HistoricoIndicadores } from "../historico";
+import { emOrdem, textoDoValor } from "../regras";
 import type { Indicadores, ResultadoIndicador } from "../regras";
 import ReguaFaixas from "./ReguaFaixas";
 import Sparkline from "./Sparkline";
@@ -10,13 +11,17 @@ import Variacao from "./Variacao";
 
 export interface RotulosComparacao {
   atual: string;
-  anterior: string;
-  anoAnterior: string;
+  /** O período comparado com o atual — o da variação. */
+  comparada: string;
+  /** A terceira coluna (o mesmo período do ano anterior); nula quando a comparação escolhida não a mostra. */
+  extra: string | null;
 }
 
 interface TabelaIndicadoresProps {
   indicadores: Indicadores;
   rotulos: RotulosComparacao;
+  /** Nulo enquanto o histórico carrega (ou se ele falhou): as comparações mostram "—". */
+  historico: HistoricoIndicadores | null;
   /** "mês" ou "período", para o título do grupo de rentabilidade. */
   periodo: string;
   nota: string;
@@ -25,31 +30,35 @@ interface TabelaIndicadoresProps {
 function ValorAtual({ indicador }: { indicador: ResultadoIndicador }) {
   return (
     <span className="sp-ind-tabela__atual">
-      <strong>{indicador.textoValor ?? formatarValor(indicador.valor, indicador.config)}</strong>
+      <strong>{textoDoValor(indicador)}</strong>
       {indicador.detalheValor && <small>{indicador.detalheValor}</small>}
     </span>
   );
 }
 
+function ValorComparado({ indicador }: { indicador: ResultadoIndicador | undefined }) {
+  return <span className="sp-ind-num sp-ind-tabela__comparacao">{indicador ? textoDoValor(indicador) : "—"}</span>;
+}
+
 /**
  * Indicadores por grupo, com a régua de faixas, o atual, as comparações, o
- * minigráfico de 12 meses e o status. As comparações e a série chegam na fase 2;
- * até lá mostram "—".
+ * minigráfico dos 12 meses e o status.
  */
-export default function TabelaIndicadores({ indicadores, rotulos, periodo, nota }: TabelaIndicadoresProps) {
+export default function TabelaIndicadores({ indicadores, rotulos, historico, periodo, nota }: TabelaIndicadoresProps) {
   const linhas = emOrdem(indicadores);
+  const comExtra = rotulos.extra !== null;
 
   return (
-    <section className="sp-ind-card sp-ind-tabela" aria-label="Indicadores por grupo">
+    <section className={`sp-ind-card sp-ind-tabela${comExtra ? "" : " sp-ind-tabela--sem-extra"}`} aria-label="Indicadores por grupo">
       <div className="sp-ind-tabela__rolagem">
         <div className="sp-ind-tabela__conteudo">
           <div className="sp-ind-tabela__linha sp-ind-tabela__linha--cabecalho">
             <span>Indicador</span>
             <span>Faixa</span>
             <span className="sp-ind-num">{rotulos.atual}</span>
-            <span className="sp-ind-num">{rotulos.anterior}</span>
+            <span className="sp-ind-num">{rotulos.comparada}</span>
             <span className="sp-ind-num">Variação</span>
-            <span className="sp-ind-num">{rotulos.anoAnterior}</span>
+            {comExtra && <span className="sp-ind-num">{rotulos.extra}</span>}
             <span className="sp-ind-num">12 meses</span>
             <span>Status</span>
           </div>
@@ -58,28 +67,36 @@ export default function TabelaIndicadores({ indicadores, rotulos, periodo, nota 
               <div className="sp-ind-tabela__titulo-grupo">
                 {grupo.codigo === "rentabilidade" ? `${grupo.titulo} · no ${periodo}` : grupo.titulo}
               </div>
-              {linhas.filter((linha) => linha.config.grupo === grupo.codigo).map((linha) => (
-                <div key={linha.config.codigo} className="sp-ind-tabela__linha">
-                  <div className="sp-ind-tabela__nome">
-                    <div>
-                      <span>{linha.config.nome}</span>
-                      <span className="sp-ind-tabela__info" tabIndex={0} role="img"
-                        aria-label={`${linha.config.formula}. ${linha.config.explicacao}`}
-                        title={`${linha.config.formula}\n${linha.config.explicacao}`}>
-                        <Info size={16} aria-hidden="true" />
-                      </span>
+              {linhas.filter((linha) => linha.config.grupo === grupo.codigo).map((linha) => {
+                const codigo = linha.config.codigo;
+                const comparado = historico?.comparada?.indicadores[codigo];
+                return (
+                  <div key={codigo} className="sp-ind-tabela__linha">
+                    <div className="sp-ind-tabela__nome">
+                      <div>
+                        <span>{linha.config.nome}</span>
+                        <span className="sp-ind-tabela__info" tabIndex={0} role="img"
+                          aria-label={`${linha.config.formula}. ${linha.config.explicacao}`}
+                          title={`${linha.config.formula}\n${linha.config.explicacao}`}>
+                          <Info size={16} aria-hidden="true" />
+                        </span>
+                      </div>
+                      {linha.nota && <small>{linha.nota}</small>}
                     </div>
-                    {linha.nota && <small>{linha.nota}</small>}
+                    <ReguaFaixas indicador={linha} />
+                    <ValorAtual indicador={linha} />
+                    <ValorComparado indicador={comparado} />
+                    <span className="sp-ind-num">
+                      <Variacao atual={linha.valor} anterior={comparado?.valor ?? null} config={linha.config} />
+                    </span>
+                    {comExtra && <ValorComparado indicador={historico?.extra?.indicadores[codigo]} />}
+                    <span className="sp-ind-num">
+                      <Sparkline serie={historico ? historico.meses.map((mes) => mes.indicadores?.[codigo].valor ?? null) : null} />
+                    </span>
+                    <span><StatusPill status={linha.status} /></span>
                   </div>
-                  <ReguaFaixas indicador={linha} />
-                  <ValorAtual indicador={linha} />
-                  <span className="sp-ind-num sp-ind-tabela__comparacao">—</span>
-                  <span className="sp-ind-num"><Variacao atual={linha.valor} anterior={null} config={linha.config} /></span>
-                  <span className="sp-ind-num sp-ind-tabela__comparacao">—</span>
-                  <span className="sp-ind-num"><Sparkline serie={null} /></span>
-                  <span><StatusPill status={linha.status} /></span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ))}
         </div>

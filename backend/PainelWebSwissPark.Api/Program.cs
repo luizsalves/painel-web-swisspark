@@ -190,6 +190,7 @@ builder.Services.AddScoped<IEmpresaConfiguracaoRepository, EmpresaConfiguracaoRe
 builder.Services.AddScoped<IContaContabilConfiguracaoRepository, ContaContabilConfiguracaoRepository>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IDashboardPeriodoService, DashboardPeriodoService>();
+builder.Services.AddScoped<DashboardPeriodoConsolidadoService>();
 
 // ==========================================================================
 // CFO Tati (IA Planning) — API da DeepSeek (compatível com a da OpenAI)

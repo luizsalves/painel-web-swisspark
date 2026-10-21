@@ -8,7 +8,14 @@ export interface MensagemCfoTati {
 
 export interface PerguntarCfoTatiPayload {
   pergunta: string;
+  /** Último mês do período (AAAA-MM). */
   anoMes: string;
+  /** Primeiro mês do período, quando ele tem mais de um. */
+  anoMesInicial?: string;
   empresa?: string;
+  codColigada?: number;
+  codFilial?: number;
+  codConta?: string;
+  status?: string;
   historico: Array<{ autor: "usuario" | "tati"; texto: string }>;
 }

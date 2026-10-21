@@ -69,6 +69,11 @@ export function formatarValor(valor: number | null, config: ConfigIndicador) {
   }
 }
 
+/** O que a tela mostra no lugar do número: o texto ("Caixa líquido") ou o valor formatado. */
+export function textoDoValor(indicador: ResultadoIndicador) {
+  return indicador.textoValor ?? formatarValor(indicador.valor, indicador.config);
+}
+
 export type Sentido = "melhorou" | "piorou" | "estavel";
 
 /**
@@ -79,7 +84,11 @@ export type Sentido = "melhorou" | "piorou" | "estavel";
 export function formatarVariacao(atual: number | null, anterior: number | null, config: ConfigIndicador):
   { texto: string; sentido: Sentido } | null {
   if (atual === null || anterior === null || !Number.isFinite(atual) || !Number.isFinite(anterior)) return null;
-  const diferenca = atual - anterior;
+  // Arredonda na unidade que aparece na tela (pontos percentuais, mil reais).
+  const escala = config.unidade === "percentual" ? 100 : config.unidade === "moeda" ? 1 / 1000 : 1;
+  const arredondada = Math.round((atual - anterior) * escala * 10 ** config.casas);
+  // O que arredonda para zero sai sem sinal: "0,00", não "-0,00".
+  const diferenca = arredondada === 0 ? 0 : atual - anterior;
   const texto = config.unidade === "percentual"
     ? `${comSinal(diferenca, numero(Math.abs(diferenca) * 100, config.casas), true)} p.p.`
     : config.unidade === "multiplo"
@@ -87,8 +96,6 @@ export function formatarVariacao(atual: number | null, anterior: number | null, 
       : config.unidade === "moeda"
         ? formatarMil(diferenca, { sinal: true })
         : comSinal(diferenca, numero(Math.abs(diferenca), config.casas), true);
-  const escala = config.unidade === "percentual" ? 100 : 1;
-  const arredondada = Math.round(diferenca * escala * 10 ** config.casas);
   const sentido: Sentido = arredondada === 0
     ? "estavel"
     : (config.direcao === "maior_melhor") === diferenca > 0 ? "melhorou" : "piorou";

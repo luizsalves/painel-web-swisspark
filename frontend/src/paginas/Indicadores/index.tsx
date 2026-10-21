@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { RefreshCw } from "lucide-react";
@@ -9,7 +9,7 @@ import Button from "../../componentes/ui/Button";
 import LoadingSpinner from "../../componentes/ui/LoadingSpinner";
 import { useFiltros } from "../../contexts/FiltrosContext";
 import { extrairMensagemDeErro } from "../../services/api";
-import { carregarIndicadores } from "../../services/indicadoresService";
+import { carregarIndicadores, carregarIndicadoresMensais } from "../../services/indicadoresService";
 import { coligadaDaEmpresa } from "../../utils/empresaContabil";
 import { periodoDosFiltros } from "../../utils/filtrosPainel";
 import type { CampoFiltro } from "../../utils/filtrosPainel";
@@ -20,7 +20,9 @@ import AbasIndicadores from "./componentes/AbasIndicadores";
 import IndicesFinanceiros from "./componentes/IndicesFinanceiros";
 import VisaoContador from "./componentes/VisaoContador";
 import VisaoDiretoria from "./componentes/VisaoDiretoria";
-import { descreverPeriodo, mesesDoPeriodo, mesmoPeriodoDoAnoAnterior, periodoAnterior, rotuloPeriodo } from "./periodo";
+import { MESES_DO_HISTORICO, colunasDeComparacao, montarHistorico } from "./historico";
+import type { OpcaoComparacao } from "./historico";
+import { descreverPeriodo, deslocarMes, mesesDoPeriodo, rotuloPeriodo } from "./periodo";
 import { calcularIndicadores, totaisDaDfc } from "./regras";
 import type { DadosPainel } from "./regras";
 import { lerVisao } from "./visoes";
@@ -37,7 +39,8 @@ const TITULO: Record<Visao, string> = {
 
 const SUBTITULO_PADRAO = "Índices financeiros e fluxo de caixa calculados a partir dos saldos contábeis do TOTVS.";
 
-const OPCOES_COMPARACAO = [
+// "Acumulado do ano anterior" compara com janeiro a dezembro do ano anterior.
+const OPCOES_COMPARACAO: { valor: OpcaoComparacao; rotulo: string }[] = [
   { valor: "anterior-e-ano-anterior", rotulo: "Período anterior e mesmo período do ano anterior" },
   { valor: "anterior", rotulo: "Só o período anterior" },
   { valor: "acumulado-ano-anterior", rotulo: "Acumulado do ano anterior" },
@@ -49,8 +52,7 @@ export default function Indicadores() {
   const [parametrosUrl, setParametrosUrl] = useSearchParams();
   const visao = lerVisao(parametrosUrl.get("visao"));
   const detalhe = lerDetalhe(parametrosUrl.get("detalhe"));
-  // Fase 1: a escolha já existe, mas as comparações só chegam com o histórico.
-  const [comparacao, setComparacao] = useState(OPCOES_COMPARACAO[0].valor);
+  const [comparacao, setComparacao] = useState<OpcaoComparacao>(OPCOES_COMPARACAO[0].valor);
 
   const trocarVisao = useCallback((proxima: Visao, ancora?: Detalhe) => {
     setParametrosUrl((atuais) => {
@@ -82,19 +84,35 @@ export default function Indicadores() {
   });
   const erro = error ? extrairMensagemDeErro(error, "Não foi possível calcular os indicadores.") : null;
 
+  // As comparações e os 12 meses saem da base de cada mês, numa consulta só que termina
+  // no mês final do período. Só a Visão do contador mostra; nas outras não precisa ler.
+  const inicioHistorico = deslocarMes(fim, -(MESES_DO_HISTORICO - 1));
+  const historicoConsulta = useQuery({
+    queryKey: ["indicadores-mensal", inicioHistorico, fim, parametros?.codColigada, parametros?.codFilial],
+    queryFn: () => carregarIndicadoresMensais({
+      inicio: inicioHistorico, fim, codColigada: parametros!.codColigada, codFilial: parametros!.codFilial,
+    }),
+    enabled: parametros !== null && visao === "contador",
+  });
+  const erroHistorico = historicoConsulta.error
+    ? extrairMensagemDeErro(historicoConsulta.error, "Não foi possível carregar o histórico.") : null;
+
   const meses = mesesDoPeriodo(inicio, fim);
   const dados: DadosPainel | null = resultado
     ? { base: resultado.baseCalculo, indicadores: calcularIndicadores(resultado.baseCalculo, meses), dfc: totaisDaDfc(resultado.dfc), meses }
     : null;
 
   const descricao = descreverPeriodo(inicio, fim);
-  const anterior = periodoAnterior(inicio, fim);
-  const anoAnterior = mesmoPeriodoDoAnoAnterior(inicio, fim);
+  const colunas = colunasDeComparacao(inicio, fim, comparacao);
   const rotulos = {
     atual: rotuloPeriodo(inicio, fim),
-    anterior: rotuloPeriodo(anterior.inicio, anterior.fim),
-    anoAnterior: rotuloPeriodo(anoAnterior.inicio, anoAnterior.fim),
+    comparada: colunas.comparada.rotulo,
+    extra: colunas.extra?.rotulo ?? null,
   };
+  const historico = useMemo(
+    () => historicoConsulta.data ? montarHistorico(historicoConsulta.data, fim, colunasDeComparacao(inicio, fim, comparacao)) : null,
+    [historicoConsulta.data, inicio, fim, comparacao],
+  );
   const subtitulo = !parametros || visao === "indices"
     ? SUBTITULO_PADRAO
     : visao === "contador"
@@ -110,12 +128,16 @@ export default function Indicadores() {
             {visao === "contador" && (
               <label className="sp-ind-comparar">
                 <span>Comparar com</span>
-                <select value={comparacao} onChange={(evento) => setComparacao(evento.target.value)}>
+                <select value={comparacao} onChange={(evento) => setComparacao(evento.target.value as OpcaoComparacao)}>
                   {OPCOES_COMPARACAO.map((opcao) => <option key={opcao.valor} value={opcao.valor}>{opcao.rotulo}</option>)}
                 </select>
               </label>
             )}
-            <Button variant="secondary" icon={<RefreshCw size={16} />} isLoading={isFetching} onClick={() => void refetch()}>
+            <Button variant="secondary" icon={<RefreshCw size={16} />} isLoading={isFetching}
+              onClick={() => {
+                void refetch();
+                if (visao === "contador") void historicoConsulta.refetch();
+              }}>
               Atualizar
             </Button>
           </>
@@ -147,13 +169,19 @@ export default function Indicadores() {
               <strong>Dados</strong>
               <span>
                 {visao === "contador"
-                  ? `Os valores de ${descricao} são os reais do sistema. Comparações com períodos anteriores e minigráficos aparecem quando o histórico estiver disponível.`
+                  ? erroHistorico
+                    ? `Os valores de ${descricao} são os reais do sistema, mas as comparações não carregaram: ${erroHistorico}`
+                    : historico
+                      ? `Os valores de ${descricao}, as comparações e os 12 meses saem dos saldos reais do sistema, mês a mês.`
+                      : `Os valores de ${descricao} são os reais do sistema. Carregando os ${MESES_DO_HISTORICO} meses das comparações…`
                   : `Os números de ${descricao} são reais. Comparações com o ano anterior e a tendência de 12 meses aparecem quando o histórico estiver disponível.`}
               </span>
             </div>
             {visao === "contador" ? (
               <VisaoContador dados={dados} dfc={resultado.dfc} inicio={inicio} fim={fim} empresaNome={filtros.empresaNome}
-                codColigada={parametros.codColigada} rotulos={rotulos} detalhe={detalhe} onDetalheVisto={detalheVisto} />
+                codColigada={parametros.codColigada} rotulos={rotulos} historico={historico}
+                mensagemHistorico={erroHistorico ?? "Carregando os últimos 12 meses…"}
+                detalhe={detalhe} onDetalheVisto={detalheVisto} />
             ) : (
               <VisaoDiretoria dados={dados} inicio={inicio} fim={fim} onVerDetalhe={(ancora) => trocarVisao("contador", ancora)} />
             )}

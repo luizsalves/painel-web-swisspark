@@ -9,8 +9,8 @@ namespace PainelWebSwissPark.Api.Services.BusinessLogic;
 /// <summary>
 /// Planilha do fechamento no formato que a contabilidade já usa: cabeçalho verde-claro
 /// com a identificação da conta e os responsáveis, Saldo Razão / Composição / Diferença,
-/// a tabela DATA | HISTORICO | OBS. | CHAMADO | VALOR e, no fim, as assinaturas do
-/// sócio e do contador.
+/// a tabela DATA | HISTORICO | OBS. | CHAMADO | VALOR (abrindo com o saldo anterior) e,
+/// no fim, as assinaturas do sócio e do contador.
 /// </summary>
 public static class FechamentoExcel
 {
@@ -26,7 +26,16 @@ public static class FechamentoExcel
     public static byte[] Gerar(ExportarFechamentoRequest dados)
     {
         using var workbook = new HSSFWorkbook();
-        var sheet = workbook.CreateSheet("Fechamento");
+        PreencherAba(workbook, workbook.CreateSheet("Fechamento"), dados);
+        HSSFFormulaEvaluator.EvaluateAllFormulaCells(workbook);
+        using var output = new MemoryStream();
+        workbook.Write(output, true);
+        return output.ToArray();
+    }
+
+    /// <summary>Uma aba no formato do fechamento; o Excel do ano (<see cref="FechamentoAnualExcel"/>) monta uma por mês.</summary>
+    internal static void PreencherAba(HSSFWorkbook workbook, ISheet sheet, ExportarFechamentoRequest dados)
+    {
         sheet.DisplayGridlines = false;
         sheet.IsPrintGridlines = false;
         sheet.FitToPage = true;
@@ -89,6 +98,8 @@ public static class FechamentoExcel
         var celulaTabela = Estilo(grade: true, quebra: true);
         var dataTabela = Estilo(grade: true, formato: "dd/mm/yyyy", alinhamento: HorizontalAlignment.Left);
         var valorTabela = Estilo(grade: true, formato: "#,##0.00");
+        var celulaSaldoAnterior = Estilo(grade: true, negrito: true);
+        var valorSaldoAnterior = Estilo(grade: true, negrito: true, formato: "#,##0.00");
         var linhaDeAssinatura = Estilo(linhaEmBaixo: true);
         var rotuloDeAssinatura = Estilo(negrito: true, alinhamento: HorizontalAlignment.Center);
         var dataDeAssinatura = Estilo(tamanho: 10, alinhamento: HorizontalAlignment.Center);
@@ -192,7 +203,17 @@ public static class FechamentoExcel
         Celula(LinhaCabecalhoTabela, ColJ, ColJ, cabecalhoTabela, "VALOR");
         sheet.RepeatingRows = new CellRangeAddress(LinhaCabecalhoTabela, LinhaCabecalhoTabela, -1, -1);
 
+        // A primeira linha é o saldo anterior, no último dia do mês anterior: somado
+        // aos lançamentos, a coluna VALOR fecha no Saldo Razão.
         var rowIndex = LinhaCabecalhoTabela + 1;
+        var inicioDoPeriodo = DateTime.ParseExact($"{dados.Periodo}-01", "yyyy-MM-dd", CultureInfo.InvariantCulture);
+        Celula(rowIndex, ColA, ColA, dataTabela).SetCellValue(inicioDoPeriodo.AddDays(-1));
+        Celula(rowIndex, ColB, ColG, celulaSaldoAnterior, "SALDO ANTERIOR");
+        Celula(rowIndex, ColH, ColH, celulaTabela);
+        Celula(rowIndex, ColI, ColI, celulaTabela);
+        Celula(rowIndex, ColJ, ColJ, valorSaldoAnterior).SetCellValue((double)dados.SaldoAnterior);
+        rowIndex++;
+
         foreach (var item in dados.Lancamentos)
         {
             var linhasDeTexto = item.Historico.Split('\n').Sum(l => Math.Max(1, (int)Math.Ceiling(l.Length / 70d)));
@@ -229,10 +250,6 @@ public static class FechamentoExcel
         Celula(rowIndex, ColA, ColD, dataDeAssinatura, "Data: ____/____/______");
         Celula(rowIndex, ColH, ColJ, dataDeAssinatura, "Data: ____/____/______");
 
-        HSSFFormulaEvaluator.EvaluateAllFormulaCells(workbook);
-        workbook.SetPrintArea(0, ColA, ColJ, 0, rowIndex);
-        using var output = new MemoryStream();
-        workbook.Write(output, true);
-        return output.ToArray();
+        workbook.SetPrintArea(workbook.GetSheetIndex(sheet), ColA, ColJ, 0, rowIndex);
     }
 }
