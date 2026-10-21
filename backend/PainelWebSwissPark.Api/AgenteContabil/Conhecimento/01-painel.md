@@ -68,7 +68,7 @@ Algumas empresas fecham com todas as filiais juntas (filiais consolidadas). Nela
 ## CFO Tati • IA
 
 - **Para que serve:** conversar com a Tati, a assistente de IA do painel.
-- **O que se vê:** os números do backlog do fechamento, com os mesmos filtros e o mesmo cálculo da Produtividade, o gráfico do backlog na aba "Indicadores fixos" e o chat. Os gráficos que a Tati cria ficam na aba "Criados pela Tati". Esses números são do fechamento, e não os indicadores financeiros da tela Indicadores.
+- **O que se vê:** os mesmos filtros da Produtividade, a área dos gráficos que a Tati cria, em cima, e o chat, embaixo. Os gráficos da Tati são do backlog e da produtividade do fechamento, e não os indicadores financeiros da tela Indicadores.
 - **Quem usa:** o superadministrador.
 
 ## Entrada

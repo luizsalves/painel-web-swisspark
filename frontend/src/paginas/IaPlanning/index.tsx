@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Cpu, Sparkles, BarChart3, FileText, CheckCircle2, ClipboardList, Settings2, X, ChevronDown, ArrowUp, Layers } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Cpu, Sparkles, BarChart3, X, ChevronDown, ArrowUp } from "lucide-react";
 import AppLayout from "../../componentes/layout/AppLayout";
 import UserMenu from "../../componentes/layout/UserMenu";
 import BotaoFiltros from "../../componentes/filtros/BotaoFiltros";
@@ -24,11 +24,6 @@ const SUGESTOES_RAPIDAS = [
 
 function horarioAtual(): string {
   return new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-}
-
-function formatarPercentual(valor: number, total: number): string {
-  if (total <= 0) return "—";
-  return `${((valor / total) * 100).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
 }
 
 function formatarMes(anoMes: string): string {
@@ -152,33 +147,19 @@ function GraficoTatiCard({ grafico, onRemover }: { grafico: GraficoTati; onRemov
 export default function IaPlanning() {
   const { filtros } = useFiltros();
   // O resumo e a Tati identificam a empresa pelo nome (GFILIAL.NOME), o mesmo da gaveta.
-  const {
-    inicio, fim, empresa, consolidada, filtroContas, resumo, carregando: isLoading, erro,
-  } = useResumoProdutividade(filtros);
+  const { inicio, fim, empresa, consolidada, filtroContas, erro } = useResumoProdutividade(filtros);
   const camposFiltro = consolidada ? CAMPOS_FILTRO_CONSOLIDADO : CAMPOS_FILTRO;
-  // Com mais de um mês, cada conta entra uma vez por mês, como na Produtividade.
   const variosMeses = inicio !== fim;
-
-  const barras = useMemo(
-    () =>
-      [
-        { label: "Backlog", value: resumo.backlogTotal, cor: "backlog" },
-        { label: "Pendente", value: resumo.pendentes, cor: "pendente" },
-        { label: "Preparado", value: resumo.preparados, cor: "preparado" },
-        { label: "Conferido", value: resumo.conferidos, cor: "conferido" },
-        { label: "Finalizado", value: resumo.fechados, cor: "finalizado" },
-      ] as const,
-    [resumo]
-  );
 
   const [mensagens, setMensagens] = useState<MensagemCfoTati[]>(() => [mensagemInicial()]);
   const [pergunta, setPergunta] = useState("");
   const [isEnviando, setIsEnviando] = useState(false);
   const [chatRecolhido, setChatRecolhido] = useState(false);
-  const [aba, setAba] = useState<"fixos" | "tati">("fixos");
   const [graficosTati, setGraficosTati] = useState<GraficoTati[]>([]);
   const proximoIdGrafico = useRef(1);
   const listaMensagensRef = useRef<HTMLDivElement>(null);
+  const areaGraficosRef = useRef<HTMLDivElement>(null);
+  const mostrarGraficos = () => areaGraficosRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
 
   useEffect(() => {
     const elemento = listaMensagensRef.current;
@@ -228,7 +209,7 @@ export default function IaPlanning() {
       if (grafico) {
         const id = proximoIdGrafico.current++;
         setGraficosTati((atual) => [{ ...grafico, id, horario }, ...atual]);
-        setAba("tati");
+        mostrarGraficos();
       }
     } catch (erroCapturado) {
       const mensagemDeErro = extrairMensagemDeErro(erroCapturado, "Não consegui falar com a IA agora.");
@@ -267,76 +248,28 @@ export default function IaPlanning() {
           </span>
         )}
 
-        <section className="sp-dashboard__kpis" aria-label="Indicadores gerais">
-          {[
-            { label: "Backlog", value: resumo.backlogTotal, Icon: Layers, tone: "backlog",
-              detail: variosMeses ? "Fechamentos do período (conta × mês)" : "Total de contas do período" },
-            { label: "Pendentes", value: resumo.pendentes, detail: "Sem nenhuma ação", Icon: FileText, tone: "pendente" },
-            { label: "Preparadas", value: resumo.preparados, detail: "Contas prontas", Icon: ClipboardList, tone: "preparado" },
-            { label: "Conferidas", value: resumo.conferidos, detail: "Contas revisadas", Icon: Settings2, tone: "conferido" },
-            { label: "Finalizadas", value: resumo.fechados, detail: "Contas fechadas", Icon: CheckCircle2, tone: "finalizado" },
-          ].map(({ label, value, detail, Icon, tone }) => (
-            <div key={label} className={`ia-kpi ia-kpi--${tone}`}>
-              <span className="ia-kpi__icon"><Icon size={25} /></span>
-              <div>
-                <strong>{isLoading ? "—" : value.toLocaleString("pt-BR")}</strong>
-                <span>{label}</span>
-                <em className="ia-kpi__percentual">
-                  {isLoading ? "—" : formatarPercentual(value, resumo.backlogTotal)}
-                  <small> do backlog</small>
-                </em>
-                <small>{detail}</small>
-              </div>
-              <div className="ia-kpi__decoration" aria-hidden="true"><i /><i /><i /><i /><i /></div>
-            </div>
-          ))}
-        </section>
-
         <section className="sp-ia-planning__workspace">
-          <div className="sp-ia-planning__charts">
-            <div className="ia-abas" role="tablist" aria-label="Tipo de indicador">
-              <button type="button" role="tab" aria-selected={aba === "fixos"} className={aba === "fixos" ? "ia-abas__botao ia-abas__botao--ativa" : "ia-abas__botao"} onClick={() => setAba("fixos")}>
-                <BarChart3 size={16} /> Indicadores fixos
-              </button>
-              <button type="button" role="tab" aria-selected={aba === "tati"} className={aba === "tati" ? "ia-abas__botao ia-abas__botao--ativa" : "ia-abas__botao"} onClick={() => setAba("tati")}>
-                <Sparkles size={16} /> Criados pela Tati{graficosTati.length > 0 && <span className="ia-abas__contador">{graficosTati.length}</span>}
-              </button>
-            </div>
-
-            {aba === "tati" ? (
-              <div className="ia-graficos-tati" role="tabpanel">
-                {graficosTati.length === 0 ? (
-                  <div className="sp-card ia-graficos-tati__vazio">
-                    <Sparkles size={28} />
-                    <p>Nenhum gráfico ainda. Peça um à Tati no chat — por exemplo, <button type="button" disabled={isEnviando} onClick={() => void enviarPergunta("Crie um gráfico por empresa")}>“Crie um gráfico por empresa”</button>.</p>
-                  </div>
-                ) : (
-                  graficosTati.map((grafico) => (
-                    <GraficoTatiCard
-                      key={grafico.id}
-                      grafico={grafico}
-                      onRemover={() => setGraficosTati((atual) => atual.filter((g) => g.id !== grafico.id))}
-                    />
-                  ))
-                )}
-              </div>
-            ) : (
-            <>
-            <div className="sp-card sp-card--chart">
-              <div className="ia-chart-heading"><h2 className="sp-card__title">Backlog de Atividades: Total vs. Realizado</h2><div className="ia-chart-key">{barras.map((bar) => <span key={bar.label} className={`ia-chart-key--${bar.cor}`}>● {bar.label}</span>)}</div></div>
-              {isLoading ? (
-                <div className="sp-card__loading">
-                  <LoadingSpinner size={26} color="var(--color-green)" />
+          {/* Em cima, os gráficos que a Tati cria (o mais novo primeiro); embaixo, a conversa. */}
+          <div className="sp-ia-planning__charts" ref={areaGraficosRef}>
+            <div
+              className={`ia-graficos-tati${graficosTati.length === 0 ? " ia-graficos-tati--vazio" : ""}`}
+              aria-label="Gráficos criados pela Tati"
+            >
+              {graficosTati.length === 0 ? (
+                <div className="sp-card ia-graficos-tati__vazio">
+                  <Sparkles size={22} />
+                  <p>Os gráficos que a Tati criar aparecem aqui. Peça um no chat — por exemplo, <button type="button" disabled={isEnviando} onClick={() => void enviarPergunta("Crie um gráfico por empresa")}>“Crie um gráfico por empresa”</button>.</p>
                 </div>
               ) : (
-                <div className="ia-backlog" role="img" aria-label={`Backlog ${resumo.backlogTotal.toLocaleString("pt-BR")}; finalizado ${resumo.fechados}; conferido ${resumo.conferidos}; preparado ${resumo.preparados}; pendente ${resumo.pendentes}`}>
-                  <div className="ia-backlog__axis">{[4,3,2,1,0].map((tick) => <span key={tick}>{Math.round(Math.max(resumo.backlogTotal, resumo.pendentes, 1) * tick / 4).toLocaleString("pt-BR")}</span>)}</div>
-                  <div className="ia-backlog__plot">{barras.map((bar) => <div className="ia-backlog__column" key={bar.label}><div className="ia-backlog__track"><div className={`ia-backlog__bar ia-backlog__bar--${bar.cor}`} style={{ height: `${Math.max(bar.value / Math.max(resumo.backlogTotal, resumo.pendentes, 1) * 90, 0)}%` }}><b>{bar.value.toLocaleString("pt-BR")}</b></div></div><span>{bar.label}</span></div>)}</div>
-                </div>
+                graficosTati.map((grafico) => (
+                  <GraficoTatiCard
+                    key={grafico.id}
+                    grafico={grafico}
+                    onRemover={() => setGraficosTati((atual) => atual.filter((g) => g.id !== grafico.id))}
+                  />
+                ))
               )}
             </div>
-            </>
-            )}
           </div>
 
           <aside className={`ia-ask${chatRecolhido ? " ia-ask--recolhido" : ""}`} aria-label="Pergunte à CFO Tati">
@@ -388,7 +321,7 @@ export default function IaPlanning() {
                         <div className="ia-ask__cartao">
                           <p>{renderizarTexto(corpo)}</p>
                           {grafico && (
-                            <button type="button" className="ia-ask__ver-grafico" onClick={() => setAba("tati")}>
+                            <button type="button" className="ia-ask__ver-grafico" onClick={mostrarGraficos}>
                               <BarChart3 size={14} /> Ver gráfico: {grafico.titulo}
                             </button>
                           )}

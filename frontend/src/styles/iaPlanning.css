@@ -365,9 +365,9 @@
 .ia-abas__contador { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; background: #ff9100; color: #fff; font-size: 11px; }
 
 .ia-graficos-tati { flex: 1; min-height: 0; max-height: 640px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; padding-right: 4px; }
-.ia-graficos-tati__vazio { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; min-height: 320px; text-align: center; color: #4a5a8a; }
+.ia-graficos-tati__vazio { display: flex; align-items: center; justify-content: center; gap: 10px; text-align: center; color: #4a5a8a; }
 .ia-graficos-tati__vazio svg { color: #4f6fe0; }
-.ia-graficos-tati__vazio p { max-width: 380px; margin: 0; font-size: 14px; line-height: 1.5; }
+.ia-graficos-tati__vazio p { margin: 0; font-size: 14px; line-height: 1.5; }
 .ia-graficos-tati__vazio button { border: 0; padding: 0; background: none; color: #1f3fbf; font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer; }
 
 .ia-grafico-tati__topo { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
@@ -389,15 +389,16 @@
    largura total. A área ocupa a altura da tela; os gráficos têm altura fixa, a conversa
    fica com o resto e rola por dentro, numa coluna central de leitura. */
 @media (min-width: 1101px) {
-  .sp-planning-shell .sp-ia-planning__workspace { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); height: max(700px, calc(100vh - 32px)); }
+  .sp-planning-shell .sp-ia-planning__workspace { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); height: max(560px, calc(100vh - 210px)); }
   .sp-planning-shell .sp-ia-planning__workspace:has(.ia-ask--recolhido) { grid-template-rows: auto auto; height: auto; }
   .ia-ask { min-height: 0; }
   .ia-ask--recolhido { align-self: start; }
   .ia-ask__mensagens { padding-inline: max(4px, calc((100% - 880px) / 2)); }
   .ia-ask__sugestoes, .ia-ask__campo { width: min(880px, 100%); align-self: center; }
-  /* O mais novo primeiro, lado a lado, na mesma altura do gráfico do backlog. */
+  /* O mais novo primeiro, lado a lado; sem gráfico, só uma linha de aviso. */
   .ia-graficos-tati { flex: none; height: 300px; max-height: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); align-items: start; align-content: start; }
-  .ia-graficos-tati__vazio { grid-column: 1 / -1; min-height: 280px; }
+  .ia-graficos-tati--vazio { height: auto; }
+  .ia-graficos-tati__vazio { grid-column: 1 / -1; }
 }
 
 .ia-ask { display: flex; flex-direction: column; gap: 12px; min-width: 0; padding: 16px; border-radius: 22px; background: linear-gradient(160deg, #1740d8 0%, #0d2ca8 45%, #081c74 100%); color: #e8eeff; box-shadow: 0 18px 40px #0b2a9e3d, inset 0 0 0 1px #ffffff1f; }
