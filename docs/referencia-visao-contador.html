@@ -1,0 +1,1015 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Visão do contador · referência</title>
+<style>
+/* Moldura só desta página de referência */
+:root { --cor-primaria: #0E5A45; }
+body { margin: 0; background: #F4F5F7; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.pagina { max-width: 1320px; margin: 0 auto; padding: 24px 16px 64px; }
+.aviso-referencia {
+  margin-bottom: 20px; padding: 10px 14px; border: 1px dashed #CBD1D8; border-radius: 8px;
+  background: #FFFFFF; font-size: 13px; line-height: 1.5; color: #4E5968;
+}
+
+/* ==========================================================================
+   Indicadores · Visão do contador
+   - .ind-raiz  → tokens (cores). Vai no wrapper das abas E nos portais (tooltip, gaveta).
+   - .ind       → pilha vertical com 24px entre as seções.
+   Troque o valor de --ind-primaria pelo token verde do sistema.
+   ========================================================================== */
+
+.ind-raiz {
+  --ind-primaria: var(--cor-primaria, #0E5A45);
+  --ind-texto: #17202B;
+  --ind-texto-2: #4E5968;
+  --ind-suave: #5B6573;
+  --ind-comp: #3D4754;
+  --ind-icone: #6B7684;
+  --ind-borda: #E2E5EA;
+  --ind-linha: #EEF0F3;
+  --ind-borda-forte: #CBD1D8;
+  --ind-trilho: #F0F2F5;
+  --ind-vazio: #F7F8FA;
+
+  --bom-fg: #1B6B43;      --bom-bg: #E3F2E9;      --bom-seg: #B5DCC4;
+  --atencao-fg: #7A4A00;  --atencao-bg: #FCEFD6;  --atencao-seg: #F1D08E;
+  --risco-fg: #A12A24;    --risco-bg: #FBE4E2;    --risco-seg: #ECB0AA;
+  --verificar-fg: #4E5968; --verificar-bg: #EEF0F3; --verificar-seg: #DDE1E6;
+
+  --melhorou: #1B6B43;
+  --piorou: #A12A24;
+  --neutro: #4E5968;
+  --peso-mais: #7CC29A;
+  --peso-menos: #E08A82;
+
+  color: var(--ind-texto);
+  font-variant-numeric: tabular-nums;
+}
+.ind-raiz *, .ind-raiz *::before, .ind-raiz *::after { box-sizing: border-box; }
+.ind-raiz :focus-visible { outline: 2px solid var(--ind-primaria); outline-offset: 2px; }
+.ind-raiz [hidden] { display: none !important; }
+
+.ind { display: flex; flex-direction: column; gap: 24px; }
+
+/* ---------- Utilitários ---------- */
+.ind-card { background: #FFFFFF; border: 1px solid var(--ind-borda); border-radius: 12px; }
+.ind-titulo-secao { margin: 0; font-size: 18px; font-weight: 600; color: var(--ind-texto); }
+.ind-subtitulo { font-size: 13px; color: var(--ind-suave); }
+.ind-texto-2 { font-size: 13px; color: var(--ind-texto-2); }
+.ind-rolagem { overflow-x: auto; }
+.ind-dir { text-align: right; }
+.ind-forte { font-weight: 600; color: var(--ind-texto); }
+.ind-comp { color: var(--ind-comp); }
+.ind-forte-var { font-weight: 600; }
+.ind-link {
+  padding: 0; border: 0; background: none; font: inherit; font-size: 13px; font-weight: 500;
+  color: var(--ind-primaria); text-decoration: none; cursor: pointer;
+}
+.ind-link:hover { text-decoration: underline; }
+.ind-link.ind-dir { justify-self: end; }
+.ind-estado {
+  padding: 24px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px;
+  font-size: 14px; color: var(--ind-texto-2);
+}
+
+/* ---------- Abas ---------- */
+.ind-abas { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--ind-borda); }
+.ind-aba {
+  display: flex; align-items: center; min-height: 44px; padding: 0 16px; margin-bottom: -1px;
+  border-bottom: 2px solid transparent; font-size: 15px; color: var(--ind-texto-2); text-decoration: none;
+}
+.ind-aba[aria-current="page"] { font-weight: 600; color: var(--ind-primaria); border-bottom-color: var(--ind-primaria); }
+
+/* ---------- Cabeçalho da aba (no projeto, mantenha o que já existe) ---------- */
+.ind-cabecalho { display: flex; flex-direction: column; gap: 4px; }
+.ind-titulo-aba { margin: 0; font-size: 20px; font-weight: 600; }
+
+/* ---------- Barra "Comparar com" ---------- */
+.ind-barra { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; }
+.ind-campo { display: flex; flex-direction: column; gap: 6px; }
+.ind-campo label { font-size: 12px; font-weight: 500; color: var(--ind-texto-2); }
+.ind-select {
+  height: 44px; min-width: 250px; padding: 0 12px; border: 1px solid var(--ind-borda-forte);
+  border-radius: 8px; background: #FFFFFF; font: inherit; font-size: 14px; color: var(--ind-texto);
+}
+.ind-select--pequeno { height: 36px; min-width: 120px; }
+.ind-espaco { flex: 1 1 0; }
+.ind-botao {
+  height: 44px; padding: 0 18px; border: 1px solid var(--ind-borda-forte); border-radius: 8px;
+  background: #FFFFFF; font: inherit; font-size: 14px; font-weight: 500; color: var(--ind-texto); cursor: pointer;
+}
+.ind-botao:hover { background: var(--ind-vazio); }
+.ind-botao:disabled { color: var(--ind-suave); cursor: default; }
+
+/* ---------- Avisos ---------- */
+.ind-aviso {
+  display: flex; gap: 10px; align-items: center; padding: 12px 16px; border: 1px solid #C9D8EC;
+  border-radius: 8px; background: #EEF3FA; font-size: 13px; line-height: 1.5; color: #1D3F6E;
+}
+.ind-aviso strong { font-weight: 600; }
+.ind-pontos {
+  display: flex; flex-wrap: wrap; gap: 10px 28px; align-items: center; padding: 14px 18px;
+  border: 1px solid #F0D9A8; border-radius: 10px; background: #FFF8EB; font-size: 14px; color: #4A3B1C;
+}
+.ind-pontos__titulo { font-weight: 600; color: #7A4A00; }
+.ind-pontos__link { margin-left: auto; font-weight: 500; color: var(--ind-primaria); }
+
+/* ---------- Cards de resumo ---------- */
+.ind-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; }
+.ind-resumo { padding: 18px 20px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.ind-resumo__topo { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.ind-resumo__rotulo { font-size: 13px; font-weight: 500; color: var(--ind-texto-2); }
+.ind-resumo__valor { font-size: 30px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.2; }
+.ind-resumo__comp { font-size: 13px; color: var(--ind-suave); }
+
+/* ---------- Pílula de status ---------- */
+.ind-pill {
+  display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 12px; font-weight: 500;
+  line-height: 1.4; white-space: nowrap;
+}
+.ind-pill--bom { background: var(--bom-bg); color: var(--bom-fg); }
+.ind-pill--atencao { background: var(--atencao-bg); color: var(--atencao-fg); }
+.ind-pill--risco { background: var(--risco-bg); color: var(--risco-fg); }
+.ind-pill--verificar { background: var(--verificar-bg); color: var(--verificar-fg); }
+
+/* ---------- Tabela de indicadores ---------- */
+.ind-tabela-card { padding: 8px 24px 18px; }
+.ind-tabela { min-width: 1040px; }
+.ind-grade {
+  display: grid;
+  grid-template-columns: minmax(230px, 2fr) 150px 92px 92px 104px 92px 104px 92px;
+  gap: 12px;
+  align-items: center;
+}
+.ind-cab {
+  padding: 14px 0 12px; border-bottom: 1px solid var(--ind-borda);
+  font-size: 12px; font-weight: 500; color: var(--ind-suave);
+}
+.ind-cab .ind-cab-base { color: var(--ind-texto); font-weight: 600; }
+.ind-grupo { padding: 22px 0 6px; font-size: 13px; font-weight: 600; color: var(--ind-primaria); letter-spacing: 0.02em; }
+.ind-linha { padding: 12px 0; border-top: 1px solid var(--ind-linha); font-size: 14px; }
+.ind-nome { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ind-nome__linha { display: flex; align-items: center; gap: 6px; }
+.ind-nome__texto { font-weight: 500; }
+.ind-nota { font-size: 12px; color: #7A4A00; }
+.ind-sem-regua { font-size: 12px; color: var(--ind-suave); }
+.ind-especial { font-size: 13px; }
+.ind-especial-comp { font-size: 12px; }
+.ind-aa { font-size: 11px; font-weight: 400; color: var(--ind-suave); }
+.ind-var { font-weight: 500; }
+.ind-spark { display: flex; justify-content: flex-end; }
+.ind-rodape { display: flex; flex-wrap: wrap; gap: 8px 20px; padding-top: 16px; font-size: 12px; color: var(--ind-suave); }
+
+/* ---------- Régua de faixas ---------- */
+.ind-regua { position: relative; width: 100%; height: 16px; }
+.ind-regua__trilho {
+  position: absolute; left: 0; right: 0; top: 4px; height: 8px;
+  display: flex; border-radius: 4px; overflow: hidden;
+}
+.ind-regua__trilho > div { height: 8px; }
+.ind-regua__marcador {
+  position: absolute; top: 0; width: 3px; height: 16px; margin-left: -1px;
+  border-radius: 2px; background: var(--ind-texto);
+}
+
+/* ---------- Tooltip da fórmula (renderizado no body) ---------- */
+.ind-tip__botao {
+  display: inline-flex; align-items: center; padding: 0; border: 0; background: none;
+  color: var(--ind-icone); cursor: help; flex: none;
+}
+.ind-tip__caixa {
+  box-sizing: border-box; position: absolute; z-index: 1000; width: 280px; padding: 10px 12px; border-radius: 8px;
+  background: #17202B; color: #FFFFFF; font-size: 12px; line-height: 1.5;
+  display: flex; flex-direction: column; gap: 4px; pointer-events: none;
+}
+.ind-tip__caixa strong { font-weight: 500; }
+
+/* ---------- Painel "O que explica a variação do lucro" e matriz ---------- */
+.ind-painel { padding: 22px 24px; display: flex; flex-direction: column; gap: 14px; }
+.ind-painel__cab { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.ind-tabela-lucro { min-width: 840px; }
+.ind-grade-lucro {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.6fr) 96px 96px 104px minmax(160px, 1fr) 96px;
+  gap: 12px;
+  align-items: center;
+}
+.ind-cab-lucro {
+  padding: 0 0 10px; border-bottom: 1px solid var(--ind-borda);
+  font-size: 12px; font-weight: 500; color: var(--ind-suave);
+}
+.ind-linha-lucro { min-height: 44px; border-top: 1px solid var(--ind-linha); font-size: 14px; }
+.ind-total-lucro { min-height: 48px; border-top: 1px solid var(--ind-borda-forte); font-size: 14px; font-weight: 600; }
+.ind-peso { position: relative; height: 8px; border-radius: 4px; background: var(--ind-trilho); }
+.ind-peso__barra { position: absolute; left: 0; top: 0; height: 8px; border-radius: 4px; }
+
+/* ---------- Matriz dos últimos 12 meses ---------- */
+.ind-matriz { min-width: 1040px; display: flex; flex-direction: column; gap: 4px; }
+.ind-grade-matriz {
+  display: grid;
+  grid-template-columns: minmax(190px, 1.6fr) repeat(12, minmax(66px, 1fr));
+  gap: 4px;
+  align-items: center;
+  font-size: 12px;
+}
+.ind-cab-matriz { padding-bottom: 4px; font-weight: 500; color: var(--ind-suave); }
+.ind-cab-matriz > span:not(:first-child) { text-align: center; }
+.ind-cab-matriz > .ind-ultimo { color: var(--ind-texto); font-weight: 600; }
+.ind-matriz__nome { font-size: 13px; color: var(--ind-texto); }
+.ind-celula { padding: 8px 4px; border-radius: 4px; text-align: center; font-weight: 500; white-space: nowrap; }
+.ind-celula--bom { background: var(--bom-bg); color: var(--bom-fg); }
+.ind-celula--atencao { background: var(--atencao-bg); color: var(--atencao-fg); }
+.ind-celula--risco { background: var(--risco-bg); color: var(--risco-fg); }
+.ind-celula--verificar { background: var(--verificar-bg); color: var(--verificar-fg); }
+.ind-celula--vazia { background: var(--ind-vazio); color: var(--ind-icone); }
+.ind-legenda { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; font-size: 12px; color: var(--ind-texto-2); }
+
+/* ---------- Base de cálculo ---------- */
+.ind-base { padding: 12px 24px; display: flex; flex-direction: column; gap: 12px; }
+.ind-base__botao {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%;
+  min-height: 48px; padding: 0; border: 0; background: none; font: inherit; color: var(--ind-texto);
+  text-align: left; cursor: pointer;
+}
+.ind-base__titulos { display: flex; flex-direction: column; gap: 2px; }
+.ind-base__acao { font-size: 14px; font-weight: 500; color: var(--ind-primaria); }
+.ind-base__grade {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
+  gap: 32px; padding: 4px 0 14px; font-size: 14px;
+}
+.ind-base__col { display: flex; flex-direction: column; }
+.ind-base__col-titulo { padding-bottom: 6px; font-size: 13px; font-weight: 600; color: var(--ind-primaria); }
+.ind-base__item { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px solid var(--ind-linha); }
+.ind-base__valor { font-weight: 500; white-space: nowrap; }
+.ind-etiqueta { margin-left: 6px; font-size: 12px; font-weight: 400; }
+.ind-etiqueta--verificar { color: #7A4A00; }
+.ind-etiqueta--info { color: var(--ind-suave); }
+
+/* ---------- Gaveta de contas (renderizada no body) ---------- */
+.ind-gaveta__fundo {
+  position: fixed; inset: 0; z-index: 900; display: flex; justify-content: flex-end;
+  background: rgba(23, 32, 43, 0.45);
+}
+.ind-gaveta { width: 560px; max-width: 100%; height: 100%; display: flex; flex-direction: column; background: #FFFFFF; }
+.ind-gaveta__cab {
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
+  padding: 20px 24px; border-bottom: 1px solid var(--ind-borda);
+}
+.ind-gaveta__titulos { display: flex; flex-direction: column; gap: 2px; }
+.ind-gaveta__titulos h2:focus { outline: none; }
+.ind-gaveta__fechar {
+  display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px;
+  margin: -10px -10px 0 0; border: 0; border-radius: 8px; background: none; color: var(--ind-texto-2); cursor: pointer;
+}
+.ind-gaveta__fechar:hover { background: var(--ind-trilho); }
+.ind-gaveta__corpo { flex: 1; overflow-y: auto; padding: 8px 24px 24px; }
+.ind-grade-contas {
+  display: grid; grid-template-columns: minmax(0, 1fr) 100px 100px 100px; gap: 12px; align-items: center; width: 100%;
+}
+.ind-cab-contas { padding: 10px 0; border-bottom: 1px solid var(--ind-borda); font-size: 12px; font-weight: 500; color: var(--ind-suave); }
+.ind-linha-conta {
+  min-height: 52px; padding: 8px 0; border: 0; border-top: 1px solid var(--ind-linha); background: none;
+  font: inherit; font-size: 13px; color: inherit; text-align: left; cursor: pointer;
+}
+.ind-linha-conta:hover { background: var(--ind-vazio); }
+.ind-conta { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ind-conta__cod { font-size: 12px; color: var(--ind-suave); }
+.ind-lancamentos {
+  display: flex; flex-direction: column; gap: 10px; padding: 12px 0 16px 12px;
+  border-top: 1px solid var(--ind-linha); font-size: 13px;
+}
+.ind-grade-lanc { display: grid; grid-template-columns: 84px minmax(0, 1fr) 96px 96px; gap: 10px; align-items: center; }
+.ind-diferenca { font-style: italic; color: var(--ind-texto-2); }
+
+/* ---------- Esqueleto de carregamento ---------- */
+.ind-esq { display: block; border-radius: 4px; background: var(--ind-trilho); animation: ind-pulso 1.2s ease-in-out infinite; }
+@keyframes ind-pulso { 50% { opacity: 0.55; } }
+@media (prefers-reduced-motion: reduce) { .ind-esq { animation: none; } }
+
+@media (max-width: 640px) {
+  .ind-tabela-card, .ind-painel { padding-left: 16px; padding-right: 16px; }
+  .ind-base { padding-left: 16px; padding-right: 16px; }
+  .ind-select { min-width: 0; width: 100%; }
+  .ind-campo { flex: 1 1 100%; }
+}
+
+</style>
+</head>
+<body>
+<div class="pagina">
+  <p class="aviso-referencia">
+    <strong>Referência visual da aba Visão do contador.</strong> Os valores de mar/2026 são da AEPL.
+    As comparações, os 12 meses, a explicação do lucro e as contas da gaveta são <strong>exemplo</strong>.
+    No produto, tudo vem da API (seção 5.4 do prompt) e a cor primária é o verde do sistema.
+  </p>
+  <div class="ind-raiz ind" id="raiz">
+    <nav class="ind-abas" aria-label="Visões">
+      <a href="#" class="ind-aba" data-visao="contador" aria-current="page">Visão do contador</a>
+      <a href="#" class="ind-aba" data-visao="diretoria">Visão da diretoria</a>
+    </nav>
+    <div class="ind" id="app"></div>
+  </div>
+</div>
+<script>
+(function () {
+  'use strict';
+
+  /* =========================================================================
+     1. EXEMPLO DE RESPOSTA DA API
+     Só para esta referência visual. No produto este objeto vem pronto de
+     GET /api/indicadores/contador (seção 5.4) e o front NÃO calcula status,
+     variação nem posição da régua: só formata e desenha (partes 2 e 3).
+     Os valores de mar/2026 são da AEPL. Comparações, 12 meses, explicação
+     do lucro e contas da gaveta são EXEMPLO.
+     ========================================================================= */
+  const MESES_SERIE = ['2025-04', '2025-05', '2025-06', '2025-07', '2025-08', '2025-09',
+    '2025-10', '2025-11', '2025-12', '2026-01', '2026-02', '2026-03'];
+
+  const GRUPOS = [
+    ['liquidez', 'Liquidez'],
+    ['endividamento', 'Endividamento'],
+    ['rentabilidade', 'Rentabilidade e resultado · no período'],
+  ];
+
+  const CONFIG = [
+    { grupo: 'liquidez', codigo: 'LIQ_CORRENTE', nome: 'Liquidez corrente',
+      formula: 'Ativo circulante ÷ Passivo circulante',
+      explicacao: 'Acima de 1: ativos suficientes para cobrir dívidas de até 1 ano.',
+      unidade: 'numero', casas: 2, direcao: 'maior_melhor', limiteRisco: 1, limiteBom: 1.5, escala: { min: 0, max: 2 },
+      serie: [1.18, 1.17, 1.15, 1.14, 1.12, 1.11, 1.10, 1.09, 1.07, 1.06, 1.05, 1.024858], anoAnterior: 1.19 },
+    { grupo: 'liquidez', codigo: 'LIQ_SECA', nome: 'Liquidez seca',
+      formula: '(Ativo circulante − Estoques) ÷ Passivo circulante',
+      explicacao: 'Visão mais conservadora; exclui estoques do cálculo.',
+      unidade: 'numero', casas: 2, direcao: 'maior_melhor', limiteRisco: 0.5, limiteBom: 1, escala: { min: 0, max: 1.5 },
+      serie: [0.26, 0.25, 0.24, 0.24, 0.23, 0.22, 0.22, 0.21, 0.21, 0.20, 0.20, 0.187585], anoAnterior: 0.27,
+      nota: 'Estoques são 82% do ativo circulante' },
+    { grupo: 'liquidez', codigo: 'LIQ_IMEDIATA', nome: 'Liquidez imediata',
+      formula: 'Disponibilidades ÷ Passivo circulante',
+      explicacao: 'Acima de 1: cobre obrigações imediatas só com caixa e equivalentes.',
+      unidade: 'numero', casas: 2, direcao: 'maior_melhor', limiteRisco: 0.1, limiteBom: 0.3, escala: { min: 0, max: 0.5 },
+      serie: [0.03, 0.02, 0.04, 0.03, 0.02, 0.03, 0.02, 0.01, 0.02, 0.01, 0.01, 0.040425], anoAnterior: 0.03 },
+    { grupo: 'liquidez', codigo: 'LIQ_GERAL', nome: 'Liquidez geral',
+      formula: '(Ativo circulante + Realizável a longo prazo) ÷ (Passivo circulante + Passivo não circulante)',
+      explicacao: 'Visão de longo prazo (mais de 12 meses).',
+      unidade: 'numero', casas: 2, direcao: 'maior_melhor', limiteRisco: 1, limiteBom: 1.2, escala: { min: 0, max: 2 },
+      serie: [1.30, 1.29, 1.29, 1.28, 1.27, 1.27, 1.26, 1.25, 1.24, 1.24, 1.23, 1.215622], anoAnterior: 1.31 },
+
+    { grupo: 'endividamento', codigo: 'END_GERAL', nome: 'Endividamento geral',
+      formula: 'Passivo total ÷ Ativo total',
+      explicacao: 'A proporção dos ativos da empresa que foi financiada por terceiros.',
+      unidade: 'percentual', casas: 2, direcao: 'menor_melhor', limiteRisco: 80, limiteBom: 60, escala: { min: 0, max: 100 },
+      serie: [68.9, 69.1, 69.4, 69.6, 69.9, 70.2, 70.4, 70.7, 70.9, 71.1, 71.4, 71.7907], anoAnterior: 68.7 },
+    { grupo: 'endividamento', codigo: 'END_CURTO_PRAZO', nome: 'Dívida no curto prazo',
+      formula: 'Passivo circulante ÷ Passivo total',
+      explicacao: 'O percentual das dívidas que vence no curto prazo.',
+      unidade: 'percentual', casas: 2, direcao: 'menor_melhor', limiteRisco: 70, limiteBom: 40, escala: { min: 0, max: 100 },
+      serie: [98.8, 98.9, 99.0, 99.0, 99.1, 99.2, 99.2, 99.3, 99.3, 99.4, 99.4, 99.5237], anoAnterior: 98.7 },
+    { grupo: 'endividamento', codigo: 'DIV_LIQ_EBITDA_12M', nome: 'Dív. líquida / EBITDA 12m',
+      formula: '(Dívida bruta − Caixa) ÷ EBITDA dos últimos 12 meses',
+      explicacao: 'Quantos anos de geração operacional de caixa levariam para quitar a dívida.',
+      unidade: 'multiplo', casas: 2, direcao: 'menor_melhor', limiteRisco: 4, limiteBom: 2.5, escala: { min: 0, max: 6 },
+      serie: [2.61, 2.68, 2.74, 2.81, 2.88, 2.95, 3.02, 3.09, 3.17, 3.26, 3.39, 3.521322], anoAnterior: 2.55 },
+    { grupo: 'endividamento', codigo: 'DIV_BRUTA_PL', nome: 'Dívida bruta / PL',
+      formula: 'Dívida bruta ÷ Patrimônio líquido',
+      explicacao: 'A proporção entre o capital de terceiros e o capital próprio.',
+      unidade: 'multiplo', casas: 2, direcao: 'menor_melhor', limiteRisco: 2, limiteBom: 1, escala: { min: 0, max: 3 },
+      serie: [0.41, 0.41, 0.42, 0.42, 0.43, 0.43, 0.44, 0.44, 0.45, 0.45, 0.46, 0.472249], anoAnterior: 0.40 },
+
+    { grupo: 'rentabilidade', codigo: 'ROE', nome: 'ROE',
+      formula: 'Lucro líquido ÷ Patrimônio líquido',
+      explicacao: 'Retorno sobre o patrimônio líquido (ganho dos acionistas).',
+      unidade: 'percentual', casas: 2, direcao: 'maior_melhor', limiteRisco: 0, limiteBom: 12, escala: { min: -10, max: 30 }, anualizar: true,
+      serie: [0.03, 0.02, -0.60, 0.03, 0.02, -0.55, 0.04, 0.03, -0.50, 0.01, 0.01, -0.786921], anoAnterior: -0.62 },
+    { grupo: 'rentabilidade', codigo: 'ROA', nome: 'ROA',
+      formula: 'Lucro líquido ÷ Ativo total',
+      explicacao: 'Retorno sobre o ativo total (eficiência dos investimentos).',
+      unidade: 'percentual', casas: 2, direcao: 'maior_melhor', limiteRisco: 0, limiteBom: 4, escala: { min: -5, max: 10 }, anualizar: true,
+      serie: [0.01, 0.01, -0.17, 0.01, 0.01, -0.15, 0.01, 0.01, -0.14, 0.00, 0.00, -0.221986], anoAnterior: -0.18 },
+    { grupo: 'rentabilidade', codigo: 'MARGEM_LIQUIDA', nome: 'Margem líquida',
+      formula: 'Lucro líquido ÷ Receita líquida',
+      explicacao: 'Lucro líquido gerado a cada R$ 1 de venda.',
+      unidade: 'percentual', casas: 2, direcao: 'maior_melhor', limiteRisco: 0, limiteBom: 10, escala: { min: -40, max: 40 },
+      serie: [2.1, 1.4, -35.0, 1.8, 0.9, -31.2, 2.4, 1.6, -28.7, 0.8, 0.7, -40.3509], anoAnterior: -33.5,
+      nota: 'IR e CS maiores que o resultado antes dos impostos' },
+    { grupo: 'rentabilidade', codigo: 'MARGEM_BRUTA', nome: 'Margem bruta',
+      formula: 'Lucro bruto ÷ Receita líquida',
+      explicacao: 'Percentual de lucro após o custo dos produtos e serviços.',
+      unidade: 'percentual', casas: 2, direcao: 'maior_melhor', limiteRisco: 20, limiteBom: 40, escala: { min: 0, max: 100 },
+      verificar: true, motivoSemRegua: 'Sem custos para comparar',
+      serie: [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100], anoAnterior: 100,
+      nota: 'Custos zerados no período: conferir o de-para' },
+    { grupo: 'rentabilidade', codigo: 'EBITDA', nome: 'EBITDA',
+      formula: 'EBIT + Depreciação + Amortização',
+      explicacao: 'Desempenho operacional puro (sem juros, impostos, depreciação e amortização).',
+      unidade: 'moeda', casas: 1, direcao: 'maior_melhor', limiteRisco: 0, limiteBom: 0, escala: null,
+      motivoSemRegua: 'Sem faixa definida',
+      serie: [92500, 88600, 88900, 83400, 82100, 84800, 80300, 81700, 83000, 79600, 81000, 84135.73], anoAnterior: 90400 },
+  ];
+
+  const RESPOSTA = (function montarExemplo() {
+    const arred = (v, c) => { const f = Math.pow(10, c); return Math.sign(v) * Math.round(Math.abs(v) * f) / f; };
+
+    const statusDe = (cfg, v) => {
+      if (cfg.verificar) return 'verificar';
+      if (!cfg.escala) return v < 0 ? 'risco' : 'bom';
+      const x = arred(cfg.anualizar ? v * 12 : v, cfg.casas);
+      if (cfg.direcao === 'maior_melhor') return x >= cfg.limiteBom ? 'bom' : x < cfg.limiteRisco ? 'risco' : 'atencao';
+      return x <= cfg.limiteBom ? 'bom' : x > cfg.limiteRisco ? 'risco' : 'atencao';
+    };
+
+    const avaliar = (cfg, v, nota) => {
+      let posicaoRegua = null;
+      let motivoSemRegua = cfg.motivoSemRegua || null;
+      if (!cfg.verificar && cfg.escala) {
+        const base = cfg.anualizar ? v * 12 : v;
+        posicaoRegua = Math.max(1, Math.min(99, (base - cfg.escala.min) / (cfg.escala.max - cfg.escala.min) * 100));
+        motivoSemRegua = null;
+      }
+      return {
+        temDados: true, valor: v, valorAnualizado: cfg.anualizar ? v * 12 : null, valorGrafico: v,
+        texto: null, textoCurto: null, status: statusDe(cfg, v), nota: nota || null, posicaoRegua, motivoSemRegua,
+      };
+    };
+
+    const UNIDADE_VARIACAO = { numero: 'absoluta', percentual: 'pp', multiplo: 'multiplo', moeda: 'moeda' };
+    const comparar = (cfg, atual, base) => {
+      const unidade = UNIDADE_VARIACAO[cfg.unidade];
+      if (!atual.temDados || !base.temDados || atual.valor === null || base.valor === null || atual.texto || base.texto) {
+        return { valor: null, unidade, melhorou: null };
+      }
+      const c = cfg.unidade === 'moeda' ? 2 : cfg.casas;
+      const valor = arred(arred(atual.valor, c) - arred(base.valor, c), c);
+      let melhorou = valor === 0 ? null : (cfg.direcao === 'maior_melhor' ? valor > 0 : valor < 0);
+      if (atual.status === 'verificar') melhorou = null;
+      return { valor, unidade, melhorou };
+    };
+
+    const linhas = CONFIG.map((cfg) => {
+      const atual = avaliar(cfg, cfg.serie[11], cfg.nota);
+      const anterior = avaliar(cfg, cfg.serie[10]);
+      const anoAnterior = avaliar(cfg, cfg.anoAnterior);
+      return {
+        grupo: cfg.grupo,
+        codigo: cfg.codigo, nome: cfg.nome, formula: cfg.formula, explicacao: cfg.explicacao,
+        unidade: cfg.unidade, casas: cfg.casas, direcao: cfg.direcao,
+        limiteRisco: cfg.escala ? cfg.limiteRisco : null,
+        limiteBom: cfg.escala ? cfg.limiteBom : null,
+        escala: cfg.escala,
+        atual, anterior, anoAnterior,
+        variacaoAnterior: comparar(cfg, atual, anterior),
+        variacaoAnoAnterior: comparar(cfg, atual, anoAnterior),
+        meses: MESES_SERIE.map((anoMes, i) => ({ anoMes, avaliacao: avaliar(cfg, cfg.serie[i]) })),
+      };
+    });
+    const porCodigo = {};
+    linhas.forEach((l) => { porCodigo[l.codigo] = l; });
+
+    const ROTULOS_DRE = [
+      ['receitaLiquida', 'Receita líquida'], ['custos', 'Custos'], ['despesasOperacionais', 'Despesas operacionais'],
+      ['depreciacaoAmortizacao', 'Depreciação e amortização'], ['resultadoFinanceiro', 'Resultado financeiro'], ['irCs', 'IR e CS'],
+    ];
+    const DRE_ATUAL = { receitaLiquida: 187530.96, custos: 0, despesasOperacionais: -103395.23, depreciacaoAmortizacao: -67633.78, resultadoFinanceiro: -14880.20, irCs: -77292.19 };
+    const DRE_ANTERIOR = { receitaLiquida: 176300, custos: 0, despesasOperacionais: -95300, depreciacaoAmortizacao: -67200, resultadoFinanceiro: -12600, irCs: 0 };
+    const DRE_ANO_ANTERIOR = { receitaLiquida: 179430.96, custos: 0, despesasOperacionais: -88995.23, depreciacaoAmortizacao: -66133.78, resultadoFinanceiro: -10780.20, irCs: -73592.19 };
+
+    const explicacao = (base) => {
+      const ls = ROTULOS_DRE
+        .filter(([c]) => base[c] !== 0 || DRE_ATUAL[c] !== 0)
+        .map(([codigo, rotulo]) => ({ codigo, rotulo, valorBase: base[codigo], valorAtual: DRE_ATUAL[codigo], variacao: DRE_ATUAL[codigo] - base[codigo] }));
+      const maior = Math.max.apply(null, ls.map((l) => Math.abs(l.variacao))) || 1;
+      ls.forEach((l) => { l.peso = Math.abs(l.variacao) / maior * 100; });
+      const lucroBase = ls.reduce((s, l) => s + l.valorBase, 0);
+      const lucroAtual = ls.reduce((s, l) => s + l.valorAtual, 0);
+      return { linhas: ls, lucroBase, lucroAtual, variacaoLucro: lucroAtual - lucroBase };
+    };
+    const expAnterior = explicacao(DRE_ANTERIOR);
+    const expAnoAnterior = explicacao(DRE_ANO_ANTERIOR);
+
+    const card = (codigo, rotulo) => {
+      const l = porCodigo[codigo];
+      return { codigo, rotulo, unidade: l.unidade, casas: l.casas, atual: l.atual, anterior: l.anterior, anoAnterior: l.anoAnterior,
+        variacaoAnterior: l.variacaoAnterior, variacaoAnoAnterior: l.variacaoAnoAnterior };
+    };
+    const cfgLucro = { unidade: 'moeda', casas: 1, direcao: 'maior_melhor' };
+    const avLucro = (valor, status) => ({ temDados: true, valor, valorAnualizado: null, valorGrafico: valor, texto: null, textoCurto: null, status, nota: null, posicaoRegua: null, motivoSemRegua: null });
+    const lucroAtual = avLucro(expAnterior.lucroAtual, 'risco');
+    const lucroAnterior = avLucro(expAnterior.lucroBase, 'atencao');
+    const lucroAnoAnterior = avLucro(expAnoAnterior.lucroBase, 'risco');
+
+    const BASE = {
+      temDados: true, dataBalanco: '2026-03-31',
+      ativoTotal: 34087932.98, ativoCirculante: 24960794.97, disponivel: 984563.27, estoques: 20392081.09,
+      realizavelLongoPrazo: 4787803.87, passivoCirculante: 24355366.24, passivoNaoCirculante: 116549.27,
+      patrimonioLiquido: 9616017.47, dividaBruta: 4541150.68, dividaLiquida: 3556587.41,
+      receitaLiquida: 187530.96, custos: 0, lucroBruto: 187530.96, despesasOperacionais: -103395.23, ebitda: 84135.73,
+      depreciacaoAmortizacao: -67633.78, ebit: 16501.95, resultadoFinanceiro: -14880.20, resultadoAntesIr: 1621.75,
+      irCs: -77292.19, outrosResultados: 0, lucroLiquido: -75670.44,
+      ebitda12m: 1010035.73, mesesEbitda12m: 12, despesasPorDiferenca: true,
+    };
+
+    return {
+      empresa: { codColigada: 17, codFilial: null, nome: 'AEPL PARTICIPACOES LTDA' },
+      periodo: { inicio: '2026-03', fim: '2026-03', meses: 1, rotulo: 'Mar/26' },
+      periodoAnterior: { inicio: '2026-02', fim: '2026-02', rotulo: 'Fev/26' },
+      periodoAnoAnterior: { inicio: '2025-03', fim: '2025-03', rotulo: 'Mar/25' },
+      dataBalanco: '2026-03-31',
+      primeiroMesComDados: '2018-01',
+      mesesSemDados: [],
+      mesesSerie: MESES_SERIE,
+      grupos: GRUPOS.map(([codigo, titulo]) => ({ codigo, titulo, indicadores: linhas.filter((l) => l.grupo === codigo) })),
+      cards: [
+        card('LIQ_CORRENTE', 'Liquidez corrente'),
+        card('END_GERAL', 'Endividamento geral'),
+        card('DIV_LIQ_EBITDA_12M', 'Dív. líquida / EBITDA 12m'),
+        { codigo: 'LUCRO_LIQUIDO', rotulo: 'Lucro líquido do período', unidade: 'moeda', casas: 1,
+          atual: lucroAtual, anterior: lucroAnterior, anoAnterior: lucroAnoAnterior,
+          variacaoAnterior: comparar(cfgLucro, lucroAtual, lucroAnterior),
+          variacaoAnoAnterior: comparar(cfgLucro, lucroAtual, lucroAnoAnterior) },
+      ],
+      pontosVerificar: [
+        { codigo: 'CUSTOS_ZERADOS', texto: 'Custos zerados com R$ 20,39 mi em estoque' },
+        { codigo: 'DFC_NAO_CLASSIFICADO', texto: 'R$ 359,7 mil na DFC sem classificação' },
+      ],
+      explicacaoLucro: { anterior: expAnterior, anoAnterior: expAnoAnterior },
+      baseCalculo: { atual: BASE, anterior: BASE, anoAnterior: BASE },
+    };
+  })();
+
+  /* =========================================================================
+     2. FORMATAÇÃO (igual a formatacao.ts)
+     ========================================================================= */
+  const TRAVESSAO = '—';
+  const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  const ROTULO_STATUS = { bom: 'Bom', atencao: 'Atenção', risco: 'Risco', verificar: 'Verificar' };
+  const FORMATOS = {};
+  const nf = (c) => FORMATOS[c] || (FORMATOS[c] = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: c, maximumFractionDigits: c }));
+  const semZeroNegativo = (v) => (v === 0 ? 0 : v);
+
+  function moedaAbreviada(v) {
+    v = semZeroNegativo(v);
+    const a = Math.abs(v);
+    if (a >= 1e6) return nf(2).format(v / 1e6) + ' mi';
+    if (a >= 1e3) return nf(1).format(v / 1e3) + ' mil';
+    return nf(0).format(v);
+  }
+  function moedaCompleta(v) { const s = nf(2).format(Math.abs(v)); return v < 0 ? '(' + s + ')' : s; }
+  function moedaSinal(v) { v = semZeroNegativo(v); return (v > 0 ? '+' : '') + nf(2).format(v); }
+  const mil1 = (v) => nf(1).format(semZeroNegativo(v) / 1000);
+  const mil1Sinal = (v) => (v > 0 ? '+' : '') + mil1(v);
+
+  function formatarValor(v, unidade, casas) {
+    if (v === null || v === undefined) return TRAVESSAO;
+    v = semZeroNegativo(v);
+    if (unidade === 'numero') return nf(casas).format(v);
+    if (unidade === 'percentual') return nf(casas).format(v) + '%';
+    if (unidade === 'multiplo') return nf(casas).format(v) + 'x';
+    return moedaAbreviada(v);
+  }
+  function formatarVariacao(variacao, casas) {
+    if (!variacao || variacao.valor === null) return TRAVESSAO;
+    const v = semZeroNegativo(variacao.valor);
+    const abs = Math.abs(v);
+    const sinal = v > 0 ? '+' : v < 0 ? '-' : '';
+    if (variacao.unidade === 'absoluta') return sinal + nf(casas).format(abs);
+    if (variacao.unidade === 'pp') return sinal + nf(casas).format(abs) + ' p.p.';
+    if (variacao.unidade === 'multiplo') return sinal + nf(casas).format(abs) + 'x';
+    return sinal + moedaAbreviada(abs);
+  }
+  function textoAvaliacao(a, unidade, casas) {
+    if (!a.temDados) return TRAVESSAO;
+    if (a.texto) return a.texto;
+    return formatarValor(a.valor, unidade, casas);
+  }
+  function textoCelulaMatriz(a, ind) {
+    if (!a.temDados) return TRAVESSAO;
+    if (a.textoCurto) return a.textoCurto;
+    if (a.valor === null) return TRAVESSAO;
+    if (ind.unidade === 'moeda') return mil1(a.valor);
+    return formatarValor(a.valor, ind.unidade, ind.casas);
+  }
+  function rotuloMes(anoMes) { const p = anoMes.split('-'); return MESES[Number(p[1]) - 1] + '/' + p[0].slice(2); }
+  function rotuloPeriodoLongo(inicio, fim) {
+    const longo = (am) => { const p = am.split('-'); return MESES[Number(p[1]) - 1] + '/' + p[0]; };
+    return inicio === fim ? longo(inicio) : longo(inicio) + ' a ' + longo(fim);
+  }
+  function dataBr(iso) { const p = iso.slice(0, 10).split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
+  function faixasTexto(ind) {
+    if (ind.limiteBom === null || ind.limiteRisco === null || ind.escala === null) return null;
+    const f = (v) => formatarValor(v, ind.unidade, ind.casas);
+    if (ind.direcao === 'maior_melhor') {
+      return 'Bom: ≥ ' + f(ind.limiteBom) + ' · Atenção: entre ' + f(ind.limiteRisco) + ' e ' + f(ind.limiteBom) + ' · Risco: < ' + f(ind.limiteRisco);
+    }
+    return 'Bom: ≤ ' + f(ind.limiteBom) + ' · Atenção: entre ' + f(ind.limiteBom) + ' e ' + f(ind.limiteRisco) + ' · Risco: > ' + f(ind.limiteRisco);
+  }
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  /* =========================================================================
+     3. DESENHO (mesma estrutura dos componentes React do Apêndice A)
+     ========================================================================= */
+  const ICONE_INFO = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5"></path><path d="M12 8h.01"></path></svg>';
+  const ICONE_FECHAR = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>';
+
+  const estado = { visao: 'contador', comparar: 'anterior', baseAberta: lerBaseAberta() };
+  const INDICE = {};
+  RESPOSTA.grupos.forEach((g) => g.indicadores.forEach((ind) => { INDICE[ind.codigo] = ind; }));
+
+  function lerBaseAberta() { try { return localStorage.getItem('indicadores.baseCalculoAberta') === '1'; } catch (e) { return false; } }
+  function salvarBaseAberta(v) { try { localStorage.setItem('indicadores.baseCalculoAberta', v ? '1' : '0'); } catch (e) { /* sem armazenamento */ } }
+
+  const rotuloBase = (d) => (estado.comparar === 'anterior' ? d.periodoAnterior.rotulo : d.periodoAnoAnterior.rotulo);
+
+  // ---- Pílula de status e variação (6.12) ----
+  const pill = (s) => '<span class="ind-pill ind-pill--' + s + '">' + ROTULO_STATUS[s] + '</span>';
+  function variacaoHtml(v, casas, rb, classe) {
+    const cor = v.valor === null || v.melhorou === null ? 'var(--neutro)' : v.melhorou ? 'var(--melhorou)' : 'var(--piorou)';
+    return '<span class="' + (classe || '') + '" style="color:' + cor + '" title="Contra ' + esc(rb) + '">' + esc(formatarVariacao(v, casas)) + '</span>';
+  }
+
+  // ---- Régua de faixas (6.10) ----
+  function regua(ind) {
+    const a = ind.atual;
+    if (a.posicaoRegua === null || !ind.escala || ind.limiteBom === null || ind.limiteRisco === null) {
+      return '<span class="ind-sem-regua">' + esc(a.motivoSemRegua || 'Sem dados') + '</span>';
+    }
+    const min = ind.escala.min, max = ind.escala.max;
+    const largura = (trecho) => (trecho / (max - min) * 100).toFixed(2) + '%';
+    const segmentos = ind.direcao === 'maior_melhor'
+      ? [['risco', ind.limiteRisco - min], ['atencao', ind.limiteBom - ind.limiteRisco], ['bom', max - ind.limiteBom]]
+      : [['bom', ind.limiteBom - min], ['atencao', ind.limiteRisco - ind.limiteBom], ['risco', max - ind.limiteRisco]];
+    const maior = ind.direcao === 'maior_melhor';
+    const f = (v) => formatarValor(v, ind.unidade, ind.casas);
+    const rotulo = ind.nome + ': ' + textoAvaliacao(a, ind.unidade, ind.casas) + ', ' + ROTULO_STATUS[a.status] + '. Bom ' +
+      (maior ? '≥ ' : '≤ ') + f(ind.limiteBom) + ', risco ' + (maior ? '< ' : '> ') + f(ind.limiteRisco) + '.';
+    return '<div class="ind-regua" role="img" aria-label="' + esc(rotulo) + '">' +
+      '<div class="ind-regua__trilho">' +
+      segmentos.map((s) => '<div style="width:' + largura(s[1]) + ';background:var(--' + s[0] + '-seg)"></div>').join('') +
+      '</div><div class="ind-regua__marcador" style="left:' + a.posicaoRegua.toFixed(1) + '%"></div></div>';
+  }
+
+  // ---- Minigráfico (6.11) ----
+  function sparkline(valores) {
+    const numeros = valores.filter((v) => v !== null);
+    if (numeros.length < 2) return '<span style="color:var(--ind-icone)">' + TRAVESSAO + '</span>';
+    const minimo = Math.min.apply(null, numeros), maximo = Math.max.apply(null, numeros);
+    const y = (v) => (maximo === minimo ? 12 : 22 - (v - minimo) / (maximo - minimo) * 20);
+    const trechos = [];
+    let atual = [];
+    valores.forEach((v, i) => {
+      if (v === null) { if (atual.length) trechos.push(atual); atual = []; return; }
+      atual.push((i * 96 / 11).toFixed(1) + ',' + y(v).toFixed(1));
+    });
+    if (atual.length) trechos.push(atual);
+    return '<svg width="96" height="24" viewBox="0 0 96 24" aria-hidden="true">' +
+      trechos.filter((t) => t.length >= 2).map((t) => '<polyline points="' + t.join(' ') +
+        '" fill="none" stroke="#4E5968" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"></polyline>').join('') +
+      '</svg>';
+  }
+
+  // ---- Tabela de indicadores (6.9) ----
+  function valorCelula(a, ind, atual) {
+    const classe = atual ? 'ind-dir ind-forte' : 'ind-dir ind-comp';
+    if (!a.temDados) return '<div class="' + classe + '">' + TRAVESSAO + '</div>';
+    if (a.texto) return '<div class="' + classe + ' ' + (atual ? 'ind-especial' : 'ind-especial-comp') + '">' + esc(a.texto) + '</div>';
+    return '<div class="' + classe + '">' + esc(formatarValor(a.valor, ind.unidade, ind.casas)) + '</div>';
+  }
+  function linhaIndicador(ind, rb) {
+    const a = ind.atual;
+    const v = estado.comparar === 'anterior' ? ind.variacaoAnterior : ind.variacaoAnoAnterior;
+    return '<div class="ind-grade ind-linha">' +
+      '<div class="ind-nome"><div class="ind-nome__linha"><span class="ind-nome__texto">' + esc(ind.nome) + '</span>' +
+      '<button type="button" class="ind-tip__botao" data-tip="' + ind.codigo + '" aria-label="Fórmula de ' + esc(ind.nome) + '">' + ICONE_INFO + '</button></div>' +
+      (a.nota ? '<span class="ind-nota">' + esc(a.nota) + '</span>' : '') + '</div>' +
+      regua(ind) +
+      '<div class="ind-dir">' + valorCelula(a, ind, true) +
+      (a.valorAnualizado !== null ? '<div class="ind-aa">≈ ' + esc(formatarValor(a.valorAnualizado, 'percentual', 2)) + ' a.a.</div>' : '') + '</div>' +
+      valorCelula(ind.anterior, ind, false) +
+      variacaoHtml(v, ind.casas, rb, 'ind-dir ind-var') +
+      valorCelula(ind.anoAnterior, ind, false) +
+      '<div class="ind-spark">' + sparkline(ind.meses.map((m) => m.avaliacao.valorGrafico)) + '</div>' +
+      '<div>' + pill(a.status) + '</div>' +
+      '</div>';
+  }
+  function tabela(d) {
+    const rb = rotuloBase(d);
+    const longo = (p) => esc(rotuloPeriodoLongo(p.inicio, p.fim));
+    return '<section class="ind-card ind-tabela-card" aria-label="Indicadores por grupo">' +
+      '<div class="ind-rolagem"><div class="ind-tabela">' +
+      '<div class="ind-grade ind-cab">' +
+      '<span>Indicador</span><span>Faixa</span>' +
+      '<span class="ind-dir" title="' + longo(d.periodo) + '">' + esc(d.periodo.rotulo) + '</span>' +
+      '<span class="ind-dir' + (estado.comparar === 'anterior' ? ' ind-cab-base' : '') + '" title="' + longo(d.periodoAnterior) + '">' + esc(d.periodoAnterior.rotulo) + '</span>' +
+      '<span class="ind-dir">Variação</span>' +
+      '<span class="ind-dir' + (estado.comparar === 'ano-anterior' ? ' ind-cab-base' : '') + '" title="' + longo(d.periodoAnoAnterior) + '">' + esc(d.periodoAnoAnterior.rotulo) + '</span>' +
+      '<span class="ind-dir">12 meses</span><span>Status</span>' +
+      '</div>' +
+      d.grupos.map((g) => '<div class="ind-grupo">' + esc(g.titulo) + '</div>' + g.indicadores.map((ind) => linhaIndicador(ind, rb)).join('')).join('') +
+      '</div></div>' +
+      '<div class="ind-rodape"><span>Dív. líquida / EBITDA usa o EBITDA dos últimos 12 meses.</span>' +
+      '<span>Passe o mouse no ícone ao lado do nome para ver a fórmula.</span></div>' +
+      '</section>';
+  }
+
+  // ---- Cabeçalho, barra, avisos, cards (6.5 a 6.8) ----
+  function cabecalho(d) {
+    const mmaaaa = (am) => { const p = am.split('-'); return p[1] + '/' + p[0]; };
+    return '<header class="ind-cabecalho"><h2 class="ind-titulo-aba">Índices financeiros</h2>' +
+      '<span class="ind-subtitulo">' + esc(d.empresa.nome) + ' · Coligada ' + d.empresa.codColigada + ' · balanço em ' + dataBr(d.dataBalanco) +
+      ' · resultado de ' + mmaaaa(d.periodo.inicio) + ' a ' + mmaaaa(d.periodo.fim) + '</span></header>';
+  }
+  function barra(d) {
+    return '<div class="ind-barra">' +
+      '<div class="ind-campo"><label for="ind-comparar">Comparar com</label>' +
+      '<select id="ind-comparar" class="ind-select">' +
+      '<option value="anterior"' + (estado.comparar === 'anterior' ? ' selected' : '') + '>Período anterior (' + esc(d.periodoAnterior.rotulo) + ')</option>' +
+      '<option value="ano-anterior"' + (estado.comparar === 'ano-anterior' ? ' selected' : '') + '>Mesmo período do ano anterior (' + esc(d.periodoAnoAnterior.rotulo) + ')</option>' +
+      '</select></div>' +
+      '<div class="ind-espaco"></div>' +
+      '<button type="button" class="ind-botao" data-exportar>Exportar</button>' +
+      '</div>';
+  }
+  function aviso(d) {
+    if (!d.mesesSemDados.length) return '';
+    return '<div class="ind-aviso"><strong>Dados</strong><span>Não há dados contábeis antes de ' + rotuloMes(d.primeiroMesComDados) +
+      '. Comparações e meses sem dados aparecem como ' + TRAVESSAO + '.</span></div>';
+  }
+  function pontos(d) {
+    const n = d.pontosVerificar.length;
+    if (!n) return '';
+    const titulo = n === 1 ? '1 ponto a verificar antes de fechar o mês' : n + ' pontos a verificar antes de fechar o mês';
+    return '<section class="ind-pontos" aria-label="Pontos a verificar"><span class="ind-pontos__titulo">' + titulo + '</span>' +
+      d.pontosVerificar.map((p) => '<span>' + esc(p.texto) + '</span>').join('') +
+      '<a class="ind-pontos__link" href="#">Revisar em Contas contábeis</a></section>';
+  }
+  function cards(d) {
+    const rb = rotuloBase(d);
+    return '<div class="ind-cards">' + d.cards.map((c) => {
+      const base = estado.comparar === 'anterior' ? c.anterior : c.anoAnterior;
+      const v = estado.comparar === 'anterior' ? c.variacaoAnterior : c.variacaoAnoAnterior;
+      return '<div class="ind-card ind-resumo">' +
+        '<div class="ind-resumo__topo"><span class="ind-resumo__rotulo">' + esc(c.rotulo) + '</span>' + pill(c.atual.status) + '</div>' +
+        '<span class="ind-resumo__valor">' + esc(textoAvaliacao(c.atual, c.unidade, c.casas)) + '</span>' +
+        '<span class="ind-resumo__comp">' + esc(rb) + ': ' + esc(textoAvaliacao(base, c.unidade, c.casas)) + ' ' +
+        variacaoHtml(v, c.casas, rb, 'ind-forte-var') + '</span>' +
+        '</div>';
+    }).join('') + '</div>';
+  }
+
+  // ---- Painel "O que explica a variação do lucro" (6.14) ----
+  function painelLucro(d) {
+    const e = estado.comparar === 'anterior' ? d.explicacaoLucro.anterior : d.explicacaoLucro.anoAnterior;
+    const rb = rotuloBase(d), ra = d.periodo.rotulo;
+    const cor = (v) => (v >= 0 ? 'var(--melhorou)' : 'var(--piorou)');
+    return '<section id="variacao" class="ind-card ind-painel" aria-label="O que explica a variação do lucro">' +
+      '<div class="ind-painel__cab"><h2 class="ind-titulo-secao">O que explica a variação do lucro</h2>' +
+      '<span class="ind-subtitulo">Lucro líquido · ' + esc(rb) + ' → ' + esc(ra) + ' · R$ mil</span></div>' +
+      '<div class="ind-rolagem"><div class="ind-tabela-lucro">' +
+      '<div class="ind-grade-lucro ind-cab-lucro"><span>Linha da DRE</span><span class="ind-dir">' + esc(rb) + '</span>' +
+      '<span class="ind-dir">' + esc(ra) + '</span><span class="ind-dir">Variação</span><span>Peso na variação</span><span></span></div>' +
+      e.linhas.map((l) => '<div class="ind-grade-lucro ind-linha-lucro">' +
+        '<span>' + esc(l.rotulo) + '</span>' +
+        '<span class="ind-dir ind-comp">' + mil1(l.valorBase) + '</span>' +
+        '<span class="ind-dir" style="font-weight:500">' + mil1(l.valorAtual) + '</span>' +
+        '<span class="ind-dir" style="font-weight:600;color:' + cor(l.variacao) + '">' + mil1Sinal(l.variacao) + '</span>' +
+        '<div class="ind-peso"><div class="ind-peso__barra" style="width:' + l.peso.toFixed(1) + '%;background:' +
+        (l.variacao >= 0 ? 'var(--peso-mais)' : 'var(--peso-menos)') + '"></div></div>' +
+        '<button type="button" class="ind-link ind-dir" data-ver-contas="' + l.codigo + '">Ver contas</button>' +
+        '</div>').join('') +
+      '<div class="ind-grade-lucro ind-total-lucro"><span>Lucro líquido</span>' +
+      '<span class="ind-dir">' + mil1(e.lucroBase) + '</span>' +
+      '<span class="ind-dir"' + (e.lucroAtual < 0 ? ' style="color:var(--piorou)"' : '') + '>' + mil1(e.lucroAtual) + '</span>' +
+      '<span class="ind-dir" style="color:' + cor(e.variacaoLucro) + '">' + mil1Sinal(e.variacaoLucro) + '</span><span></span><span></span></div>' +
+      '</div></div>' +
+      '<span class="ind-texto-2">Cada linha abre as contas que a compõem e, dentro de cada conta, as partidas do mês.</span>' +
+      '</section>';
+  }
+
+  // ---- Matriz dos últimos 12 meses (6.16) ----
+  function matriz(d) {
+    const indicadores = [].concat.apply([], d.grupos.map((g) => g.indicadores));
+    const ultimo = d.mesesSerie.length - 1;
+    return '<section class="ind-card ind-painel" aria-label="Matriz dos últimos 12 meses">' +
+      '<div class="ind-painel__cab"><h2 class="ind-titulo-secao">Matriz dos últimos 12 meses</h2>' +
+      '<span class="ind-subtitulo">Cada célula na cor do status daquele mês</span></div>' +
+      '<div class="ind-rolagem"><div class="ind-matriz">' +
+      '<div class="ind-grade-matriz ind-cab-matriz"><span>Indicador</span>' +
+      d.mesesSerie.map((m, i) => '<span' + (i === ultimo ? ' class="ind-ultimo"' : '') + '>' + rotuloMes(m) + '</span>').join('') + '</div>' +
+      indicadores.map((ind) => '<div class="ind-grade-matriz"><span class="ind-matriz__nome">' +
+        esc(ind.unidade === 'moeda' ? ind.nome + ' (R$ mil)' : ind.nome) + '</span>' +
+        ind.meses.map((m) => {
+          const a = m.avaliacao;
+          const texto = textoCelulaMatriz(a, ind);
+          const classe = a.temDados ? 'ind-celula ind-celula--' + a.status : 'ind-celula ind-celula--vazia';
+          const status = a.temDados ? ROTULO_STATUS[a.status] : 'sem dados';
+          return '<span class="' + classe + '" title="' + esc(ind.nome + ' · ' + rotuloMes(m.anoMes) + ': ' + texto + ' · ' + status) + '">' + esc(texto) + '</span>';
+        }).join('') + '</div>').join('') +
+      '</div></div>' +
+      '<div class="ind-legenda">' + ['bom', 'atencao', 'risco', 'verificar'].map(pill).join('') +
+      '<span>Faixas definidas pela contabilidade</span></div>' +
+      '</section>';
+  }
+
+  // ---- Base de cálculo (6.17) ----
+  const BALANCO = [
+    ['ativoTotal', 'Ativo total'], ['ativoCirculante', 'Ativo circulante'], ['disponivel', 'Disponível (caixa e equivalentes)'],
+    ['estoques', 'Estoques'], ['realizavelLongoPrazo', 'Realizável a longo prazo'], ['passivoCirculante', 'Passivo circulante'],
+    ['passivoNaoCirculante', 'Passivo não circulante'], ['patrimonioLiquido', 'Patrimônio líquido'],
+    ['dividaBruta', 'Dívida bruta (empréstimos e financiamentos)'], ['dividaLiquida', 'Dívida líquida'],
+  ];
+  function itemBase(rotulo, valor, opcoes) {
+    const o = opcoes || {};
+    const etiqueta = o.etiqueta ? '<span class="ind-etiqueta ind-etiqueta--' + o.etiqueta[1] + '">' + esc(o.etiqueta[0]) + '</span>' : '';
+    return '<div class="ind-base__item"><span' + (o.forte ? ' style="font-weight:600"' : '') + '>' + esc(rotulo) + etiqueta + '</span>' +
+      '<span class="ind-base__valor" style="font-weight:' + (o.forte ? 600 : 500) + (o.negativo ? ';color:var(--piorou)' : '') + '">' + esc(valor) + '</span></div>';
+  }
+  function baseCalculo(d) {
+    const b = d.baseCalculo.atual;
+    const aberto = estado.baseAberta;
+    const custosVerificar = b.custos === 0 && b.estoques > 0;
+    const etiquetaEbitda12m = b.mesesEbitda12m < 12 ? 'base do Dív. líquida / EBITDA (' + b.mesesEbitda12m + ' meses)' : 'base do Dív. líquida / EBITDA';
+    const conteudo = !aberto ? '' :
+      '<div class="ind-base__grade">' +
+      '<div class="ind-base__col"><span class="ind-base__col-titulo">Balanço em ' + dataBr(b.dataBalanco) + '</span>' +
+      BALANCO.map((x) => itemBase(x[1], moedaCompleta(b[x[0]]))).join('') + '</div>' +
+      '<div class="ind-base__col"><span class="ind-base__col-titulo">Resultado de ' + esc(rotuloPeriodoLongo(d.periodo.inicio, d.periodo.fim)) + '</span>' +
+      itemBase('Receita líquida', moedaCompleta(b.receitaLiquida)) +
+      itemBase('(−) Custos', custosVerificar ? TRAVESSAO : moedaCompleta(b.custos), custosVerificar ? { etiqueta: ['verificar', 'verificar'] } : null) +
+      itemBase('Lucro bruto', moedaCompleta(b.lucroBruto)) +
+      itemBase('(−) Despesas operacionais, exceto D&A', moedaCompleta(b.despesasOperacionais), b.despesasPorDiferenca ? { etiqueta: ['por diferença', 'info'] } : null) +
+      itemBase('EBITDA', moedaCompleta(b.ebitda)) +
+      itemBase('(−) Depreciação e amortização', moedaCompleta(b.depreciacaoAmortizacao)) +
+      itemBase('EBIT (resultado operacional)', moedaCompleta(b.ebit)) +
+      itemBase('(+/−) Resultado financeiro', moedaCompleta(b.resultadoFinanceiro)) +
+      itemBase('(−) IR e CS', moedaCompleta(b.irCs)) +
+      itemBase('Lucro líquido', moedaCompleta(b.lucroLiquido), { forte: true, negativo: b.lucroLiquido < 0 }) +
+      itemBase('EBITDA dos últimos 12 meses', b.ebitda12m === null ? TRAVESSAO : moedaCompleta(b.ebitda12m), { etiqueta: [etiquetaEbitda12m, 'info'] }) +
+      '</div></div>';
+    return '<section class="ind-card ind-base" aria-label="Base de cálculo">' +
+      '<button type="button" class="ind-base__botao" aria-expanded="' + aberto + '">' +
+      '<span class="ind-base__titulos"><span class="ind-titulo-secao">Base de cálculo</span>' +
+      '<span class="ind-subtitulo">Valores usados nas fórmulas, em R$</span></span>' +
+      '<span class="ind-base__acao">' + (aberto ? 'Ocultar' : 'Mostrar') + '</span></button>' +
+      conteudo + '</section>';
+  }
+
+  const dfc = () => '<section class="ind-card ind-painel" style="border-style:dashed" aria-label="Demonstração do fluxo de caixa">' +
+    '<h2 class="ind-titulo-secao">Demonstração do fluxo de caixa</h2>' +
+    '<span class="ind-subtitulo">Aqui fica a DFC que a tela já tem, sem nenhuma mudança.</span></section>';
+
+  // ---- Montagem da aba ----
+  const raiz = document.getElementById('raiz');
+  const app = document.getElementById('app');
+
+  function render() {
+    raiz.querySelectorAll('.ind-aba').forEach((a) => {
+      if (a.dataset.visao === estado.visao) a.setAttribute('aria-current', 'page');
+      else a.removeAttribute('aria-current');
+    });
+    if (estado.visao === 'diretoria') {
+      app.innerHTML = '<div class="ind-card ind-estado">A visão da diretoria será construída na próxima etapa.</div>';
+      return;
+    }
+    const d = RESPOSTA;
+    app.innerHTML = [cabecalho(d), barra(d), aviso(d), pontos(d), cards(d), tabela(d), painelLucro(d), matriz(d), baseCalculo(d), dfc()].join('');
+  }
+
+  // ---- Tooltip da fórmula (6.13) ----
+  let tooltip = null;
+  let donoTooltip = null;
+  function mostrarTooltip(botao) {
+    if (donoTooltip === botao) return;
+    esconderTooltip();
+    const ind = INDICE[botao.dataset.tip];
+    const faixas = faixasTexto(ind);
+    const r = botao.getBoundingClientRect();
+    tooltip = document.createElement('div');
+    tooltip.className = 'ind-raiz ind-tip__caixa';
+    tooltip.id = 'ind-tooltip';
+    tooltip.setAttribute('role', 'tooltip');
+    tooltip.innerHTML = '<strong>' + esc(ind.formula) + '</strong><span>' + esc(ind.explicacao) + '</span>' + (faixas ? '<span>' + esc(faixas) + '</span>' : '');
+    document.body.appendChild(tooltip);
+    const limite = window.scrollX + document.documentElement.clientWidth - 280 - 8;
+    tooltip.style.top = (r.bottom + 6 + window.scrollY) + 'px';
+    tooltip.style.left = Math.max(8, Math.min(r.left + window.scrollX, limite)) + 'px';
+    botao.setAttribute('aria-describedby', 'ind-tooltip');
+    donoTooltip = botao;
+  }
+  function esconderTooltip() {
+    if (tooltip) tooltip.remove();
+    if (donoTooltip) donoTooltip.removeAttribute('aria-describedby');
+    tooltip = null;
+    donoTooltip = null;
+  }
+
+  // ---- Gaveta de contas (6.15) ----
+  function contasExemplo(linha) {
+    const fatoresBase = [0.62, 0.28, 0.10], fatoresAtual = [0.66, 0.26, 0.08];
+    return fatoresBase.map((fb, i) => {
+      const valorBase = linha.valorBase * fb, valorAtual = linha.valorAtual * fatoresAtual[i];
+      return { codConta: '9.9.9.99.000' + (i + 1), descricao: 'Conta de exemplo ' + (i + 1), valorBase, valorAtual, variacao: valorAtual - valorBase };
+    }).sort((a, b) => Math.abs(b.variacao) - Math.abs(a.variacao));
+  }
+  function abrirGaveta(codigo, origem) {
+    esconderTooltip();
+    const d = RESPOSTA;
+    const e = estado.comparar === 'anterior' ? d.explicacaoLucro.anterior : d.explicacaoLucro.anoAnterior;
+    const linha = e.linhas.find((l) => l.codigo === codigo);
+    const rb = rotuloBase(d), ra = d.periodo.rotulo;
+    const fundo = document.createElement('div');
+    fundo.className = 'ind-raiz ind-gaveta__fundo';
+    fundo.innerHTML =
+      '<aside class="ind-gaveta" role="dialog" aria-modal="true" aria-labelledby="ind-gaveta-titulo">' +
+      '<header class="ind-gaveta__cab"><div class="ind-gaveta__titulos">' +
+      '<h2 id="ind-gaveta-titulo" tabindex="-1" class="ind-titulo-secao">' + esc(linha.rotulo) + ' · contas</h2>' +
+      '<span class="ind-subtitulo">' + esc(rb) + ' → ' + esc(ra) + ' · R$</span></div>' +
+      '<button type="button" class="ind-gaveta__fechar" aria-label="Fechar">' + ICONE_FECHAR + '</button></header>' +
+      '<div class="ind-gaveta__corpo">' +
+      '<div class="ind-grade-contas ind-cab-contas"><span>Conta</span><span class="ind-dir">' + esc(rb) + '</span>' +
+      '<span class="ind-dir">' + esc(ra) + '</span><span class="ind-dir">Variação</span></div>' +
+      contasExemplo(linha).map((c) =>
+        '<button type="button" class="ind-grade-contas ind-linha-conta" aria-expanded="false" data-conta="' + c.codConta + '">' +
+        '<span class="ind-conta"><span class="ind-conta__cod">' + esc(c.codConta) + '</span><span>' + esc(c.descricao) + '</span></span>' +
+        '<span class="ind-dir ind-comp">' + moedaCompleta(c.valorBase) + '</span>' +
+        '<span class="ind-dir">' + moedaCompleta(c.valorAtual) + '</span>' +
+        '<span class="ind-dir" style="font-weight:600;color:' + (c.variacao >= 0 ? 'var(--melhorou)' : 'var(--piorou)') + '">' + moedaSinal(c.variacao) + '</span>' +
+        '</button>' +
+        '<div class="ind-lancamentos" data-lancamentos="' + c.codConta + '" hidden>' +
+        '<div class="ind-grade-lanc ind-cab-contas"><span>Data</span><span>Histórico</span><span class="ind-dir">Débito</span><span class="ind-dir">Crédito</span></div>' +
+        '<span class="ind-texto-2">Os lançamentos do mês vêm do endpoint que a tela de Fechamentos já usa.</span>' +
+        '<a class="ind-link" href="#">Abrir no fechamento</a></div>'
+      ).join('') +
+      '</div></aside>';
+    document.body.appendChild(fundo);
+
+    const fechar = () => {
+      document.removeEventListener('keydown', tecla);
+      fundo.remove();
+      if (origem && document.body.contains(origem)) origem.focus();
+    };
+    const tecla = (ev) => { if (ev.key === 'Escape') fechar(); };
+    document.addEventListener('keydown', tecla);
+    fundo.addEventListener('mousedown', (ev) => { if (ev.target === fundo) fechar(); });
+    fundo.querySelector('.ind-gaveta__fechar').addEventListener('click', fechar);
+    fundo.querySelectorAll('[data-conta]').forEach((botao) => {
+      botao.addEventListener('click', () => {
+        const painel = fundo.querySelector('[data-lancamentos="' + botao.dataset.conta + '"]');
+        const abrir = painel.hidden;
+        fundo.querySelectorAll('[data-lancamentos]').forEach((p) => { p.hidden = true; });
+        fundo.querySelectorAll('[data-conta]').forEach((b) => b.setAttribute('aria-expanded', 'false'));
+        painel.hidden = !abrir;
+        botao.setAttribute('aria-expanded', String(abrir));
+      });
+    });
+    fundo.querySelector('#ind-gaveta-titulo').focus();
+  }
+
+  // ---- Eventos ----
+  raiz.querySelector('.ind-abas').addEventListener('click', (ev) => {
+    const aba = ev.target.closest('.ind-aba');
+    if (!aba) return;
+    ev.preventDefault();
+    estado.visao = aba.dataset.visao;
+    render();
+  });
+  app.addEventListener('change', (ev) => {
+    if (ev.target.id === 'ind-comparar') {
+      estado.comparar = ev.target.value;
+      render();
+      document.getElementById('ind-comparar').focus();
+    }
+  });
+  app.addEventListener('click', (ev) => {
+    const verContas = ev.target.closest('[data-ver-contas]');
+    if (verContas) { abrirGaveta(verContas.dataset.verContas, verContas); return; }
+    if (ev.target.closest('.ind-base__botao')) {
+      estado.baseAberta = !estado.baseAberta;
+      salvarBaseAberta(estado.baseAberta);
+      render();
+      app.querySelector('.ind-base__botao').focus();
+      return;
+    }
+    const exportar = ev.target.closest('[data-exportar]');
+    if (exportar) {
+      exportar.disabled = true;
+      exportar.textContent = 'Exportando…';
+      setTimeout(() => { exportar.disabled = false; exportar.textContent = 'Exportar'; }, 1200);
+    }
+  });
+  app.addEventListener('mouseover', (ev) => { const b = ev.target.closest('.ind-tip__botao'); if (b) mostrarTooltip(b); });
+  app.addEventListener('mouseout', (ev) => {
+    const b = ev.target.closest('.ind-tip__botao');
+    if (b && !b.contains(ev.relatedTarget)) esconderTooltip();
+  });
+  app.addEventListener('focusin', (ev) => { if (ev.target.matches('.ind-tip__botao')) mostrarTooltip(ev.target); });
+  app.addEventListener('focusout', (ev) => { if (ev.target.matches('.ind-tip__botao')) esconderTooltip(); });
+  document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') esconderTooltip(); });
+  window.addEventListener('scroll', esconderTooltip, { passive: true });
+
+  render();
+})();
+
+</script>
+</body>
+</html>
