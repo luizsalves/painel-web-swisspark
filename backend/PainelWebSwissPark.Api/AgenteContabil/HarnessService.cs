@@ -20,6 +20,7 @@ public class HarnessService(
     ConsultarBacklogPorEmpresa consultarBacklogPorEmpresa,
     ConsultarProdutividadeTime consultarProdutividadeTime,
     ConsultarFechamento consultarFechamento,
+    ConsultarIndicadores consultarIndicadores,
     ILogger<HarnessService> logger)
 {
     // Cada pergunta legítima resolve em 1-2 idas à ferramenta; isso é só um
@@ -33,6 +34,38 @@ public class HarnessService(
     private static readonly TimeSpan TempoLimite = TimeSpan.FromSeconds(60);
 
     private static readonly Lazy<string> Instrucoes = new(CarregarInstrucoes);
+
+    // Os .md de AgenteContabil/Conhecimento, lidos uma vez como as instruções.
+    private static readonly Lazy<BaseDeConhecimento> Conhecimento = new(CarregarConhecimento);
+
+    private sealed record BaseDeConhecimento(string Texto, int Arquivos, int Caracteres, string? Aviso);
+
+    /// <summary>
+    /// Lê as instruções e a base de conhecimento na subida da API e registra no log o que foi
+    /// carregado. Uma falha aqui não derruba a API: só a Tati deixa de responder, como antes.
+    /// </summary>
+    public static void PreCarregar(ILogger logger)
+    {
+        try
+        {
+            logger.LogInformation("CFO Tati: instruções carregadas ({Caracteres} caracteres)", Instrucoes.Value.Length);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "CFO Tati: não foi possível carregar as instruções");
+        }
+
+        var conhecimento = Conhecimento.Value;
+        if (conhecimento.Aviso is not null)
+        {
+            logger.LogWarning("CFO Tati: seguindo sem base de conhecimento — {Aviso}", conhecimento.Aviso);
+            return;
+        }
+
+        logger.LogInformation(
+            "CFO Tati: base de conhecimento carregada ({Arquivos} arquivos, {Caracteres} caracteres)",
+            conhecimento.Arquivos, conhecimento.Caracteres);
+    }
 
     public Task<string> ExecutarAsync(
         string pergunta, string anoMes, string? empresa, List<MensagemChatDto> historico, CancellationToken cancellationToken)
@@ -59,11 +92,13 @@ public class HarnessService(
             anoMesInicial, pedido.AnoMes, pedido.Empresa ?? "todas", pedido.CodFilial,
             pedido.CodConta ?? "todas", pedido.Status ?? "todos", pedido.Historico.Count);
 
-        // As ferramentas consultam um mês por vez; num período, o mês final é o padrão.
+        // Só a consultar_indicadores recebe um período; as outras consultam um mês por vez, e o
+        // mês final é o padrão delas.
         var periodo = anoMesInicial == pedido.AnoMes
             ? $"período {pedido.AnoMes}"
-            : $"período de {anoMesInicial} a {pedido.AnoMes} (as ferramentas consultam um mês por vez: use {pedido.AnoMes}, " +
-              "o mês final, a menos que o usuário peça outro mês ou a evolução do período)";
+            : $"período de {anoMesInicial} a {pedido.AnoMes} (consultar_indicadores recebe o período inteiro; as outras " +
+              $"ferramentas consultam um mês por vez: use {pedido.AnoMes}, o mês final, a menos que o usuário peça outro " +
+              "mês ou a evolução do período)";
         var empresa = string.IsNullOrWhiteSpace(pedido.Empresa)
             ? "todas"
             : pedido.CodColigada is { } coligada ? $"{pedido.Empresa} (coligada {coligada})" : pedido.Empresa;
@@ -90,7 +125,12 @@ public class HarnessService(
 
         var inicio = DateTime.UtcNow;
 
-        var systemPrompt = $"{Instrucoes.Value}\n\n## Contexto da conversa\n\n{contexto}";
+        // Instruções e base de conhecimento são iguais em toda pergunta e vêm primeiro, para o
+        // DeepSeek reaproveitar esse começo em cache; o contexto, que muda, fica no fim.
+        var baseDeConhecimento = Conhecimento.Value.Texto;
+        var systemPrompt = baseDeConhecimento.Length == 0
+            ? $"{Instrucoes.Value}\n\n## Contexto da conversa\n\n{contexto}"
+            : $"{Instrucoes.Value}\n\n{baseDeConhecimento}\n\n## Contexto da conversa\n\n{contexto}";
 
         List<ChatTool> ferramentas =
         [
@@ -99,6 +139,7 @@ public class HarnessService(
             ConsultarBacklogPorEmpresa.Definicao,
             ConsultarProdutividadeTime.Definicao,
             ConsultarFechamento.Definicao,
+            ConsultarIndicadores.Definicao,
         ];
 
         List<ChatMessage> mensagens = [new SystemChatMessage(systemPrompt)];
@@ -218,6 +259,7 @@ public class HarnessService(
             ConsultarBacklogPorEmpresa.NomeFerramenta => consultarBacklogPorEmpresa.ExecutarAsync(input, cancellationToken),
             ConsultarProdutividadeTime.NomeFerramenta => consultarProdutividadeTime.ExecutarAsync(input, cancellationToken),
             ConsultarFechamento.NomeFerramenta => consultarFechamento.ExecutarAsync(input, cancellationToken),
+            ConsultarIndicadores.NomeFerramenta => consultarIndicadores.ExecutarAsync(input, cancellationToken),
             _ => Task.FromResult($"Ferramenta desconhecida: {nome}"),
         };
 
@@ -231,5 +273,43 @@ public class HarnessService(
         }
 
         return File.ReadAllText(caminho);
+    }
+
+    /// <summary>
+    /// Os .md da pasta Conhecimento em ordem alfabética (o prefixo 01-, 02-… decide), separados
+    /// por "---" sob o título "# Base de conhecimento". Sem a pasta, a Tati segue sem a base.
+    /// </summary>
+    private static BaseDeConhecimento CarregarConhecimento()
+    {
+        var pasta = Path.Combine(AppContext.BaseDirectory, "AgenteContabil", "Conhecimento");
+        if (!Directory.Exists(pasta))
+        {
+            return new BaseDeConhecimento(string.Empty, 0, 0, $"pasta não encontrada: {pasta}");
+        }
+
+        try
+        {
+            var conteudos = Directory.GetFiles(pasta, "*.md")
+                .OrderBy(Path.GetFileName, StringComparer.Ordinal)
+                .Select(File.ReadAllText)
+                .ToList();
+            if (conteudos.Count == 0)
+            {
+                return new BaseDeConhecimento(string.Empty, 0, 0, $"nenhum arquivo .md em {pasta}");
+            }
+
+            // O material é de referência: não muda regras nem ferramentas, e a ferramenta vence.
+            var texto = "# Base de conhecimento\n\n" +
+                "Material de referência sobre o painel. Ele não muda as suas regras nem as ferramentas; " +
+                "se divergir do que uma ferramenta devolveu, vale a ferramenta.\n\n" +
+                string.Join("\n\n---\n\n", conteudos.Select(conteudo => conteudo.Trim()));
+
+            return new BaseDeConhecimento(texto, conteudos.Count, conteudos.Sum(conteudo => conteudo.Length), null);
+        }
+        // Erro de leitura ou de permissão não derruba a subida: a Tati só segue sem a base.
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return new BaseDeConhecimento(string.Empty, 0, 0, $"erro ao ler {pasta}: {ex.Message}");
+        }
     }
 }

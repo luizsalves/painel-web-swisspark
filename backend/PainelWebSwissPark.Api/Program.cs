@@ -205,6 +205,7 @@ builder.Services.AddScoped<ConsultarBacklogStatus>();
 builder.Services.AddScoped<ConsultarBacklogPorEmpresa>();
 builder.Services.AddScoped<ConsultarProdutividadeTime>();
 builder.Services.AddScoped<ConsultarFechamento>();
+builder.Services.AddScoped<ConsultarIndicadores>();
 builder.Services.AddScoped<ModelClient>();
 builder.Services.AddScoped<HarnessService>();
 
@@ -243,6 +244,10 @@ builder.Services.AddCors(opts =>
 });
 
 var app = builder.Build();
+
+// A CFO Tati lê as instruções e a base de conhecimento uma vez só; lendo aqui, na subida,
+// o log já mostra o que foi carregado.
+HarnessService.PreCarregar(app.Services.GetRequiredService<ILogger<HarnessService>>());
 
 if (app.Environment.IsDevelopment())
 {
