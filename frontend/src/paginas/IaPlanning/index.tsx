@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Cpu, Sparkles, BarChart3, X, ChevronDown, ArrowUp } from "lucide-react";
+import { Cpu, Sparkles, BarChart3, X, ChevronDown, ArrowUp, SquarePen, Users, ListChecks, FileSearch, TrendingUp } from "lucide-react";
 import AppLayout from "../../componentes/layout/AppLayout";
 import UserMenu from "../../componentes/layout/UserMenu";
 import BotaoFiltros from "../../componentes/filtros/BotaoFiltros";
@@ -20,6 +20,14 @@ const SUGESTOES_RAPIDAS = [
   "Quem mais fechou contas este mês?",
   "Como está a conciliação do período?",
   "Crie um gráfico por empresa",
+];
+
+// Os 4 assuntos da Tati, com o mesmo texto das opções da saudação dela.
+const ASSUNTOS_TATI = [
+  { rotulo: "Produtividade do time", pergunta: "Ver a produtividade do time", Icone: Users },
+  { rotulo: "Acompanhamento da conciliação", pergunta: "Acompanhar a conciliação do período", Icone: ListChecks },
+  { rotulo: "Fechamento de uma conta", pergunta: "Verificar o fechamento de uma conta", Icone: FileSearch },
+  { rotulo: "Saúde financeira", pergunta: "Ver a saúde financeira da empresa", Icone: TrendingUp },
 ];
 
 function horarioAtual(): string {
@@ -119,7 +127,7 @@ function GraficoTatiCard({ grafico, onRemover }: { grafico: GraficoTati; onRemov
   const maior = Math.max(...grafico.itens.map((item) => Math.abs(item.valor)), 1);
 
   return (
-    <div className="sp-card ia-grafico-tati">
+    <div className="sp-card ia-grafico-tati" id={`grafico-tati-${grafico.id}`}>
       <div className="ia-grafico-tati__topo">
         <div>
           <h2 className="sp-card__title">{grafico.titulo}</h2>
@@ -160,6 +168,20 @@ export default function IaPlanning() {
   const listaMensagensRef = useRef<HTMLDivElement>(null);
   const areaGraficosRef = useRef<HTMLDivElement>(null);
   const mostrarGraficos = () => areaGraficosRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  const mostrarGrafico = (id: number) =>
+    document.getElementById(`grafico-tati-${id}`)?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+
+  // O que a Tati recebe dos filtros da tela, mostrado na barra lateral.
+  const contextoAtual = [
+    { rotulo: "Empresa", valor: empresa || "Todas as empresas" },
+    { rotulo: "Período", valor: formatarPeriodo(inicio, fim) },
+    {
+      rotulo: "Filial",
+      valor: consolidada ? "Todas (consolidadas)" : filtroContas.codFilial !== undefined ? `Filial ${filtroContas.codFilial}` : "Todas",
+    },
+    ...(filtroContas.codConta ? [{ rotulo: "Conta", valor: filtroContas.codConta }] : []),
+    ...(filtroContas.status ? [{ rotulo: "Status", valor: descreverStatus(filtros) }] : []),
+  ];
 
   useEffect(() => {
     const elemento = listaMensagensRef.current;
@@ -219,10 +241,13 @@ export default function IaPlanning() {
     }
   };
 
+  // Nova conversa começa do zero, inclusive sem os gráficos da conversa anterior.
   const limparConversa = () => {
     setMensagens([mensagemInicial()]);
     setPergunta("");
+    setGraficosTati([]);
   };
+  const conversaVazia = mensagens.length <= 1 && graficosTati.length === 0;
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -249,7 +274,9 @@ export default function IaPlanning() {
         )}
 
         <section className="sp-ia-planning__workspace">
-          {/* Em cima, os gráficos que a Tati cria (o mais novo primeiro); embaixo, a conversa. */}
+          {/* Em cima, os gráficos que a Tati cria (o mais novo primeiro); embaixo, a conversa;
+              à direita, a barra lateral. */}
+          <div className="ia-principal">
           <div className="sp-ia-planning__charts" ref={areaGraficosRef}>
             <div
               className={`ia-graficos-tati${graficosTati.length === 0 ? " ia-graficos-tati--vazio" : ""}`}
@@ -281,7 +308,7 @@ export default function IaPlanning() {
                 type="button"
                 className="ia-ask__limpar"
                 onClick={limparConversa}
-                disabled={isEnviando || mensagens.length <= 1}
+                disabled={isEnviando || conversaVazia}
               >
                 Limpar conversa
               </button>
@@ -387,6 +414,59 @@ export default function IaPlanning() {
               </>
             )}
           </aside>
+          </div>
+
+          {/* Barra lateral, como a do ChatGPT. Some nas telas estreitas, onde as sugestões e o
+              "Limpar conversa" do chat fazem esse papel. */}
+          <nav className="ia-lateral" aria-label="Atalhos da CFO Tati">
+            <button type="button" className="ia-lateral__nova" onClick={limparConversa} disabled={isEnviando || conversaVazia}>
+              <SquarePen size={17} /> Nova conversa
+            </button>
+
+            <div className="ia-lateral__secao">
+              <h3>Assuntos</h3>
+              <ul>
+                {ASSUNTOS_TATI.map(({ rotulo, pergunta: perguntaDoAssunto, Icone }) => (
+                  <li key={rotulo}>
+                    <button type="button" className="ia-lateral__item" disabled={isEnviando} onClick={() => void enviarPergunta(perguntaDoAssunto)}>
+                      <Icone size={16} /> {rotulo}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="ia-lateral__secao">
+              <h3>Usando agora</h3>
+              <dl className="ia-lateral__contexto">
+                {contextoAtual.map(({ rotulo, valor }) => (
+                  <div key={rotulo}>
+                    <dt>{rotulo}</dt>
+                    <dd title={valor}>{valor}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+
+            <div className="ia-lateral__secao">
+              <h3>Gráficos da conversa</h3>
+              {graficosTati.length === 0 ? (
+                <p className="ia-lateral__vazio">Nenhum gráfico ainda.</p>
+              ) : (
+                <ul>
+                  {graficosTati.map((grafico) => (
+                    <li key={grafico.id}>
+                      <button type="button" className="ia-lateral__item" onClick={() => mostrarGrafico(grafico.id)}>
+                        <BarChart3 size={16} />
+                        <span>{grafico.titulo}</span>
+                        <small>{grafico.horario}</small>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </nav>
         </section>
       </main>
     </AppLayout>
