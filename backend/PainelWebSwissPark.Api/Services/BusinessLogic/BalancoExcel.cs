@@ -54,6 +54,13 @@ public static class BalancoExcel
         var cabecalho = Estilo(negrito: true, cor: 40, fundo: 43, borda: true);
         var cabecalhoValor = Estilo(negrito: true, cor: 40, fundo: 43, borda: true);
         cabecalhoValor.Alignment = HorizontalAlignment.Right;
+        var linhaAssinatura = Estilo();
+        linhaAssinatura.BorderBottom = BorderStyle.Thin;
+        linhaAssinatura.BottomBorderColor = 41;
+        var rotuloAssinatura = Estilo(negrito: true, tamanho: 9);
+        rotuloAssinatura.Alignment = HorizontalAlignment.Center;
+        var dataAssinatura = Estilo(cor: 42, tamanho: 9);
+        dataAssinatura.Alignment = HorizontalAlignment.Center;
         var estilos = new Dictionary<string, (ICellStyle Texto, ICellStyle Valor)>
         {
             ["linha"] = (Estilo(borda: true), Estilo(valor: true, borda: true)),
@@ -132,6 +139,16 @@ public static class BalancoExcel
             Celula(sheet, rowIndex++, 0, UltimaColuna,
                 $"Ativo e passivo diferem em R$ {diferenca.ToString("N2", cultura)}. Há lançamentos desbalanceados ou contas fora do ativo e do passivo.",
                 label, 30);
+
+        // Espaço para o sócio (embaixo do ativo) e o contador (embaixo do passivo) assinarem.
+        rowIndex++;
+        foreach (var (de, ate, papel) in new[] { (0, 1, "Sócio"), (3, 4, "Contador") })
+        {
+            Celula(sheet, rowIndex, de, ate, "", linhaAssinatura, 40);
+            Celula(sheet, rowIndex + 1, de, ate, $"Assinatura do {papel}", rotuloAssinatura);
+            Celula(sheet, rowIndex + 2, de, ate, "Data: ____/____/______", dataAssinatura);
+        }
+        rowIndex += 4;
         Celula(sheet, rowIndex, 0, UltimaColuna,
             $"Emitido em {DateTime.Now.ToString("dd/MM/yyyy HH:mm", cultura)} pelo Painel SwissPark. As contas de cada linha estão na aba Composição.", label);
         workbook.SetPrintArea(0, 0, UltimaColuna, 0, rowIndex);

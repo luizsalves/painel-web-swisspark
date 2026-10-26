@@ -78,6 +78,13 @@ public static class DfcExcel
         var detalheValor = Estilo(cor: 42, tamanho: 9, valor: true);
         var totalTexto = Estilo(negrito: true, cor: 40, fundo: 43);
         var totalValor = Estilo(negrito: true, cor: 40, fundo: 43, valor: true);
+        var linhaAssinatura = Estilo();
+        linhaAssinatura.BorderBottom = BorderStyle.Thin;
+        linhaAssinatura.BottomBorderColor = 41;
+        var rotuloAssinatura = Estilo(negrito: true, tamanho: 9);
+        rotuloAssinatura.Alignment = HorizontalAlignment.Center;
+        var dataAssinatura = Estilo(cor: 42, tamanho: 9);
+        dataAssinatura.Alignment = HorizontalAlignment.Center;
 
         ICell Celula(int row, int start, int end, string texto, ICellStyle estilo, float altura = 20)
         {
@@ -163,7 +170,16 @@ public static class DfcExcel
                 "\"Variações não classificadas\" reúne contas que movimentaram no período e ainda não têm linha definida na DFC. " +
                 "Elas mantêm o fechamento com o caixa, mas precisam ser classificadas com a contabilidade.", label, 30);
         }
-        rowIndex++;
+
+        // Espaço para o sócio e o contador assinarem; as colunas 3 e 4 só separam os dois.
+        rowIndex += 2;
+        foreach (var (de, ate, papel) in new[] { (0, 2, "Sócio"), (5, UltimaColuna, "Contador") })
+        {
+            Celula(rowIndex, de, ate, "", linhaAssinatura, 40);
+            Celula(rowIndex + 1, de, ate, $"Assinatura do {papel}", rotuloAssinatura);
+            Celula(rowIndex + 2, de, ate, "Data: ____/____/______", dataAssinatura);
+        }
+        rowIndex += 4;
         Celula(rowIndex, 0, UltimaColuna, $"Emitido em {DateTime.Now.ToString("dd/MM/yyyy HH:mm", cultura)} pelo Painel SwissPark.", label);
 
         workbook.SetPrintArea(0, 0, UltimaColuna, 0, rowIndex);
