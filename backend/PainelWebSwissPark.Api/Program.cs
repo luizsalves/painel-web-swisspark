@@ -199,6 +199,7 @@ builder.Services.AddScoped<DashboardPeriodoConsolidadoService>();
 // projeto.
 // ==========================================================================
 builder.Services.Configure<DeepSeekOptions>(builder.Configuration.GetSection(DeepSeekOptions.SectionName));
+builder.Services.Configure<AgenteContabilOptions>(builder.Configuration.GetSection(AgenteContabilOptions.SectionName));
 
 builder.Services.AddScoped<ConsultarSaldo>();
 builder.Services.AddScoped<ConsultarBacklogStatus>();
@@ -206,6 +207,9 @@ builder.Services.AddScoped<ConsultarBacklogPorEmpresa>();
 builder.Services.AddScoped<ConsultarProdutividadeTime>();
 builder.Services.AddScoped<ConsultarFechamento>();
 builder.Services.AddScoped<ConsultarIndicadores>();
+builder.Services.AddScoped<ConsultarBalancete>();
+builder.Services.AddScoped<ConsultarBalanco>();
+builder.Services.AddScoped<ConsultarDfc>();
 builder.Services.AddScoped<ModelClient>();
 builder.Services.AddScoped<HarnessService>();
 
@@ -247,7 +251,9 @@ var app = builder.Build();
 
 // A CFO Tati lê as instruções e a base de conhecimento uma vez só; lendo aqui, na subida,
 // o log já mostra o que foi carregado.
-HarnessService.PreCarregar(app.Services.GetRequiredService<ILogger<HarnessService>>());
+HarnessService.PreCarregar(
+    app.Services.GetRequiredService<ILogger<HarnessService>>(),
+    app.Services.GetRequiredService<IOptions<AgenteContabilOptions>>().Value.VersaoInstrucoes);
 
 if (app.Environment.IsDevelopment())
 {
