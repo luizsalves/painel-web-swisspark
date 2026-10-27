@@ -1,6 +1,6 @@
 # Tati Analista — Fase 1: teste manual (Apêndice A)
 
-Data: 27/10/2026. Branch `feature/tati-modulos`, instruções v3, 9 ferramentas, limites de 6 idas ao modelo e 60 s (90 s na 3ª rodada, por decisão do Luiz).
+Data: 27/10/2026. Branch `feature/tati-modulos`, instruções v3, 9 ferramentas, limites de 6 idas ao modelo e 60 s (90 s na 3ª e na 4ª rodada, por decisão do Luiz).
 
 ## Como foi feito
 
@@ -51,15 +51,30 @@ Decisões (27/10/2026, aceitando as recomendações do relatório final):
 |---|---|---|---|---|---|
 | 2 | Indicadores da AEPL em atenção ou crítico | consultar_indicadores | os mesmos status e valores; nenhum alarme que a ferramenta não deu | batem | 6,7 s |
 | 4 | Balancete da AEPL | consultar_balancete | aponta o 1.2.2 Investimentos credor como "observação de leitura (não é alerta da ferramenta)"; explica que o PL do balancete difere do balanço porque o resultado ainda está nas contas 3 em diante; não chama mais de "movimento do mês" o crédito bruto | batem (conferidas também as linhas 1.2.1, 2.2, 3.1.1, 3.1.2, 5.4, 6 e 7) | 7,7 s |
-| 4b | Balancete da AGV Campinas | consultar_balancete | truncado (50 de 52); a mesma explicação do PL; débitos e créditos ditos brutos | batem | 33,8 s (28,4 s só na consulta ao banco) |
+| 4b | Balancete da AGV Campinas | consultar_balancete | truncado (50 de 52); a mesma explicação do PL; disse "os débitos e créditos acima são brutos" sem ter mostrado débitos e créditos, e "mostrei as 50 contas" mostrando cerca de 20 grupos (corrigido na 4ª rodada) | batem | 33,8 s (28,4 s só na consulta ao banco) |
+
+## 4ª rodada: correção da v3 depois da revisão do árbitro
+
+A v3 da 3ª rodada dizia que o PL do balancete é sempre menor que o do balanço, o que só vale com lucro no ano; a AEPL, com prejuízo, tem o PL do balancete maior (R$ 9.723.544,33 × R$ 8.770.587,45 no balanço). A v3 passou a dizer: menor com lucro, maior com prejuízo, explicando sem calcular a diferença; contas redutoras e Lucros/Prejuízos Acumulados não contam como "sinal contrário"; a diferença do PL não pede conferência; débitos e créditos só são explicados quando citados; resumo é avisado.
+
+| # | Pergunta | Ferramenta | Resposta | Números | Tempo |
+|---|---|---|---|---|---|
+| 4 | Balancete da AEPL | consultar_balancete | resumo avisado ("até o nível 3, 47 linhas, sem corte"); 1.2.2 Investimentos credor apontado como leitura dela; PL do balancete explicado sem conta e sem pedir conferência | batem | 7,9 s |
+| 4b | Balancete da AGV Campinas | consultar_balancete | "a ferramenta trouxe as 50 contas de maior saldo de um total de 52 — o que segue é um resumo"; tabela com saldo anterior, débitos, créditos e saldo atual; débitos e créditos ditos brutos | batem (conferidas as linhas 1, 1.1.1, 1.1.2, 1.2, 2.1, 2.2, 2.3, 3, 5 e 8) | 46,8 s (39,9 s só na consulta ao banco) |
+| — | Por que o PL do balancete da AEPL é diferente do PL do balanço? | nenhuma | conceito: o resultado não encerrado fica nas contas 3 em diante; menor com lucro, maior com prejuízo; diferença normal; oferece trazer os dois valores | sem número | 2,5 s |
 
 ## Observações
 
 - Pergunta 4 do Apêndice A ("espera truncado"): com o padrão até o nível 3, a AEPL tem 47 linhas e não corta; o corte foi testado com a AGV (4b) e nos testes unitários.
 - Pergunta 9 do Apêndice A ("espera não tenho esse dado"): a AEPL Participações tem saldos em dez/2015 e receita zero no ano, então a resposta certa é "zero". Sem dado nenhum, a pergunta 9b (2014).
-- Os tempos ficaram entre 1,5 s e 9,8 s. Nesta rodada o banco respondeu rápido; em medições anteriores, uma consulta da DFC da AGV levou até 44,6 s — com mais de uma ferramenta lenta, os 60 s podem estourar (`AgenteContabil:TempoLimiteSegundos`).
+- Tempos: na 1ª e na 2ª rodada, de 1,5 s a 9,8 s; na 3ª e na 4ª, o banco estava lento e o balancete da AGV levou 33,8 s e 46,8 s (28,4 s e 39,9 s só na consulta). Em medições fora da Tati, a DFC da AGV levou até 44,6 s e uma consulta de indicadores da AGV, 65 s. Por isso o limite passou de 60 s para 90 s (`AgenteContabil:TempoLimiteSegundos`).
 - Em 2026-09 todos os lançamentos da coligada 1 estão na filial 1; as filiais das SCPs não têm movimento próprio.
 - Pergunta 4, 2ª rodada: os números conferiam, mas a Tati apontou por conta própria o grupo 1.2.2 Investimentos com saldo credor, o que a regra da v3 ainda não permitia, e citou como "movimento do mês" da receita o crédito bruto (R$ 238.085,24; a receita líquida do mês, da `consultar_indicadores`, desconta os débitos de R$ 13.568,66). As duas coisas foram resolvidas na 3ª rodada, acima.
-- Tempo: na 3ª rodada o banco estava lento e a consulta do balancete da AGV levou 28,4 s sozinha; na investigação, uma consulta de indicadores da AGV chegou a 65 s. Por isso o limite passou para 90 s.
+- Ajustes de texto para a próxima versão das instruções (não mudam número):
+  - na 4ª rodada, a Tati escreveu para o usuário "use `consultar_balanco`" (nome interno da ferramenta) em vez de "o balanço";
+  - ao apontar o 1.2.2 Investimentos credor, arriscou causas ("pode ser baixa de investimento ou lançamento na conta errada"); a v3 só autoriza sugerir conferir com a contabilidade;
+  - na 4b, citou o saldo credor da receita (R$ 12.009.602,70) ao falar do resultado do ano, o que pode ser lido como se fosse o resultado.
+- Cada pergunta de cada rodada foi feita uma vez; a resposta do modelo varia de uma vez para outra.
+- Pendência para quando o front puder mudar: a barra lateral da tela nova (PR #9) manda "Ver a saúde financeira da empresa" como 4º assunto, e a v3 oferece "Ver a saúde financeira e as demonstrações da empresa". As duas funcionam; só o texto difere.
 - Perguntas 10 e 10b: "3 fechadas" no backlog e "4 contas" na produtividade não se contradizem. O backlog conta quantas contas estão hoje com status Fechado; a produtividade conta as ações de fechamento registradas no mês. São medidas diferentes, e a Tati não deve somar nem comparar uma com a outra.
 - As saídas de referência (inclusive backlog, produtividade e a conferência das 19 parcelas) ficaram na pasta da sessão, fora do repositório.
