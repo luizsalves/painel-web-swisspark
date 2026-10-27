@@ -23,7 +23,8 @@ public class ConsultarIndicadoresTests(ITestOutputHelper saida)
             Dfc = RegrasIndicadoresTests.DfcAepl(),
         };
         var resposta = ConsultarIndicadores.MontarResposta(
-            "AEPL PARTICIPACOES LTDA", 17, filial: null, new DateTime(2026, 3, 1), new DateTime(2026, 3, 1), resultado);
+            new LocalizarEmpresa.Empresa("AEPL PARTICIPACOES LTDA", 17, Filial: null, Filiais: []),
+            new DateTime(2026, 3, 1), new DateTime(2026, 3, 1), resultado);
         json = JsonSerializer.Serialize(resposta, Opcoes);
         return JsonDocument.Parse(json).RootElement;
     }
@@ -96,7 +97,8 @@ public class ConsultarIndicadoresTests(ITestOutputHelper saida)
     public void Sem_nenhum_lancamento_diz_que_nao_ha_dados()
     {
         var resposta = ConsultarIndicadores.MontarResposta(
-            "EMPRESA SEM LANCAMENTOS", 99, filial: null, new DateTime(2026, 3, 1), new DateTime(2026, 3, 1), new IndicadoresViewModel());
+            new LocalizarEmpresa.Empresa("EMPRESA SEM LANCAMENTOS", 99, Filial: null, Filiais: []),
+            new DateTime(2026, 3, 1), new DateTime(2026, 3, 1), new IndicadoresViewModel());
         var raiz = JsonDocument.Parse(JsonSerializer.Serialize(resposta, Opcoes)).RootElement;
 
         Assert.True(raiz.GetProperty("semDados").GetBoolean());
