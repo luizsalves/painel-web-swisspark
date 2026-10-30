@@ -20,6 +20,8 @@ public class IndicadoresTotvsRepository(AppDbContext context)
     // Saldos devedores positivos. TIPOGERACAO 'A' marca as partidas de apuração
     // que zeram as contas de resultado no encerramento do exercício; sem elas
     // o movimento das contas 3 a 8 é a DRE do período.
+    // OPTION (RECOMPILE): o plano guardado na primeira execução servia mal às outras
+    // coligadas. Montado para uma pequena, levava a AGV de 0,2 s para até 69 s.
     private static string SqlSaldos(BaseTotvs baseDados)
     {
         var banco = BasesTotvs.NomeDoBanco(baseDados);
@@ -45,6 +47,7 @@ public class IndicadoresTotvsRepository(AppDbContext context)
                 CAST(SUM(CASE WHEN DATA >= @inicio AND ISNULL(TIPOGERACAO, '') <> 'A' THEN DEBITO - CREDITO ELSE 0 END) AS decimal(28,4)) AS MOVIMENTOSEMAPURACAO
             FROM MOVIMENTOS
             GROUP BY CODCONTA
+            OPTION (RECOMPILE)
             """;
     }
 
