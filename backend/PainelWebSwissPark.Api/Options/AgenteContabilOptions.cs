@@ -24,5 +24,5 @@ public class AgenteContabilOptions
     /// Qual AgenteContabil/Instrucoes/instrucoes-{versão}.md a Tati segue. As versões antigas
     /// continuam no build, para dar para voltar trocando só este valor.
     /// </summary>
-    public string VersaoInstrucoes { get; init; } = "v3";
+    public string VersaoInstrucoes { get; init; } = "v4";
 }

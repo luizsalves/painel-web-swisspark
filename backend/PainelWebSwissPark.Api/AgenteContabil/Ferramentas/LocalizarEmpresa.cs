@@ -41,7 +41,7 @@ public static class LocalizarEmpresa
         public object? Erro => invalidos.Count == 0 ? null : new
         {
             erro = $"Parâmetro inválido: {string.Join(", ", invalidos)}. codColigada, codFilial e nivel são números " +
-                "inteiros; detalhado é true ou false; os demais são texto.",
+                "inteiros; detalhado é true ou false; indicadores é uma lista de textos; os demais são texto.",
         };
 
         public string? Texto(string nome)
@@ -73,6 +73,21 @@ public static class LocalizarEmpresa
 
             invalidos.Add(nome);
             return false;
+        }
+
+        /// <summary>Uma lista de textos; um texto só também vale, como lista de um.</summary>
+        public IReadOnlyList<string>? Lista(string nome)
+        {
+            if (Ausente(nome, out var valor)) return null;
+            if (valor.ValueKind == JsonValueKind.String) return [valor.GetString()!.Trim()];
+            if (valor.ValueKind == JsonValueKind.Array && valor.EnumerateArray().All(item => item.ValueKind == JsonValueKind.String))
+            {
+                var itens = valor.EnumerateArray().Select(item => item.GetString()!.Trim()).Where(item => item.Length > 0).ToList();
+                return itens.Count == 0 ? null : itens;
+            }
+
+            invalidos.Add(nome);
+            return null;
         }
 
         private bool Ausente(string nome, out JsonElement valor) =>

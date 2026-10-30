@@ -30,6 +30,7 @@ public class HarnessService(
     ConsultarBalancete consultarBalancete,
     ConsultarBalanco consultarBalanco,
     ConsultarDfc consultarDfc,
+    ConsultarHistoricoIndicadores consultarHistoricoIndicadores,
     IOptions<AgenteContabilOptions> opcoes,
     ILogger<HarnessService> logger)
 {
@@ -119,8 +120,9 @@ public class HarnessService(
         // padrão delas (o balanço da tela também é a posição no fim do período).
         var periodo = anoMesInicial == pedido.AnoMes
             ? $"período {pedido.AnoMes}"
-            : $"período de {anoMesInicial} a {pedido.AnoMes} (consultar_indicadores e consultar_dfc recebem o período " +
-              $"inteiro; as outras ferramentas consultam um mês por vez: use {pedido.AnoMes}, o mês final, a menos que o " +
+            : $"período de {anoMesInicial} a {pedido.AnoMes} (consultar_indicadores, consultar_dfc e " +
+              $"consultar_historico_indicadores recebem o período inteiro; as outras ferramentas consultam um mês por vez: " +
+              $"use {pedido.AnoMes}, o mês final, a menos que o " +
               "usuário peça outro mês ou a evolução do período)";
         var empresa = string.IsNullOrWhiteSpace(pedido.Empresa)
             ? "todas"
@@ -167,6 +169,7 @@ public class HarnessService(
             ConsultarBalancete.Definicao,
             ConsultarBalanco.Definicao,
             ConsultarDfc.Definicao,
+            ConsultarHistoricoIndicadores.Definicao,
         ];
 
         List<ChatMessage> mensagens = [new SystemChatMessage(systemPrompt)];
@@ -180,6 +183,9 @@ public class HarnessService(
         }
 
         mensagens.Add(new UserChatMessage(pergunta));
+
+        // O que as ferramentas devolveram nesta resposta: é contra isso que o gráfico é conferido.
+        var resultadosDaResposta = new List<ValidadorGraficoTati.ResultadoDeFerramenta>();
 
         try
         {
@@ -216,7 +222,7 @@ public class HarnessService(
                         return "Não consegui gerar uma resposta agora. Tente novamente.";
                     }
 
-                    return await GarantirOpcoesAsync(texto, mensagens, tokenComTimeout);
+                    return Validado(await GarantirOpcoesAsync(texto, mensagens, tokenComTimeout), resultadosDaResposta);
                 }
 
                 mensagens.Add(new AssistantChatMessage(resposta));
@@ -224,6 +230,7 @@ public class HarnessService(
                 foreach (var chamada in resposta.ToolCalls)
                 {
                     var resultado = await ExecutarComLogAsync(chamada, tokenComTimeout);
+                    resultadosDaResposta.Add(new(chamada.FunctionName, resultado));
                     mensagens.Add(new ToolChatMessage(chamada.Id, resultado));
                 }
             }
@@ -236,6 +243,20 @@ public class HarnessService(
 
         logger.LogWarning("CFO Tati: estourou o limite de {MaxIteracoes} idas ao modelo sem resposta final", MaxIteracoes);
         return "Precisei consultar dados demais pra essa pergunta e não cheguei a uma resposta. Tenta reformular de um jeito mais específico?";
+    }
+
+    /// <summary>
+    /// O texto final, sem o bloco de gráfico se algum número dele não saiu das ferramentas desta
+    /// resposta. O motivo vai para o log, sem os valores; o modelo não é chamado de novo.
+    /// </summary>
+    private string Validado(string texto, IReadOnlyList<ValidadorGraficoTati.ResultadoDeFerramenta> resultados)
+    {
+        var validacao = ValidadorGraficoTati.Validar(texto, resultados);
+        if (validacao.Motivo is not null)
+        {
+            logger.LogWarning("CFO Tati: gráfico removido da resposta — {Motivo}", validacao.Motivo);
+        }
+        return validacao.Texto;
     }
 
     // As opções numeradas são obrigatórias (a tela vira botões 1, 2, 3...). Se o
@@ -368,6 +389,7 @@ public class HarnessService(
             ConsultarBalancete.NomeFerramenta => consultarBalancete.ExecutarAsync(input, cancellationToken),
             ConsultarBalanco.NomeFerramenta => consultarBalanco.ExecutarAsync(input, cancellationToken),
             ConsultarDfc.NomeFerramenta => consultarDfc.ExecutarAsync(input, cancellationToken),
+            ConsultarHistoricoIndicadores.NomeFerramenta => consultarHistoricoIndicadores.ExecutarAsync(input, cancellationToken),
             _ => Task.FromResult(JsonSerializer.Serialize(new { erro = $"Ferramenta desconhecida: {nome}" }, OpcoesJson)),
         };
 

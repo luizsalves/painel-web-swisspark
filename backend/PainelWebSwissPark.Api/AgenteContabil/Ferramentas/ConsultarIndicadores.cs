@@ -293,7 +293,7 @@ public class ConsultarIndicadores(
     };
 
     /// <summary>O código do indicador pelo código ou pelo nome; nulo se não achar ou se achar mais de um.</summary>
-    private static string? AcharIndicador(string texto)
+    internal static string? AcharIndicador(string texto)
     {
         var procurado = SoLetrasENumeros(texto);
         if (Sinonimos.TryGetValue(procurado, out var sinonimo))
@@ -317,7 +317,7 @@ public class ConsultarIndicadores(
     private static string SoLetrasENumeros(string texto) =>
         string.Concat(EmpresasConsolidadas.Normalizar(texto).Where(char.IsLetterOrDigit));
 
-    private static string Unidade(ConfigIndicador config) => config.Unidade switch
+    internal static string Unidade(ConfigIndicador config) => config.Unidade switch
     {
         UnidadeIndicador.Percentual => "percentual",
         UnidadeIndicador.Multiplo => "multiplo",
@@ -326,7 +326,7 @@ public class ConsultarIndicadores(
     };
 
     /// <summary>Na unidade da tela e com as casas dela: percentual em pontos (0,7179 → 71.79).</summary>
-    private static double? NaUnidade(double? valor, ConfigIndicador config) => valor is not { } v ? null
+    internal static double? NaUnidade(double? valor, ConfigIndicador config) => valor is not { } v ? null
         : config.Unidade == UnidadeIndicador.Percentual
             ? Math.Round(v * 100, config.Casas, MidpointRounding.AwayFromZero)
             : Math.Round(v, config.Unidade == UnidadeIndicador.Moeda ? 2 : config.Casas, MidpointRounding.AwayFromZero);

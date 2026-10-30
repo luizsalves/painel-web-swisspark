@@ -84,6 +84,26 @@ internal sealed class IndicadoresFalso(Dictionary<DateTime, IndicadoresViewModel
     }
 }
 
+/// <summary>A base de cada mês (AAAA-MM); mês sem base volta zerado, como uma empresa sem lançamentos.</summary>
+internal sealed class IndicadoresMensaisFalso(Dictionary<string, BaseCalculoIndicadoresViewModel> porMes) : IIndicadoresMensaisService
+{
+    public ConcurrentQueue<(DateTime Inicio, DateTime Fim, short Coligada, short? Filial)> Chamadas { get; } = new();
+
+    public Task<List<BaseCalculoMensalViewModel>> CalcularAsync(
+        DateTime inicio, DateTime fim, short codColigada, short? codFilial, CancellationToken cancellationToken)
+    {
+        Chamadas.Enqueue((inicio, fim, codColigada, codFilial));
+        // Como o service: um item por mês do intervalo, com o fim fora.
+        var meses = new List<BaseCalculoMensalViewModel>();
+        for (var mes = inicio; mes < fim; mes = mes.AddMonths(1))
+        {
+            var anoMes = mes.ToString("yyyy-MM", System.Globalization.CultureInfo.InvariantCulture);
+            meses.Add(new BaseCalculoMensalViewModel { AnoMes = anoMes, BaseCalculo = porMes.GetValueOrDefault(anoMes) ?? new() });
+        }
+        return Task.FromResult(meses);
+    }
+}
+
 internal static class Ferramenta
 {
     /// <summary>Os escopos de DI que as ferramentas abrem para o período anterior, com o mesmo service falso.</summary>

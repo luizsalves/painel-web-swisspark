@@ -210,6 +210,7 @@ builder.Services.AddScoped<ConsultarIndicadores>();
 builder.Services.AddScoped<ConsultarBalancete>();
 builder.Services.AddScoped<ConsultarBalanco>();
 builder.Services.AddScoped<ConsultarDfc>();
+builder.Services.AddScoped<ConsultarHistoricoIndicadores>();
 builder.Services.AddScoped<ModelClient>();
 builder.Services.AddScoped<HarnessService>();
 

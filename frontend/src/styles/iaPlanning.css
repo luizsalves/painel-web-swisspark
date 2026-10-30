@@ -374,12 +374,11 @@
 .ia-grafico-tati__topo small { color: #617bc5; font-size: 11px; }
 .ia-grafico-tati__topo button { display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid #dbe4fb; border-radius: 8px; background: #fff; color: #617bc5; cursor: pointer; }
 .ia-grafico-tati__topo button:hover { background: #fff1f1; border-color: #f3b4b4; color: #c53030; }
-.ia-grafico-tati__lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-.ia-grafico-tati__lista li { display: grid; grid-template-columns: minmax(120px, 38%) 1fr auto; align-items: center; gap: 10px; font-size: 12px; }
-.ia-grafico-tati__label { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: #25325f; }
-.ia-grafico-tati__trilho { height: 12px; border-radius: 6px; background: #edf2fd; overflow: hidden; }
-.ia-grafico-tati__barra { display: block; height: 100%; min-width: 2px; border-radius: 6px; background: linear-gradient(90deg, #7fa9ec, #1f3fbf); }
-.ia-grafico-tati__lista b { min-width: 52px; text-align: right; color: #0b1247; }
+/* O desenho (Recharts) ocupa a largura do card e nunca empurra a página para o lado. */
+.sp-card.ia-grafico-tati { min-width: 0; padding: 16px 18px 14px; }
+.ia-grafico-tati__desenho { width: 100%; min-width: 0; overflow: hidden; }
+.ia-grafico-tati__carregando { display: grid; place-items: center; height: 220px; margin: 0; color: #617bc5; font-size: 13px; }
+.ia-grafico-tati__fonte { margin: 8px 0 0; color: #617bc5; font-size: 11px; overflow-wrap: anywhere; }
 
 .sp-tati-chat__ver-grafico { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; padding: 7px 12px; border: 1px solid #c9d6f5; border-radius: 10px; background: #f4f7ff; color: #1f3a8a; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .sp-tati-chat__ver-grafico:hover { background: #e3ebff; border-color: #4f6fe0; }
@@ -402,7 +401,7 @@
   .sp-planning-shell .ia-ask__mensagens { padding-inline: max(4px, calc((100% - 880px) / 2)); }
   .ia-ask__sugestoes, .ia-ask__campo { width: min(880px, 100%); align-self: center; }
   /* O mais novo primeiro, lado a lado; sem gráfico, só uma linha de aviso. */
-  .ia-graficos-tati { flex: none; height: 300px; max-height: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); align-items: start; align-content: start; }
+  .ia-graficos-tati { flex: none; height: 340px; max-height: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); align-items: start; align-content: start; }
   .ia-graficos-tati--vazio { height: auto; }
   .ia-graficos-tati__vazio { grid-column: 1 / -1; }
 }

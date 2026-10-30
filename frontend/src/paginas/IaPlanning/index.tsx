@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Cpu, Sparkles, BarChart3, X, ChevronDown, ArrowUp, SquarePen, Users, ListChecks, FileSearch, TrendingUp } from "lucide-react";
+import { Cpu, Sparkles, BarChart3, ChevronDown, ArrowUp, SquarePen, Users, ListChecks, FileSearch, TrendingUp } from "lucide-react";
 import AppLayout from "../../componentes/layout/AppLayout";
 import UserMenu from "../../componentes/layout/UserMenu";
 import BotaoFiltros from "../../componentes/filtros/BotaoFiltros";
@@ -15,6 +15,8 @@ import { coligadaDaEmpresa } from "../../utils/empresaContabil";
 import { descreverStatus } from "../../utils/filtrosPainel";
 // Os mesmos filtros (e a mesma conta) da Produtividade: as duas telas mostram os mesmos números.
 import { CAMPOS_FILTRO, CAMPOS_FILTRO_CONSOLIDADO, useResumoProdutividade } from "../Dashboard/useResumoProdutividade";
+import { lerRespostaTati } from "./respostaTati";
+import GraficoTatiCard, { type GraficoTati } from "./componentes/GraficoTatiCard";
 
 const SUGESTOES_RAPIDAS = [
   "Quem mais fechou contas este mês?",
@@ -27,7 +29,7 @@ const ASSUNTOS_TATI = [
   { rotulo: "Produtividade do time", pergunta: "Ver a produtividade do time", Icone: Users },
   { rotulo: "Acompanhamento da conciliação", pergunta: "Acompanhar a conciliação do período", Icone: ListChecks },
   { rotulo: "Fechamento de uma conta", pergunta: "Verificar o fechamento de uma conta", Icone: FileSearch },
-  { rotulo: "Saúde financeira", pergunta: "Ver a saúde financeira da empresa", Icone: TrendingUp },
+  { rotulo: "Saúde financeira e demonstrações", pergunta: "Ver a saúde financeira e as demonstrações da empresa", Icone: TrendingUp },
 ];
 
 function horarioAtual(): string {
@@ -53,102 +55,9 @@ function mensagemInicial(): MensagemCfoTati {
   };
 }
 
-interface GraficoTati {
-  id: number;
-  titulo: string;
-  itens: { label: string; valor: number }[];
-  horario: string;
-}
-
-// O fechamento ``` é opcional: se a resposta vier cortada, o bloco ainda some do texto.
-const BLOCO_OPCOES = /```opcoes\s*([\s\S]*?)(?:```|$)/;
-const BLOCO_GRAFICO = /```grafico\s*([\s\S]*?)(?:```|$)/;
-
-function lerJson(bruto: string): unknown {
-  try {
-    return JSON.parse(bruto);
-  } catch {
-    return null;
-  }
-}
-
-// Resposta cortada no meio do JSON: aproveita os itens que chegaram inteiros.
-function recuperarGraficoCortado(bruto: string): { titulo?: string; itens: { label: string; valor: number }[] } | null {
-  const titulo = bruto.match(/"titulo"\s*:\s*"([^"]*)"/)?.[1];
-  const itens = [...bruto.matchAll(/\{\s*"label"\s*:\s*"([^"]+)"\s*,\s*"valor"\s*:\s*(-?[\d.]+)\s*\}/g)].map((m) => ({
-    label: m[1],
-    valor: Number(m[2]),
-  }));
-  return itens.length > 0 ? { titulo, itens } : null;
-}
-
-function lerRespostaTati(texto: string): {
-  corpo: string;
-  opcoes: string[];
-  grafico: Omit<GraficoTati, "id" | "horario"> | null;
-} {
-  let corpo = texto;
-  let opcoes: string[] = [];
-  let grafico: Omit<GraficoTati, "id" | "horario"> | null = null;
-
-  const blocoOpcoes = corpo.match(BLOCO_OPCOES);
-  if (blocoOpcoes) {
-    corpo = corpo.replace(BLOCO_OPCOES, "");
-    const lista = lerJson(blocoOpcoes[1]);
-    if (Array.isArray(lista)) {
-      opcoes = lista.filter((item): item is string => typeof item === "string" && item.trim() !== "");
-    }
-  }
-
-  const blocoGrafico = corpo.match(BLOCO_GRAFICO);
-  if (blocoGrafico) {
-    corpo = corpo.replace(BLOCO_GRAFICO, "");
-    const dados = (lerJson(blocoGrafico[1]) ?? recuperarGraficoCortado(blocoGrafico[1])) as { titulo?: unknown; itens?: unknown } | null;
-    if (dados && Array.isArray(dados.itens)) {
-      const itens = dados.itens
-        .map((item: { label?: unknown; valor?: unknown }) => ({ label: String(item?.label ?? ""), valor: Number(item?.valor) }))
-        .filter((item) => item.label && Number.isFinite(item.valor));
-      if (itens.length > 0) {
-        grafico = { titulo: typeof dados.titulo === "string" ? dados.titulo : "Gráfico da Tati", itens };
-      }
-    }
-  }
-
-  return { corpo: corpo.trim(), opcoes, grafico };
-}
-
 function renderizarTexto(texto: string) {
   return texto.split(/(\*\*[^*]+\*\*)/g).map((parte, indice) =>
     parte.startsWith("**") && parte.endsWith("**") ? <strong key={indice}>{parte.slice(2, -2)}</strong> : parte
-  );
-}
-
-function GraficoTatiCard({ grafico, onRemover }: { grafico: GraficoTati; onRemover: () => void }) {
-  const maior = Math.max(...grafico.itens.map((item) => Math.abs(item.valor)), 1);
-
-  return (
-    <div className="sp-card ia-grafico-tati" id={`grafico-tati-${grafico.id}`}>
-      <div className="ia-grafico-tati__topo">
-        <div>
-          <h2 className="sp-card__title">{grafico.titulo}</h2>
-          <small>Criado pela Tati às {grafico.horario}</small>
-        </div>
-        <button type="button" onClick={onRemover} aria-label={`Remover o gráfico ${grafico.titulo}`}>
-          <X size={16} />
-        </button>
-      </div>
-      <ul className="ia-grafico-tati__lista">
-        {grafico.itens.map((item) => (
-          <li key={item.label}>
-            <span className="ia-grafico-tati__label" title={item.label}>{item.label}</span>
-            <span className="ia-grafico-tati__trilho">
-              <span className="ia-grafico-tati__barra" style={{ width: `${(Math.abs(item.valor) / maior) * 100}%` }} />
-            </span>
-            <b>{item.valor.toLocaleString("pt-BR")}</b>
-          </li>
-        ))}
-      </ul>
-    </div>
   );
 }
 
