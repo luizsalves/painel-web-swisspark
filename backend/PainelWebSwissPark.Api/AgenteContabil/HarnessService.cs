@@ -216,7 +216,7 @@ public class HarnessService(
                         "CFO Tati: respondeu em {Iteracoes} chamada(s) ao modelo, {DuracaoMs}ms",
                         iteracao + 1, (DateTime.UtcNow - inicio).TotalMilliseconds);
 
-                    var texto = resposta.Content.Count > 0 ? resposta.Content[0].Text : null;
+                    var texto = LimpezaRespostaTati.Limpar(resposta.Content.Count > 0 ? resposta.Content[0].Text : null);
                     if (string.IsNullOrWhiteSpace(texto))
                     {
                         return "Não consegui gerar uma resposta agora. Tente novamente.";
@@ -280,7 +280,7 @@ public class HarnessService(
             ];
 
             var resposta = await modelClient.CriarMensagemAsync(pedido, [], cancellationToken);
-            var bloco = resposta.Content.Count > 0 ? resposta.Content[0].Text : null;
+            var bloco = LimpezaRespostaTati.Limpar(resposta.Content.Count > 0 ? resposta.Content[0].Text : null);
 
             return bloco is not null && bloco.Contains("```opcoes", StringComparison.Ordinal)
                 ? $"{texto.TrimEnd()}\n\n{bloco.Trim()}"
