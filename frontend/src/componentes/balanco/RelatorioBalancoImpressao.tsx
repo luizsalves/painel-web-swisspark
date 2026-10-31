@@ -1,4 +1,5 @@
 import type { Balanco, BalancoLinha } from "../../interfaces/Balanco";
+import AssinaturasImpressao from "../ui/AssinaturasImpressao";
 import { formatarValor, numeroContabil, ultimoDiaDoMes, ultimoDiaPorExtenso } from "../../utils/formatacaoContabil";
 
 interface RelatorioBalancoImpressaoProps {
@@ -44,6 +45,7 @@ export default function RelatorioBalancoImpressao({ balanco, empresaNome, codCol
           Ativo e passivo diferem em R$ {numeroContabil.format(diferenca)}. Há lançamentos desbalanceados ou contas fora do ativo e do passivo.
         </p>
       )}
+      <AssinaturasImpressao />
       <footer className="sp-dfc-print__footer">
         Emitido em {new Date().toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })} pelo Painel SwissPark.
       </footer>

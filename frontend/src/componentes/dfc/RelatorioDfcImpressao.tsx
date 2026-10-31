@@ -1,6 +1,7 @@
 import { Fragment } from "react";
 import type { Dfc } from "../../interfaces/Indicadores";
 import { formatarValor, mesAno, ultimoDiaDoMes, vesperaDoMes } from "../../utils/formatacaoContabil";
+import AssinaturasImpressao from "../ui/AssinaturasImpressao";
 
 interface RelatorioDfcImpressaoProps {
   dfc: Dfc;
@@ -80,6 +81,7 @@ export default function RelatorioDfcImpressao({ dfc, empresaNome, codColigada, f
           Elas mantêm o fechamento com o caixa, mas precisam ser classificadas com a contabilidade.
         </p>
       )}
+      <AssinaturasImpressao />
       <footer className="sp-dfc-print__footer">
         Emitido em {new Date().toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })} pelo Painel SwissPark.
       </footer>
