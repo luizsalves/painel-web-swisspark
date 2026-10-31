@@ -4,6 +4,18 @@
  * números a Tati busca nas ferramentas, com a empresa, o período e a tela que vão junto.
  */
 
+import { periodoDosFiltros } from "../../utils/filtrosPainel";
+import type { FiltrosPainel } from "../../utils/filtrosPainel";
+
+/**
+ * O pedido do botão do Dashboard: "Resumo do mês" ou, com vários meses nos filtros, "Resumo do
+ * período" — a mesma regra do backend (ResumoDoMesTati), que escolhe as ferramentas do resumo.
+ */
+export function perguntaDoResumo(filtros: FiltrosPainel): string {
+  const { inicio, fim } = periodoDosFiltros(filtros);
+  return inicio === fim ? "Resumo do mês" : "Resumo do período";
+}
+
 const COMPARACOES = "compare com o período anterior e com o mesmo período do ano passado";
 const COMPARACOES_DO_MES = "compare com o mês anterior e com o mesmo mês do ano passado";
 

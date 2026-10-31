@@ -9,6 +9,8 @@ interface KpiCardProps {
   icon: ReactNode;
   tone?: KpiTone;
   isLoading?: boolean;
+  /** O data-card, para os números do resumo da Tati acharem o card. */
+  ancora?: string;
 }
 
 export default function KpiCard({
@@ -18,9 +20,10 @@ export default function KpiCard({
   icon,
   tone = "neutral",
   isLoading = false,
+  ancora,
 }: KpiCardProps) {
   return (
-    <div className={`sp-kpi sp-kpi--${tone}`}>
+    <div className={`sp-kpi sp-kpi--${tone}`} data-card={ancora}>
       <div className="sp-kpi__icon">{icon}</div>
       <div className="sp-kpi__content">
         <span className="sp-kpi__value">{isLoading ? "—" : value}</span>

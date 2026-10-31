@@ -53,7 +53,7 @@ export default function VisaoDiretoria({ dados, inicio, fim, onVerDetalhe }: Vis
       <ListaAlertas alertas={gerarAlertas(dados)} />
 
       <div className="sp-ind-grade">
-        <section className="sp-ind-card sp-ind-bloco" aria-label="Da receita ao lucro">
+        <section className="sp-ind-card sp-ind-bloco" aria-label="Da receita ao lucro" data-card="resultado">
           <div className="sp-ind-bloco__cabecalho">
             <h2>Da receita ao lucro<BotaoAnalisarTati assunto="o resultado" pergunta={perguntasAnalisar.resultado()} /></h2>
             <span>{extenso} · R$ mil</span>

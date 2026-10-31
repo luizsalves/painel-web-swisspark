@@ -115,7 +115,7 @@ export default function VisaoContador({
 
       <BaseCalculo base={base} dataBalanco={ultimoDiaDoMes(fim)} descricaoPeriodo={descricao} />
 
-      <div id={idDoDetalhe("dfc")}>
+      <div id={idDoDetalhe("dfc")} data-card="dfc">
         <DemonstracaoFluxoCaixa dfc={dfc} empresaNome={empresaNome} codColigada={codColigada} inicio={inicio} fim={fim} />
       </div>
 

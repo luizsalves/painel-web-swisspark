@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Archive, ClipboardList, CheckCircle2, AlertTriangle, CheckCheck, RefreshCw } from "lucide-react";
 import BotaoAnalisarTati from "../../componentes/tati/BotaoAnalisarTati";
+import BotaoResumoTati from "../../componentes/tati/BotaoResumoTati";
 import { perguntasAnalisar } from "../../componentes/tati/perguntasAnalisar";
 import AppLayout from "../../componentes/layout/AppLayout";
 import AppHeader from "../../componentes/layout/AppHeader";
@@ -13,6 +14,7 @@ import TabelaEmpresas from "./TabelaEmpresas";
 import type { ColunaEmpresa } from "./TabelaEmpresas";
 import { ETAPAS } from "./ContasDaEmpresa";
 import { CAMPOS_FILTRO, CAMPOS_FILTRO_CONSOLIDADO, useResumoProdutividade } from "./useResumoProdutividade";
+import { useAuth } from "../../contexts/AuthContext";
 import { useFiltros } from "../../contexts/FiltrosContext";
 import type { StatusFechamentoConta } from "../../interfaces/Dashboard";
 
@@ -25,6 +27,7 @@ const COLUNAS_A_CONFERIR: ColunaEmpresa[] = [{ titulo: "Faltam", valor: (item) =
 const COLUNAS_DO_STATUS: ColunaEmpresa[] = [{ titulo: "Contas", valor: (item) => item.backlogTotal }];
 
 export default function Dashboard() {
+  const { user } = useAuth();
   const { filtros } = useFiltros();
   const [recarregar, setRecarregar] = useState(0);
   const {
@@ -67,7 +70,9 @@ export default function Dashboard() {
       />
 
       <main className="sp-dashboard">
-        <ResumoFiltros campos={consolidada ? CAMPOS_FILTRO_CONSOLIDADO : CAMPOS_FILTRO} />
+        {/* O resumo da Tati é só do superadmin: para os outros, a barra dos filtros fica como era. */}
+        <ResumoFiltros campos={consolidada ? CAMPOS_FILTRO_CONSOLIDADO : CAMPOS_FILTRO}
+          acoes={user?.isSuperAdmin ? <BotaoResumoTati /> : undefined} />
 
         {erroDaTela && (
           <span className="sp-closing__feedback sp-closing__feedback--error" role="alert">
@@ -76,14 +81,14 @@ export default function Dashboard() {
         )}
 
         <section className="sp-dashboard__kpis" aria-label="Indicadores gerais">
-          <KpiCard label="Backlog Total" unit={unidadeKpi} value={resumo.backlogTotal} icon={<Archive size={20} />} isLoading={carregando} />
-          <KpiCard label="Preparados" unit={unidadeKpi} value={resumo.preparados} icon={<ClipboardList size={20} />} isLoading={carregando} />
-          <KpiCard label="Conferidos" unit={unidadeKpi} value={resumo.conferidos} icon={<CheckCircle2 size={20} />} tone="green" isLoading={carregando} />
-          <KpiCard label="Pendentes" unit={unidadeKpi} value={resumo.pendentes} icon={<AlertTriangle size={20} />} tone="red" isLoading={carregando} />
-          <KpiCard label="Finalizados" unit={unidadeKpi} value={resumo.fechados} icon={<CheckCheck size={20} />} tone="green" isLoading={carregando} />
+          <KpiCard label="Backlog Total" unit={unidadeKpi} value={resumo.backlogTotal} icon={<Archive size={20} />} isLoading={carregando} ancora="conciliacao-backlogTotal" />
+          <KpiCard label="Preparados" unit={unidadeKpi} value={resumo.preparados} icon={<ClipboardList size={20} />} isLoading={carregando} ancora="conciliacao-preparados" />
+          <KpiCard label="Conferidos" unit={unidadeKpi} value={resumo.conferidos} icon={<CheckCircle2 size={20} />} tone="green" isLoading={carregando} ancora="conciliacao-conferidos" />
+          <KpiCard label="Pendentes" unit={unidadeKpi} value={resumo.pendentes} icon={<AlertTriangle size={20} />} tone="red" isLoading={carregando} ancora="conciliacao-pendentes" />
+          <KpiCard label="Finalizados" unit={unidadeKpi} value={resumo.fechados} icon={<CheckCheck size={20} />} tone="green" isLoading={carregando} ancora="conciliacao-fechados" />
         </section>
 
-        <section className="sp-dashboard__companies" aria-label="Andamento por empresa" aria-busy={carregando}>
+        <section className="sp-dashboard__companies" aria-label="Andamento por empresa" aria-busy={carregando} data-card="conciliacao-empresas">
           <div className="sp-dashboard__companies-heading">
             <div><h2>Conciliação por empresa<BotaoAnalisarTati assunto="a conciliação por empresa" pergunta={perguntasAnalisar.conciliacao()} /></h2><p>Todas as contas e filiais ativas devem concluir a etapa. Empresas sem contas ficam fora da meta.</p></div>
             <span>Atualizado em: {atualizadoEm ? atualizadoEm.toLocaleString("pt-BR") : "—"}</span>

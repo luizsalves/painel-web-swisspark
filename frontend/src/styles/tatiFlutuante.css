@@ -75,12 +75,52 @@
 .tati-analisar:hover { transform: scale(1.15); box-shadow: 0 0 0 3px #ffd23f99; }
 .tati-analisar:focus-visible { outline: 2px solid #ffd23f; outline-offset: 2px; }
 
+/* O "Resumo do mês" do Dashboard, na barra dos filtros. */
+.tati-resumo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 14px 4px 4px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(160deg, #1740d8 0%, #081c74 100%);
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 4px 12px #0b2a9e40;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.tati-resumo .ia-tati-avatar { width: 28px; height: 28px; border-width: 1px; box-shadow: none; }
+.tati-resumo:hover { transform: translateY(-1px); box-shadow: 0 6px 16px #0b2a9e59; }
+.tati-resumo:focus-visible { outline: 3px solid #ffd23f; outline-offset: 2px; }
+
+/* Um número do resumo com o link para o card: o clique leva ao card de onde ele veio. */
+.tati-link-card {
+  display: inline;
+  padding: 0 3px;
+  border: 0;
+  border-bottom: 1px dashed #ffd23f;
+  border-radius: 3px;
+  background: #ffd23f1f;
+  color: #ffe27a;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tati-link-card:hover { background: #ffd23f40; }
+.tati-link-card:focus-visible { outline: 2px solid #ffd23f; outline-offset: 1px; }
+
 @media (prefers-reduced-motion: reduce) {
   .tati-flutuante__painel { animation: none; }
-  .tati-flutuante__icone, .tati-analisar { transition: none; }
+  .tati-flutuante__icone, .tati-analisar, .tati-resumo { transition: none; }
 }
 
 /* Os relatórios em PDF saem sem a Tati. */
 @media print {
-  .tati-flutuante, .tati-analisar { display: none !important; }
+  .tati-flutuante, .tati-analisar, .tati-resumo { display: none !important; }
 }

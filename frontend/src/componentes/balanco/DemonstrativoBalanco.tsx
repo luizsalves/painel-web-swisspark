@@ -73,7 +73,7 @@ interface LadoBalancoProps {
 
 function LadoBalanco({ nome, titulo, linhas, mes, abertas, onAlternar }: LadoBalancoProps) {
   return (
-    <div className="sp-balance__table-wrap">
+    <div className="sp-balance__table-wrap" data-card={`balanco-${nome}`}>
       <table className="sp-indicators__table sp-balanco__tabela">
         <thead><tr><th>{titulo}<BotaoAnalisarTati assunto={`o ${nome}`} pergunta={perguntasAnalisar.ladoDoBalanco(nome)} /></th><th className="sp-indicators__number">{ultimoDiaDoMes(mes)}</th></tr></thead>
         <tbody>

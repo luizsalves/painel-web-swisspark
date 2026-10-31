@@ -62,4 +62,22 @@ public class LimpezaRespostaTatiTests
         Assert.Null(LimpezaRespostaTati.Limpar(null));
         Assert.Equal(string.Empty, LimpezaRespostaTati.Limpar(string.Empty));
     }
+
+    [Fact]
+    public void Chamada_inteira_escrita_no_texto_e_reconhecida()
+    {
+        Assert.True(LimpezaRespostaTati.TemChamadaNoTexto(
+            "<｜｜DSML｜｜function_calls>\n<｜｜DSML｜｜invoke name=\"consultar_balanco\">\n" +
+            "<｜｜DSML｜｜parameter name=\"anoMes\">2026-09</｜｜DSML｜｜parameter>"));
+        Assert.True(LimpezaRespostaTati.TemChamadaNoTexto("Vou consultar. <invoke name=\"consultar_dfc\">"));
+        Assert.True(LimpezaRespostaTati.TemChamadaNoTexto("<｜tool▁calls▁begin｜>"));
+    }
+
+    [Fact]
+    public void Tag_solta_no_fim_nao_e_chamada()
+    {
+        Assert.False(LimpezaRespostaTati.TemChamadaNoTexto($"A liquidez melhorou.\n\n{Opcoes}\n</parameter><｜tool▁calls▁end｜>"));
+        Assert.False(LimpezaRespostaTati.TemChamadaNoTexto("Os <parameters> e o <invoker> não são marcação de ferramenta."));
+        Assert.False(LimpezaRespostaTati.TemChamadaNoTexto(null));
+    }
 }

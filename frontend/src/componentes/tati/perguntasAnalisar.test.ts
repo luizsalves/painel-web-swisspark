@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { perguntasAnalisar } from "./perguntasAnalisar";
+import { filtrosPadrao } from "../../utils/filtrosPainel";
+import { perguntaDoResumo, perguntasAnalisar } from "./perguntasAnalisar";
+
+describe("perguntaDoResumo", () => {
+  it("é o resumo do mês com um mês só e o do período com vários, como no backend", () => {
+    expect(perguntaDoResumo({ ...filtrosPadrao(), ano: 2026, mesInicial: 9, mesFinal: 9 })).toBe("Resumo do mês");
+    expect(perguntaDoResumo({ ...filtrosPadrao(), ano: 2026, mesInicial: 7, mesFinal: 9 })).toBe("Resumo do período");
+  });
+});
 
 describe("perguntasAnalisar", () => {
   it("cita o card e pede as comparações do livro: período anterior e mesmo período do ano passado", () => {

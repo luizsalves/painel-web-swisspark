@@ -49,4 +49,18 @@ public class ChatEndpoint(HarnessService harnessService) : ControllerBase
 
         return Ok(new RespostaCfoTatiViewModel { Resposta = resposta });
     }
+
+    /// <summary>
+    /// POST /api/agente-contabil/chat/resumo-mes — o resumo do mês do botão do Dashboard, com os
+    /// mesmos filtros e a mesma tela do chat/tela: as ferramentas são sempre as do resumo e cada
+    /// número vai com o link do card de onde veio. A pergunta do pedido não é usada.
+    /// </summary>
+    [HttpPost("chat/resumo-mes")]
+    public async Task<IActionResult> ResumoDoMes(
+        [FromBody] PerguntarCfoTatiNaTelaRequest pedido, CancellationToken cancellationToken)
+    {
+        var resposta = await harnessService.ResumirMesAsync(pedido, cancellationToken);
+
+        return Ok(new RespostaCfoTatiViewModel { Resposta = resposta });
+    }
 }

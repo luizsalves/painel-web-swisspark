@@ -7,6 +7,7 @@ import ResumoFiltros from "../../componentes/filtros/ResumoFiltros";
 import { useFiltros } from "../../contexts/FiltrosContext";
 
 import LoadingSpinner from "../../componentes/ui/LoadingSpinner";
+import TextoTati from "../../componentes/tati/TextoTati";
 
 import { extrairMensagemDeErro } from "../../services/api";
 import { perguntarCfoTati } from "../../services/cfoTatiService";
@@ -53,12 +54,6 @@ function mensagemInicial(): MensagemCfoTati {
     texto: "Olá! Sou a Tati. Posso analisar suas contas e criar insights para você.",
     horario: horarioAtual(),
   };
-}
-
-function renderizarTexto(texto: string) {
-  return texto.split(/(\*\*[^*]+\*\*)/g).map((parte, indice) =>
-    parte.startsWith("**") && parte.endsWith("**") ? <strong key={indice}>{parte.slice(2, -2)}</strong> : parte
-  );
 }
 
 export default function IaPlanning() {
@@ -255,7 +250,8 @@ export default function IaPlanning() {
                           Tati
                         </span>
                         <div className="ia-ask__cartao">
-                          <p>{renderizarTexto(corpo)}</p>
+                          {/* Sem os links dos números: sair desta tela perderia a conversa. */}
+                          <TextoTati texto={corpo} />
                           {grafico && (
                             <button type="button" className="ia-ask__ver-grafico" onClick={mostrarGraficos}>
                               <BarChart3 size={14} /> Ver gráfico: {grafico.titulo}

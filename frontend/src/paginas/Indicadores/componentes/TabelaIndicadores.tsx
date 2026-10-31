@@ -73,7 +73,7 @@ export default function TabelaIndicadores({ indicadores, rotulos, historico, per
                 const codigo = linha.config.codigo;
                 const comparado = historico?.comparada?.indicadores[codigo];
                 return (
-                  <div key={codigo} className="sp-ind-tabela__linha">
+                  <div key={codigo} className="sp-ind-tabela__linha" data-card={`indicador-${codigo}`}>
                     <div className="sp-ind-tabela__nome">
                       <div>
                         <span>{linha.config.nome}</span>

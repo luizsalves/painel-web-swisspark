@@ -23,7 +23,7 @@ interface CardVereditoProps {
 
 export default function CardVeredito({ status, frase, descricaoPeriodo, pilares, onVerDetalhe }: CardVereditoProps) {
   return (
-    <section className="sp-ind-card sp-ind-veredito" aria-label="Saúde geral">
+    <section className="sp-ind-card sp-ind-veredito" aria-label="Saúde geral" data-card="veredito">
       <div className="sp-ind-veredito__topo">
         <StatusPill status={status} variante="grande" />
         <span>Saúde geral em {descricaoPeriodo} · o pior status entre os quatro pilares</span>
