@@ -1,5 +1,7 @@
 import { Fragment, useState } from "react";
 import { AlertTriangle, ChevronsDownUp, ChevronsUpDown } from "lucide-react";
+import BotaoAnalisarTati from "../tati/BotaoAnalisarTati";
+import { perguntasAnalisar } from "../tati/perguntasAnalisar";
 import type { Dfc } from "../../interfaces/Indicadores";
 import {
   classeNumero, formatarValor, mesAno, numeroContabil, ultimoDiaDoMes, vesperaDoMes,
@@ -39,7 +41,7 @@ export default function DemonstracaoFluxoCaixa({ dfc, empresaNome, codColigada, 
     <section className="sp-indicators__section" aria-label="Demonstração do fluxo de caixa">
       <div className="sp-indicators__section-head sp-indicators__section-head--actions">
         <div>
-          <h2>Demonstração do Fluxo de Caixa — método indireto</h2>
+          <h2>Demonstração do Fluxo de Caixa — método indireto<BotaoAnalisarTati assunto="a DFC" pergunta={perguntasAnalisar.dfc()} /></h2>
           <p>{empresaNome} · Coligada {codColigada} · {mesAno(inicio)} a {mesAno(fim)} · clique em + para abrir os grupos e as contas de cada linha.</p>
         </div>
         <button type="button" className="sp-indicators__toggle-all"

@@ -23,8 +23,9 @@ public static partial class ValidadorGraficoTati
     private static readonly HashSet<string> Unidades = new(StringComparer.Ordinal) { "R$", "%", "x", "indice", "contas" };
 
     // Números das ferramentas que identificam a consulta, e não são dado: não servem de origem
-    // para um valor do gráfico (uma "liquidez 17" não pode passar por causa da coligada 17).
-    private static readonly HashSet<string> Identificadores = new(StringComparer.Ordinal)
+    // para um valor do gráfico (uma "liquidez 17" não pode passar por causa da coligada 17). O
+    // ValidadorReferenciasTati usa a mesma lista.
+    internal static readonly HashSet<string> Identificadores = new(StringComparer.Ordinal)
     {
         "coligada", "codColigada", "filial", "codFilial", "meses", "totalDeEmpresas", "quantidadeDeEmpresas",
         "totalLinhas", "nivel", "nivelMaximo",

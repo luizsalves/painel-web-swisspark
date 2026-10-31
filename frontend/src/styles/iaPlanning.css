@@ -436,6 +436,17 @@
 .ia-ask__cartao { padding: 0 2px; color: #eef2ff; font-size: 13.5px; line-height: 1.6; }
 .ia-ask__cartao p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .ia-ask__cartao strong { color: #fff; }
+/* O texto da resposta em blocos (TextoTati): títulos, listas e tabelas do markdown da Tati. */
+.ia-ask__cartao .ia-texto > * + * { margin-top: 0.65em; }
+.ia-ask__cartao .ia-texto > .ia-texto__titulo + * { margin-top: 0.25em; }
+.ia-ask__cartao .ia-texto__titulo { color: #fff; font-weight: 700; }
+.ia-texto__lista { margin: 0; padding-left: 1.25em; }
+.ia-texto__lista li { overflow-wrap: anywhere; }
+.ia-texto__lista li + li { margin-top: 0.2em; }
+.ia-texto__tabela { max-width: 100%; overflow-x: auto; }
+.ia-texto__tabela table { border-collapse: collapse; font-size: 12.5px; }
+.ia-texto__tabela th, .ia-texto__tabela td { padding: 4px 10px 4px 0; border-bottom: 1px solid #ffffff26; text-align: left; vertical-align: top; }
+.ia-texto__tabela th { color: #c9d5ff; font-weight: 600; white-space: nowrap; }
 .ia-ask__base { display: block; margin-top: 10px; color: #ffd23f; font-size: 11.5px; }
 .ia-ask__base b { font-weight: 700; }
 .ia-ask__hora { display: block; margin-top: 4px; color: #9fb2f5; font-size: 10.5px; text-align: right; }

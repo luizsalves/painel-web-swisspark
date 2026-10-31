@@ -1,3 +1,5 @@
+import BotaoAnalisarTati from "../../../componentes/tati/BotaoAnalisarTati";
+import { perguntasAnalisar } from "../../../componentes/tati/perguntasAnalisar";
 import type { BaseCalculoIndicadores } from "../../../interfaces/Indicadores";
 import { escalaDosValores, formatarMoedaAbreviada } from "../regras";
 import type { ResultadoIndicador } from "../regras";
@@ -47,7 +49,7 @@ export default function CardDivida({ base, multiplo, dataBalanco }: CardDividaPr
   return (
     <section className="sp-ind-card sp-ind-bloco" aria-label="Dívida">
       <div className="sp-ind-bloco__cabecalho">
-        <h2>Quanto a empresa deve</h2>
+        <h2>Quanto a empresa deve<BotaoAnalisarTati assunto="a dívida" pergunta={perguntasAnalisar.divida()} /></h2>
         <span>Posição em {dataBalanco}</span>
       </div>
       <div className="sp-ind-lista">

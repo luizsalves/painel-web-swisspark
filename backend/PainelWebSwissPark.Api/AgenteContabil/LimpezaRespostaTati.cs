@@ -16,6 +16,17 @@ public static partial class LimpezaRespostaTati
         return MarcacaoDeFerramenta().Replace(texto, string.Empty).Trim();
     }
 
+    /// <summary>
+    /// Se o modelo escreveu uma chamada de ferramenta inteira no texto (a abertura do invoke ou do
+    /// function_calls), e não só uma tag solta: da limpeza sobrariam os valores dos parâmetros.
+    /// </summary>
+    public static bool TemChamadaNoTexto(string? texto) => !string.IsNullOrEmpty(texto) && AberturaDeChamada().IsMatch(texto);
+
+    [GeneratedRegex(
+        @"<\s*[｜|]*\s*(?:DSML\s*[｜|]+\s*)?(?:(?:invoke|function_calls|tool_call)\b|tool[▁_]calls?[▁_]begin)",
+        RegexOptions.IgnoreCase)]
+    private static partial Regex AberturaDeChamada();
+
     // As tags de chamada de ferramenta, abrindo ou fechando, também com o prefixo da DeepSeek
     // (</｜｜DSML｜｜ parameter>), e os tokens especiais dela (<｜tool▁calls▁end｜>). Só dentro de
     // uma linha, para não engolir texto entre um "<" e um ">".

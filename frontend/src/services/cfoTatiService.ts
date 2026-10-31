@@ -12,3 +12,9 @@ export async function perguntarCfoTatiNaTela(payload: PerguntarCfoTatiNaTelaPayl
   const { data } = await api.post<{ resposta: string }>("/agente-contabil/chat/tela", payload);
   return data.resposta;
 }
+
+/** O resumo do mês do botão do Dashboard: os mesmos filtros e tela; as ferramentas, o backend escolhe. */
+export async function resumirMesComCfoTati(payload: PerguntarCfoTatiNaTelaPayload): Promise<string> {
+  const { data } = await api.post<{ resposta: string }>("/agente-contabil/chat/resumo-mes", payload);
+  return data.resposta;
+}

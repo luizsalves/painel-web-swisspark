@@ -1,5 +1,7 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
+import BotaoAnalisarTati from "../../../componentes/tati/BotaoAnalisarTati";
+import { perguntasAnalisar } from "../../../componentes/tati/perguntasAnalisar";
 import DemonstracaoFluxoCaixa from "../../../componentes/dfc/DemonstracaoFluxoCaixa";
 import type { Dfc } from "../../../interfaces/Indicadores";
 import { ultimoDiaDoMes } from "../../../utils/formatacaoContabil";
@@ -29,7 +31,7 @@ function CardResumo({ rotulo, status, valor, detalhe, rotuloComparado, valorComp
   return (
     <div className="sp-ind-resumo">
       <div className="sp-ind-resumo__topo">
-        <span>{rotulo}</span>
+        <span>{rotulo}<BotaoAnalisarTati assunto={rotulo} pergunta={perguntasAnalisar.indicador(rotulo)} /></span>
         <StatusPill status={status} />
       </div>
       <strong className="sp-ind-resumo__valor">{valor}</strong>
@@ -113,7 +115,7 @@ export default function VisaoContador({
 
       <BaseCalculo base={base} dataBalanco={ultimoDiaDoMes(fim)} descricaoPeriodo={descricao} />
 
-      <div id={idDoDetalhe("dfc")}>
+      <div id={idDoDetalhe("dfc")} data-card="dfc">
         <DemonstracaoFluxoCaixa dfc={dfc} empresaNome={empresaNome} codColigada={codColigada} inicio={inicio} fim={fim} />
       </div>
 

@@ -3,14 +3,17 @@ import { useLocation } from "react-router-dom";
 import { ArrowUp, Minus, SquarePen } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useFiltros } from "../../contexts/FiltrosContext";
+import { useTati } from "../../contexts/TatiContext";
 import { useEmpresasConsolidadas } from "../../hooks/useEmpresasConsolidadas";
 import LoadingSpinner from "../ui/LoadingSpinner";
 import { extrairMensagemDeErro } from "../../services/api";
-import { perguntarCfoTatiNaTela } from "../../services/cfoTatiService";
+import { perguntarCfoTatiNaTela, resumirMesComCfoTati } from "../../services/cfoTatiService";
 import type { MensagemCfoTati } from "../../interfaces/CfoTati";
 import { lerRespostaTati } from "../../paginas/IaPlanning/respostaTati";
 import GraficoTatiCard from "../../paginas/IaPlanning/componentes/GraficoTatiCard";
 import { descreverContexto, pedidoDaTela, telaDaTati } from "./telaDaTati";
+import TextoTati from "./TextoTati";
+import { useIrParaCard } from "./useIrParaCard";
 
 const SUGESTOES = ["Como está esse mês?", "O que chama atenção aqui?"];
 
@@ -26,17 +29,13 @@ function mensagemInicial(): MensagemCfoTati {
   };
 }
 
-function renderizarTexto(texto: string) {
-  return texto.split(/(\*\*[^*]+\*\*)/g).map((parte, indice) =>
-    parte.startsWith("**") && parte.endsWith("**") ? <strong key={indice}>{parte.slice(2, -2)}</strong> : parte
-  );
-}
-
 /**
  * A Tati nas outras telas: fechada, é o rostinho dela no canto; clicou, abre a conversa por cima
  * da tela. Fica fora das rotas, então a conversa continua quando o usuário troca de tela. Cada
- * pergunta vai com a tela (e a aba) aberta e os filtros que ela usa. Só para o superadmin, como
- * a tela da Tati; outro usuário que entra começa uma conversa nova.
+ * pergunta vai com a tela (e a aba) aberta e os filtros que ela usa; os botões "Analisar" dos
+ * cards e o "Resumo do mês" do Dashboard mandam a pergunta pronta por aqui (TatiContext), e os
+ * números do resumo levam ao card de onde vieram. Só para o superadmin, como a tela da Tati;
+ * outro usuário que entra começa uma conversa nova.
  */
 export default function TatiFlutuante() {
   const { user } = useAuth();
@@ -45,6 +44,8 @@ export default function TatiFlutuante() {
 
 function ConversaFlutuante() {
   const { filtros } = useFiltros();
+  const { pedido, atender } = useTati();
+  const irParaCard = useIrParaCard();
   const { pathname, search } = useLocation();
   const consolidaFiliais = useEmpresasConsolidadas();
   const consolidada = Boolean(consolidaFiliais(filtros.empresa));
@@ -74,16 +75,13 @@ function ConversaFlutuante() {
     if (aberta) campoRef.current?.focus();
   }, [aberta]);
 
-  // Na tela da Tati, no login e na troca de senha o ícone some, mas a conversa fica guardada.
-  if (!tela) return null;
-
   const ultimaMensagem = mensagens[mensagens.length - 1];
   const opcoesAtuais = ultimaMensagem?.autor === "tati" ? lerRespostaTati(ultimaMensagem.texto).opcoes : [];
-  const contexto = descreverContexto(tela, filtros, consolidada);
+  const contexto = tela ? descreverContexto(tela, filtros, consolidada) : "";
 
-  const enviarPergunta = async (texto: string) => {
+  const enviarPergunta = async (texto: string, resumo = false) => {
     let perguntaLimpa = texto.trim();
-    if (!perguntaLimpa || isEnviando) return;
+    if (!perguntaLimpa || isEnviando || !tela) return;
 
     // Digitar só o número escolhe a opção correspondente da última resposta.
     const numero = /^\d+$/.test(perguntaLimpa) ? Number(perguntaLimpa) : 0;
@@ -96,7 +94,8 @@ function ConversaFlutuante() {
     setIsEnviando(true);
 
     try {
-      const resposta = await perguntarCfoTatiNaTela({ pergunta: perguntaLimpa, historico, ...pedidoDaTela(tela, filtros, consolidada) });
+      const perguntar = resumo ? resumirMesComCfoTati : perguntarCfoTatiNaTela;
+      const resposta = await perguntar({ pergunta: perguntaLimpa, historico, ...pedidoDaTela(tela, filtros, consolidada) });
       setMensagens((atual) => [...atual, { autor: "tati", texto: resposta, horario: horarioAtual(), contexto }]);
     } catch (erroCapturado) {
       const mensagemDeErro = extrairMensagemDeErro(erroCapturado, "Não consegui falar com a IA agora.");
@@ -104,6 +103,24 @@ function ConversaFlutuante() {
     } finally {
       setIsEnviando(false);
     }
+  };
+
+  // Um botão "Analisar" de um card (ou o "Resumo do mês") pediu uma análise: abre a conversa e
+  // manda a pergunta pronta, depois da resposta em andamento, se houver uma.
+  useEffect(() => {
+    if (!pedido || isEnviando || !tela) return;
+    atender(pedido.id);
+    setAberta(true);
+    void enviarPergunta(pedido.pergunta, pedido.resumo);
+  }, [pedido, isEnviando, tela, atender, enviarPergunta]);
+
+  // Na tela da Tati, no login e na troca de senha o ícone some, mas a conversa fica guardada.
+  if (!tela) return null;
+
+  // No celular a conversa ocupa a tela inteira: ela se fecha para o card aparecer.
+  const abrirCard = (alvo: string) => {
+    if (window.matchMedia?.("(max-width: 640px)").matches) setAberta(false);
+    irParaCard(alvo);
   };
 
   const handleSubmit = (event: React.FormEvent) => {
@@ -163,7 +180,7 @@ function ConversaFlutuante() {
                   Tati
                 </span>
                 <div className="ia-ask__cartao">
-                  <p>{renderizarTexto(corpo)}</p>
+                  <TextoTati texto={corpo} onCard={abrirCard} />
                   {mensagem.contexto && (
                     <span className="ia-ask__base">
                       Com base em: <b>{mensagem.contexto}</b>

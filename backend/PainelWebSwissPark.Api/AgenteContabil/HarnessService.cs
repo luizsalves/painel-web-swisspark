@@ -125,6 +125,25 @@ public class HarnessService(
     }
 
     /// <summary>
+    /// O resumo do mês do botão do Dashboard: as ferramentas de sempre (<see cref="ResumoDoMesTati"/>)
+    /// rodam antes, com os filtros da tela, e o modelo só escreve, sem ferramentas. Cada número vai
+    /// com o link do card de onde veio, e o que não confere sai do texto (<see cref="ValidadorReferenciasTati"/>).
+    /// </summary>
+    public Task<string> ResumirMesAsync(PerguntarCfoTatiNaTelaRequest pedido, CancellationToken cancellationToken)
+    {
+        var contexto = ContextoDosFiltros(pedido);
+        var tela = DescreverTela(pedido.Tela, pedido.Aba);
+        var chamadas = ResumoDoMesTati.Chamadas(pedido);
+        logger.LogInformation(
+            "CFO Tati: resumo do mês pelo botão, na tela {Tela}, com {Ferramentas}",
+            tela ?? "(não informada)", chamadas.Count == 0 ? "nenhuma ferramenta" : string.Join(", ", chamadas.Select(c => c.Ferramenta)));
+        if (chamadas.Count == 0) return Task.FromResult(ResumoDoMesTati.SemOQueResumir);
+        if (tela is not null) contexto += $" Tela aberta: {tela}.";
+
+        return ResponderAsync(ResumoDoMesTati.Pergunta(pedido), contexto, pedido.Historico, cancellationToken, chamadas);
+    }
+
+    /// <summary>
     /// "Balancete, aba Balanço"; null sem tela. Os nomes vêm do navegador e vão para o modelo:
     /// numa linha só e curtos.
     /// </summary>
@@ -178,9 +197,16 @@ public class HarnessService(
             "Use esses valores ao chamar as ferramentas, a menos que o usuário peça outro período/empresa/conta.";
     }
 
+    /// <summary>
+    /// O loop da conversa. Com <paramref name="chamadasProntas"/> (o resumo do mês), as ferramentas
+    /// rodam antes e o modelo responde sem ferramentas, e os links dos números são conferidos no modo
+    /// estrito.
+    /// </summary>
     private async Task<string> ResponderAsync(
-        string pergunta, string contexto, List<MensagemChatDto> historico, CancellationToken cancellationToken)
+        string pergunta, string contexto, List<MensagemChatDto> historico, CancellationToken cancellationToken,
+        IReadOnlyList<ResumoDoMesTati.Chamada>? chamadasProntas = null)
     {
+        var resumo = chamadasProntas is { Count: > 0 };
         using var origemComTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         origemComTimeout.CancelAfter(TempoLimite);
         var tokenComTimeout = origemComTimeout.Token;
@@ -195,7 +221,8 @@ public class HarnessService(
             ? $"{instrucoes}\n\n## Contexto da conversa\n\n{contexto}"
             : $"{instrucoes}\n\n{baseDeConhecimento}\n\n## Contexto da conversa\n\n{contexto}";
 
-        List<ChatTool> ferramentas =
+        // No resumo do mês as ferramentas já rodaram: o modelo só escreve, numa ida só.
+        List<ChatTool> ferramentas = resumo ? [] :
         [
             ConsultarSaldo.Definicao,
             ConsultarBacklogStatus.Definicao,
@@ -226,6 +253,12 @@ public class HarnessService(
 
         try
         {
+            if (resumo)
+            {
+                await ExecutarChamadasProntasAsync(chamadasProntas!, mensagens, resultadosDaResposta, tokenComTimeout);
+            }
+            var pediuOTextoDeNovo = false;
+
             for (var iteracao = 0; iteracao < MaxIteracoes; iteracao++)
             {
                 ChatCompletion resposta;
@@ -249,17 +282,30 @@ public class HarnessService(
 
                 if (resposta.ToolCalls.Count == 0)
                 {
+                    var bruto = resposta.Content.Count > 0 ? resposta.Content[0].Text : null;
+
+                    // Sem ferramentas (o resumo do mês), o DeepSeek às vezes escreve a chamada no texto, e
+                    // da limpeza sobrariam só os valores dela: pede o texto de novo, uma vez.
+                    if (resumo && !pediuOTextoDeNovo && LimpezaRespostaTati.TemChamadaNoTexto(bruto))
+                    {
+                        pediuOTextoDeNovo = true;
+                        logger.LogWarning("CFO Tati: o resumo veio com uma chamada de ferramenta no texto — pedindo o texto de novo");
+                        mensagens.Add(new UserChatMessage(
+                            "Nesta resposta não há outras ferramentas: escreva agora o resumo só com os resultados que você já tem."));
+                        continue;
+                    }
+
                     logger.LogInformation(
                         "CFO Tati: respondeu em {Iteracoes} chamada(s) ao modelo, {DuracaoMs}ms",
                         iteracao + 1, (DateTime.UtcNow - inicio).TotalMilliseconds);
 
-                    var texto = LimpezaRespostaTati.Limpar(resposta.Content.Count > 0 ? resposta.Content[0].Text : null);
+                    var texto = LimpezaRespostaTati.Limpar(bruto);
                     if (string.IsNullOrWhiteSpace(texto))
                     {
                         return "Não consegui gerar uma resposta agora. Tente novamente.";
                     }
 
-                    return Validado(await GarantirOpcoesAsync(texto, mensagens, tokenComTimeout), resultadosDaResposta);
+                    return Validado(await GarantirOpcoesAsync(texto, mensagens, tokenComTimeout), resultadosDaResposta, estrito: resumo);
                 }
 
                 mensagens.Add(new AssistantChatMessage(resposta));
@@ -284,16 +330,46 @@ public class HarnessService(
 
     /// <summary>
     /// O texto final, sem o bloco de gráfico se algum número dele não saiu das ferramentas desta
-    /// resposta. O motivo vai para o log, sem os valores; o modelo não é chamado de novo.
+    /// resposta, e com os links dos números conferidos com os cards (no resumo do mês, estrito: a
+    /// linha que não confere sai). Os motivos vão para o log, sem os valores; o modelo não é chamado de novo.
     /// </summary>
-    private string Validado(string texto, IReadOnlyList<ValidadorGraficoTati.ResultadoDeFerramenta> resultados)
+    private string Validado(string texto, IReadOnlyList<ValidadorGraficoTati.ResultadoDeFerramenta> resultados, bool estrito)
     {
         var validacao = ValidadorGraficoTati.Validar(texto, resultados);
         if (validacao.Motivo is not null)
         {
             logger.LogWarning("CFO Tati: gráfico removido da resposta — {Motivo}", validacao.Motivo);
         }
-        return validacao.Texto;
+
+        var referencias = ValidadorReferenciasTati.Validar(validacao.Texto, resultados, estrito);
+        if (referencias.Motivo is not null)
+        {
+            logger.LogWarning("CFO Tati: números conferidos com os cards — {Motivo}", referencias.Motivo);
+        }
+        return referencias.Texto;
+    }
+
+    /// <summary>
+    /// Roda as ferramentas que o fluxo já escolheu, uma depois da outra (dividem o DbContext da
+    /// requisição), e põe na conversa como se o modelo as tivesse pedido: a mensagem com as chamadas
+    /// e um resultado para cada uma.
+    /// </summary>
+    private async Task ExecutarChamadasProntasAsync(
+        IReadOnlyList<ResumoDoMesTati.Chamada> chamadasProntas, List<ChatMessage> mensagens,
+        List<ValidadorGraficoTati.ResultadoDeFerramenta> resultados, CancellationToken cancellationToken)
+    {
+        var chamadas = chamadasProntas
+            .Select((chamada, indice) => ChatToolCall.CreateFunctionToolCall(
+                $"call_resumo_{indice + 1}", chamada.Ferramenta, BinaryData.FromString(chamada.Argumentos)))
+            .ToList();
+        mensagens.Add(new AssistantChatMessage(chamadas));
+
+        foreach (var chamada in chamadas)
+        {
+            var resultado = await ExecutarComLogAsync(chamada, cancellationToken);
+            resultados.Add(new(chamada.FunctionName, resultado));
+            mensagens.Add(new ToolChatMessage(chamada.Id, resultado));
+        }
     }
 
     // As opções numeradas são obrigatórias (a tela vira botões 1, 2, 3...). Se o

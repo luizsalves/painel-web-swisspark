@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { Archive, ClipboardList, CheckCircle2, AlertTriangle, CheckCheck, RefreshCw } from "lucide-react";
+import BotaoAnalisarTati from "../../componentes/tati/BotaoAnalisarTati";
+import BotaoResumoTati from "../../componentes/tati/BotaoResumoTati";
+import { perguntasAnalisar } from "../../componentes/tati/perguntasAnalisar";
 import AppLayout from "../../componentes/layout/AppLayout";
 import AppHeader from "../../componentes/layout/AppHeader";
 import ResumoFiltros from "../../componentes/filtros/ResumoFiltros";
@@ -11,6 +14,7 @@ import TabelaEmpresas from "./TabelaEmpresas";
 import type { ColunaEmpresa } from "./TabelaEmpresas";
 import { ETAPAS } from "./ContasDaEmpresa";
 import { CAMPOS_FILTRO, CAMPOS_FILTRO_CONSOLIDADO, useResumoProdutividade } from "./useResumoProdutividade";
+import { useAuth } from "../../contexts/AuthContext";
 import { useFiltros } from "../../contexts/FiltrosContext";
 import type { StatusFechamentoConta } from "../../interfaces/Dashboard";
 
@@ -23,6 +27,7 @@ const COLUNAS_A_CONFERIR: ColunaEmpresa[] = [{ titulo: "Faltam", valor: (item) =
 const COLUNAS_DO_STATUS: ColunaEmpresa[] = [{ titulo: "Contas", valor: (item) => item.backlogTotal }];
 
 export default function Dashboard() {
+  const { user } = useAuth();
   const { filtros } = useFiltros();
   const [recarregar, setRecarregar] = useState(0);
   const {
@@ -65,7 +70,9 @@ export default function Dashboard() {
       />
 
       <main className="sp-dashboard">
-        <ResumoFiltros campos={consolidada ? CAMPOS_FILTRO_CONSOLIDADO : CAMPOS_FILTRO} />
+        {/* O resumo da Tati é só do superadmin: para os outros, a barra dos filtros fica como era. */}
+        <ResumoFiltros campos={consolidada ? CAMPOS_FILTRO_CONSOLIDADO : CAMPOS_FILTRO}
+          acoes={user?.isSuperAdmin ? <BotaoResumoTati /> : undefined} />
 
         {erroDaTela && (
           <span className="sp-closing__feedback sp-closing__feedback--error" role="alert">
@@ -74,16 +81,16 @@ export default function Dashboard() {
         )}
 
         <section className="sp-dashboard__kpis" aria-label="Indicadores gerais">
-          <KpiCard label="Backlog Total" unit={unidadeKpi} value={resumo.backlogTotal} icon={<Archive size={20} />} isLoading={carregando} />
-          <KpiCard label="Preparados" unit={unidadeKpi} value={resumo.preparados} icon={<ClipboardList size={20} />} isLoading={carregando} />
-          <KpiCard label="Conferidos" unit={unidadeKpi} value={resumo.conferidos} icon={<CheckCircle2 size={20} />} tone="green" isLoading={carregando} />
-          <KpiCard label="Pendentes" unit={unidadeKpi} value={resumo.pendentes} icon={<AlertTriangle size={20} />} tone="red" isLoading={carregando} />
-          <KpiCard label="Finalizados" unit={unidadeKpi} value={resumo.fechados} icon={<CheckCheck size={20} />} tone="green" isLoading={carregando} />
+          <KpiCard label="Backlog Total" unit={unidadeKpi} value={resumo.backlogTotal} icon={<Archive size={20} />} isLoading={carregando} ancora="conciliacao-backlogTotal" />
+          <KpiCard label="Preparados" unit={unidadeKpi} value={resumo.preparados} icon={<ClipboardList size={20} />} isLoading={carregando} ancora="conciliacao-preparados" />
+          <KpiCard label="Conferidos" unit={unidadeKpi} value={resumo.conferidos} icon={<CheckCircle2 size={20} />} tone="green" isLoading={carregando} ancora="conciliacao-conferidos" />
+          <KpiCard label="Pendentes" unit={unidadeKpi} value={resumo.pendentes} icon={<AlertTriangle size={20} />} tone="red" isLoading={carregando} ancora="conciliacao-pendentes" />
+          <KpiCard label="Finalizados" unit={unidadeKpi} value={resumo.fechados} icon={<CheckCheck size={20} />} tone="green" isLoading={carregando} ancora="conciliacao-fechados" />
         </section>
 
-        <section className="sp-dashboard__companies" aria-label="Andamento por empresa" aria-busy={carregando}>
+        <section className="sp-dashboard__companies" aria-label="Andamento por empresa" aria-busy={carregando} data-card="conciliacao-empresas">
           <div className="sp-dashboard__companies-heading">
-            <div><h2>Conciliação por empresa</h2><p>Todas as contas e filiais ativas devem concluir a etapa. Empresas sem contas ficam fora da meta.</p></div>
+            <div><h2>Conciliação por empresa<BotaoAnalisarTati assunto="a conciliação por empresa" pergunta={perguntasAnalisar.conciliacao()} /></h2><p>Todas as contas e filiais ativas devem concluir a etapa. Empresas sem contas ficam fora da meta.</p></div>
             <span>Atualizado em: {atualizadoEm ? atualizadoEm.toLocaleString("pt-BR") : "—"}</span>
             <Button variant="secondary" icon={<RefreshCw size={16} />} isLoading={carregando} onClick={() => setRecarregar((valor) => valor + 1)}>Atualizar</Button>
           </div>
@@ -92,13 +99,13 @@ export default function Dashboard() {
             <div className="sp-dashboard__company-grid">
               <aside className="sp-dashboard__company-metrics">
                 <div className="sp-dashboard__company-goal"><span>Meta de {unidade}</span><strong>{meta}</strong></div>
-                <div className="sp-card"><h3>{preparadas} preparadas</h3><MetricDonut label="Preparadas" value={preparadas} total={meta} /></div>
-                <div className="sp-card"><h3>{conferidas} conferidas</h3><MetricDonut label="Conferidas" value={conferidas} total={meta} /></div>
+                <div className="sp-card"><h3>{preparadas} preparadas<BotaoAnalisarTati assunto="as contas preparadas" pergunta={perguntasAnalisar.etapaDaConciliacao("Contas preparadas")} /></h3><MetricDonut label="Preparadas" value={preparadas} total={meta} /></div>
+                <div className="sp-card"><h3>{conferidas} conferidas<BotaoAnalisarTati assunto="as contas conferidas" pergunta={perguntasAnalisar.etapaDaConciliacao("Contas conferidas")} /></h3><MetricDonut label="Conferidas" value={conferidas} total={meta} /></div>
               </aside>
               {listas.map(({ titulo, lista, faltam, colunas, etapas, vazio }) => (
                 <section className={etapaFiltrada ? "sp-dashboard__company-list sp-dashboard__company-list--unica" : "sp-dashboard__company-list"}
                   key={titulo} aria-label={titulo}>
-                  <header><h3>{titulo}</h3><strong>{faltam}</strong></header>
+                  <header><h3>{titulo}<BotaoAnalisarTati assunto={`“${titulo}”`} pergunta={perguntasAnalisar.etapaDaConciliacao(titulo)} /></h3><strong>{faltam}</strong></header>
                   <TabelaEmpresas empresas={lista} colunas={colunas} etapas={etapas} filtro={filtroContas} inicio={inicio} fim={fim} versao={recarregar}
                     vazio={vazio} />
                 </section>
