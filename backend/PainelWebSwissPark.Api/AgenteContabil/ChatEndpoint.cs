@@ -36,4 +36,17 @@ public class ChatEndpoint(HarnessService harnessService) : ControllerBase
 
         return Ok(new RespostaCfoTatiViewModel { Resposta = resposta });
     }
+
+    /// <summary>
+    /// POST /api/agente-contabil/chat/tela — a conversa do ícone da Tati nas outras telas: os
+    /// filtros da tela e a tela (e a aba) aberta no contexto.
+    /// </summary>
+    [HttpPost("chat/tela")]
+    public async Task<IActionResult> ChatNaTela(
+        [FromBody] PerguntarCfoTatiNaTelaRequest pedido, CancellationToken cancellationToken)
+    {
+        var resposta = await harnessService.ExecutarNaTelaAsync(pedido, cancellationToken);
+
+        return Ok(new RespostaCfoTatiViewModel { Resposta = resposta });
+    }
 }

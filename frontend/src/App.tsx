@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { FiltrosProvider } from "./contexts/FiltrosContext";
 import PainelFiltros from "./componentes/filtros/PainelFiltros";
+import TatiFlutuante from "./componentes/tati/TatiFlutuante";
 import ProtectedRoute from "./rotas/ProtectedRoute";
 import Login from "./paginas/Login";
 import Dashboard from "./paginas/Dashboard";
@@ -99,6 +100,7 @@ function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
           <PainelFiltros />
+          <TatiFlutuante />
         </FiltrosProvider>
       </AuthProvider>
     </BrowserRouter>

@@ -16,8 +16,13 @@ public static partial class LimpezaRespostaTati
         return MarcacaoDeFerramenta().Replace(texto, string.Empty).Trim();
     }
 
-    // As tags de chamada de ferramenta, abrindo ou fechando, e os tokens especiais da DeepSeek
-    // (<｜tool▁calls▁end｜>). Só dentro de uma linha, para não engolir texto entre um "<" e um ">".
-    [GeneratedRegex(@"</?(?:parameter|invoke|function_calls|tool_call)\b[^<>\r\n]*>|<｜[^｜<>\r\n]*｜>", RegexOptions.IgnoreCase)]
+    // As tags de chamada de ferramenta, abrindo ou fechando, também com o prefixo da DeepSeek
+    // (</｜｜DSML｜｜ parameter>), e os tokens especiais dela (<｜tool▁calls▁end｜>). Só dentro de
+    // uma linha, para não engolir texto entre um "<" e um ">".
+    [GeneratedRegex(
+        @"</?(?:parameter|invoke|function_calls|tool_call)\b[^<>\r\n]*>" +
+        @"|</?\s*[｜|]+\s*DSML\s*[｜|]+[^<>\r\n]*>" +
+        @"|<[｜|][^｜|<>\r\n]*[｜|]>",
+        RegexOptions.IgnoreCase)]
     private static partial Regex MarcacaoDeFerramenta();
 }
