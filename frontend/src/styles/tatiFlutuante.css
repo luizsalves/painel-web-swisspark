@@ -1,0 +1,65 @@
+/* A Tati nas outras telas: fechada, o rostinho dela no canto; aberta, a conversa, com o mesmo
+   visual do chat da tela da Tati (as classes ia-ask__*). Abaixo da gaveta de filtros e dos
+   modais (z-index 1000). */
+
+.tati-flutuante__icone {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 900;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: linear-gradient(160deg, #1740d8 0%, #081c74 100%);
+  box-shadow: 0 10px 28px #0b2a9e59;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.tati-flutuante__icone:hover { transform: scale(1.06); box-shadow: 0 14px 32px #0b2a9e73; }
+.tati-flutuante__icone:focus-visible { outline: 3px solid #ffd23f; outline-offset: 3px; }
+.tati-flutuante__icone .ia-tati-avatar { width: 56px; height: 56px; box-shadow: none; }
+
+/* Abre a partir do canto do ícone. */
+.tati-flutuante__painel {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 900;
+  width: min(420px, calc(100vw - 32px));
+  height: min(640px, calc(100vh - 48px));
+  transform-origin: bottom right;
+  animation: tati-flutuante-abrir 0.18s ease-out;
+}
+
+@keyframes tati-flutuante-abrir {
+  from { opacity: 0; transform: scale(0.6); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.tati-flutuante__topo { display: flex; align-items: center; gap: 10px; }
+.tati-flutuante__topo .ia-tati-avatar { width: 40px; height: 40px; box-shadow: none; }
+.tati-flutuante__titulo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.tati-flutuante__titulo strong { color: #fff; font-size: 15px; }
+.tati-flutuante__titulo small { overflow: hidden; color: #ffd23f; font-size: 11.5px; text-overflow: ellipsis; white-space: nowrap; }
+.tati-flutuante__painel .ia-ask__recolher:disabled { opacity: 0.45; cursor: default; }
+.tati-flutuante__painel .sp-card.ia-grafico-tati { color: #1b1f3b; }
+
+@media (max-width: 640px) {
+  .tati-flutuante__painel { right: 0; bottom: 0; width: 100vw; height: 100dvh; border-radius: 0; }
+  .tati-flutuante__icone { right: 16px; bottom: 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tati-flutuante__painel { animation: none; }
+  .tati-flutuante__icone { transition: none; }
+}
+
+/* Os relatórios em PDF saem sem a Tati. */
+@media print {
+  .tati-flutuante { display: none !important; }
+}

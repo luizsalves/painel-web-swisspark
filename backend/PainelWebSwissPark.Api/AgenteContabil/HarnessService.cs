@@ -107,7 +107,46 @@ public class HarnessService(
     }
 
     /// <summary>A mesma conversa, com todos os filtros da tela (período, filial, conta e status) no contexto.</summary>
-    public Task<string> ExecutarComFiltrosAsync(PerguntarCfoTatiComFiltrosRequest pedido, CancellationToken cancellationToken)
+    public Task<string> ExecutarComFiltrosAsync(PerguntarCfoTatiComFiltrosRequest pedido, CancellationToken cancellationToken) =>
+        ResponderAsync(pedido.Pergunta, ContextoDosFiltros(pedido), pedido.Historico, cancellationToken);
+
+    /// <summary>
+    /// A conversa do ícone da Tati nas outras telas: os filtros da tela e, no fim do contexto, a
+    /// tela (e a aba) aberta, para ela saber de que assunto é uma pergunta que não diz o assunto.
+    /// </summary>
+    public Task<string> ExecutarNaTelaAsync(PerguntarCfoTatiNaTelaRequest pedido, CancellationToken cancellationToken)
+    {
+        var contexto = ContextoDosFiltros(pedido);
+        var tela = DescreverTela(pedido.Tela, pedido.Aba);
+        logger.LogInformation("CFO Tati: pergunta feita pelo ícone, na tela {Tela}", tela ?? "(não informada)");
+        if (tela is not null) contexto += $" Tela aberta: {tela}.";
+
+        return ResponderAsync(pedido.Pergunta, contexto, pedido.Historico, cancellationToken);
+    }
+
+    /// <summary>
+    /// "Balancete, aba Balanço"; null sem tela. Os nomes vêm do navegador e vão para o modelo:
+    /// numa linha só e curtos.
+    /// </summary>
+    public static string? DescreverTela(string? tela, string? aba)
+    {
+        var nomeDaTela = Limpo(tela);
+        if (nomeDaTela is null) return null;
+        var nomeDaAba = Limpo(aba);
+        return nomeDaAba is null ? nomeDaTela : $"{nomeDaTela}, aba {nomeDaAba}";
+
+        static string? Limpo(string? nome)
+        {
+            if (string.IsNullOrWhiteSpace(nome)) return null;
+            var umaLinha = string.Join(' ', nome.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+            return umaLinha.Length <= MaxCaracteresDoNomeDaTela ? umaLinha : umaLinha[..MaxCaracteresDoNomeDaTela];
+        }
+    }
+
+    private const int MaxCaracteresDoNomeDaTela = 60;
+
+    // O contexto da pergunta com os filtros da tela; a pergunta vai para o log com eles.
+    private string ContextoDosFiltros(PerguntarCfoTatiComFiltrosRequest pedido)
     {
         var anoMesInicial = string.IsNullOrWhiteSpace(pedido.AnoMesInicial) ? pedido.AnoMes : pedido.AnoMesInicial;
         logger.LogInformation(
@@ -133,12 +172,10 @@ public class HarnessService(
         var conta = string.IsNullOrWhiteSpace(pedido.CodConta) ? "todas" : pedido.CodConta;
         var status = string.IsNullOrWhiteSpace(pedido.Status) ? "todos" : pedido.Status;
 
-        var contexto =
+        return
             $"Contexto atual da tela: {periodo}, empresa: {empresa}, filial: {filial}, conta: {conta}, " +
             $"status do fechamento: {status}. " +
             "Use esses valores ao chamar as ferramentas, a menos que o usuário peça outro período/empresa/conta.";
-
-        return ResponderAsync(pedido.Pergunta, contexto, pedido.Historico, cancellationToken);
     }
 
     private async Task<string> ResponderAsync(

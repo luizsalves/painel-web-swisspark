@@ -27,6 +27,20 @@ public class LimpezaRespostaTatiTests
     }
 
     [Fact]
+    public void Tags_com_o_prefixo_DSML_saem_e_as_opcoes_continuam_legiveis()
+    {
+        var texto = "A DFC fechou.\n\n```opcoes\n[\"Ver o balanço\", \"Ver a DFC\"]</｜｜DSML｜｜ parameter>\n</｜｜DSML｜｜ invoke>\n</｜｜DSML｜｜ calls>";
+
+        Assert.Equal("A DFC fechou.\n\n```opcoes\n[\"Ver o balanço\", \"Ver a DFC\"]", LimpezaRespostaTati.Limpar(texto));
+    }
+
+    [Fact]
+    public void Tokens_com_barra_comum_saem()
+    {
+        Assert.Equal("A DFC fechou.", LimpezaRespostaTati.Limpar("A DFC fechou.<|tool_calls_end|>"));
+    }
+
+    [Fact]
     public void Texto_sem_marcacao_passa_sem_alteracao()
     {
         var texto = $"  Liquidez de 1,20 (era 1,03): 1 < 2 e 3 > 2; título \"Liquidez — <empresa>\".\n\n{Opcoes}\n";

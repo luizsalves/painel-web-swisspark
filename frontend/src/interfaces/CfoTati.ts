@@ -19,3 +19,9 @@ export interface PerguntarCfoTatiPayload {
   status?: string;
   historico: Array<{ autor: "usuario" | "tati"; texto: string }>;
 }
+
+/** A pergunta pelo ícone da Tati nas outras telas: os filtros da tela e a tela (e a aba) aberta. */
+export interface PerguntarCfoTatiNaTelaPayload extends PerguntarCfoTatiPayload {
+  tela: string;
+  aba?: string;
+}
