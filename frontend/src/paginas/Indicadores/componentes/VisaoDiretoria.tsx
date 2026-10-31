@@ -1,3 +1,5 @@
+import BotaoAnalisarTati from "../../../componentes/tati/BotaoAnalisarTati";
+import { perguntasAnalisar } from "../../../componentes/tati/perguntasAnalisar";
 import type { Detalhe } from "../ancoras";
 import { ultimoDiaDoMes, vesperaDoMes } from "../../../utils/formatacaoContabil";
 import {
@@ -53,7 +55,7 @@ export default function VisaoDiretoria({ dados, inicio, fim, onVerDetalhe }: Vis
       <div className="sp-ind-grade">
         <section className="sp-ind-card sp-ind-bloco" aria-label="Da receita ao lucro">
           <div className="sp-ind-bloco__cabecalho">
-            <h2>Da receita ao lucro</h2>
+            <h2>Da receita ao lucro<BotaoAnalisarTati assunto="o resultado" pergunta={perguntasAnalisar.resultado()} /></h2>
             <span>{extenso} · R$ mil</span>
           </div>
           <CascataResultado degraus={montarCascata(base)} />
@@ -62,7 +64,7 @@ export default function VisaoDiretoria({ dados, inicio, fim, onVerDetalhe }: Vis
 
         <section className="sp-ind-card sp-ind-bloco" aria-label="De onde veio o caixa">
           <div className="sp-ind-bloco__cabecalho">
-            <h2>De onde veio o caixa</h2>
+            <h2>De onde veio o caixa<BotaoAnalisarTati assunto="o caixa" pergunta={perguntasAnalisar.caixa()} /></h2>
             <span>{extenso}</span>
           </div>
           <div className="sp-ind-caixa__saldo">

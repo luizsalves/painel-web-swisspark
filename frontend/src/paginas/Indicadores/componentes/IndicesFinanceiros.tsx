@@ -1,4 +1,6 @@
 import { useMemo } from "react";
+import BotaoAnalisarTati from "../../../componentes/tati/BotaoAnalisarTati";
+import { perguntasAnalisar } from "../../../componentes/tati/perguntasAnalisar";
 import DemonstracaoFluxoCaixa from "../../../componentes/dfc/DemonstracaoFluxoCaixa";
 import type { BaseCalculoIndicadores, FormatoIndice, Indicadores as ResultadoIndicadores } from "../../../interfaces/Indicadores";
 import { classeNumero, formatarValor, mesAno, numeroContabil, ultimoDiaDoMes } from "../../../utils/formatacaoContabil";
@@ -74,7 +76,7 @@ export default function IndicesFinanceiros({ resultado, empresaNome, codColigada
             <div className="sp-indicators__cards">
               {indices.map((indice) => (
                 <article key={indice.codigo} className="sp-indicators__card">
-                  <span className="sp-indicators__card-name">{indice.nome}</span>
+                  <span className="sp-indicators__card-name">{indice.nome}<BotaoAnalisarTati assunto={indice.nome} pergunta={perguntasAnalisar.indicador(indice.nome)} /></span>
                   <strong className={indice.valor !== null && indice.valor < 0 ? "sp-indicators__card-value sp-indicators__number--negative" : "sp-indicators__card-value"}
                     title={indice.valor === null ? "Sem valor: o denominador da fórmula é zero." : undefined}>
                     {formatarIndice(indice.valor, indice.formato)}

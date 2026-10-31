@@ -1,3 +1,5 @@
+import BotaoAnalisarTati from "../../../componentes/tati/BotaoAnalisarTati";
+import { perguntasAnalisar } from "../../../componentes/tati/perguntasAnalisar";
 import { INDICADORES } from "../config";
 import type { HistoricoIndicadores } from "../historico";
 import { rotuloMes } from "../periodo";
@@ -19,7 +21,7 @@ export default function MatrizMeses({ meses, mensagem }: MatrizMesesProps) {
   return (
     <section className="sp-ind-card sp-ind-matriz" aria-label="Matriz dos últimos 12 meses">
       <header className="sp-ind-matriz__topo">
-        <h2>Matriz dos últimos 12 meses</h2>
+        <h2>Matriz dos últimos 12 meses<BotaoAnalisarTati assunto="os últimos 12 meses" pergunta={perguntasAnalisar.evolucao()} /></h2>
         <span>Cada célula na cor do status daquele mês</span>
       </header>
 

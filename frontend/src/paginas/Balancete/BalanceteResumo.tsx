@@ -1,3 +1,5 @@
+import BotaoAnalisarTati from "../../componentes/tati/BotaoAnalisarTati";
+import { perguntasAnalisar } from "../../componentes/tati/perguntasAnalisar";
 import { coligadaDaEmpresa } from "../../utils/empresaContabil";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -111,7 +113,7 @@ export default function BalanceteResumo() {
       <section className="sp-balance__report" aria-label="Resultado do balancete">
         <div className="sp-balance__report-head">
           <div>
-            <h2>Balancete de {periodoPorExtenso(parametros.anoMes)}</h2>
+            <h2>Balancete de {periodoPorExtenso(parametros.anoMes)}<BotaoAnalisarTati assunto="o balancete" pergunta={perguntasAnalisar.balancete()} /></h2>
             <p>
               {carregado
                 ? `${linhas.length} contas e grupos encontrados · ${linhasVisiveis.length} visíveis`

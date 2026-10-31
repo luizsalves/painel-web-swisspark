@@ -54,12 +54,33 @@
   .tati-flutuante__icone { right: 16px; bottom: 16px; }
 }
 
+/* O botão "Analisar": o rostinho da Tati, pequeno, ao lado do título de cada card. */
+.tati-analisar {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  margin-left: 6px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: linear-gradient(160deg, #1740d8 0%, #081c74 100%);
+  vertical-align: middle;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.tati-analisar .ia-tati-avatar { width: 22px; height: 22px; border-width: 1px; box-shadow: none; }
+.tati-analisar:hover { transform: scale(1.15); box-shadow: 0 0 0 3px #ffd23f99; }
+.tati-analisar:focus-visible { outline: 2px solid #ffd23f; outline-offset: 2px; }
+
 @media (prefers-reduced-motion: reduce) {
   .tati-flutuante__painel { animation: none; }
-  .tati-flutuante__icone { transition: none; }
+  .tati-flutuante__icone, .tati-analisar { transition: none; }
 }
 
 /* Os relatórios em PDF saem sem a Tati. */
 @media print {
-  .tati-flutuante { display: none !important; }
+  .tati-flutuante, .tati-analisar { display: none !important; }
 }

@@ -1,5 +1,7 @@
 import { Fragment, useState } from "react";
 import { AlertTriangle, ChevronsDownUp, ChevronsUpDown } from "lucide-react";
+import BotaoAnalisarTati from "../tati/BotaoAnalisarTati";
+import { perguntasAnalisar } from "../tati/perguntasAnalisar";
 import type { Balanco, BalancoLinha } from "../../interfaces/Balanco";
 import { classeNumero, formatarValor, numeroContabil, ultimoDiaDoMes, ultimoDiaPorExtenso } from "../../utils/formatacaoContabil";
 
@@ -37,7 +39,7 @@ export default function DemonstrativoBalanco({ balanco, empresaNome, codColigada
     <section className="sp-indicators__section" aria-label="Balanço patrimonial">
       <div className="sp-indicators__section-head sp-indicators__section-head--actions">
         <div>
-          <h2>Balanço Patrimonial — {ultimoDiaPorExtenso(mes)}</h2>
+          <h2>Balanço Patrimonial — {ultimoDiaPorExtenso(mes)}<BotaoAnalisarTati assunto="o balanço" pergunta={perguntasAnalisar.balanco()} /></h2>
           <p>{empresaNome} · Coligada {codColigada} · Em R$ · clique em + para ver as contas de cada linha.</p>
         </div>
         <button type="button" className="sp-indicators__toggle-all" disabled={chavesComContas.length === 0}
@@ -73,7 +75,7 @@ function LadoBalanco({ nome, titulo, linhas, mes, abertas, onAlternar }: LadoBal
   return (
     <div className="sp-balance__table-wrap">
       <table className="sp-indicators__table sp-balanco__tabela">
-        <thead><tr><th>{titulo}</th><th className="sp-indicators__number">{ultimoDiaDoMes(mes)}</th></tr></thead>
+        <thead><tr><th>{titulo}<BotaoAnalisarTati assunto={`o ${nome}`} pergunta={perguntasAnalisar.ladoDoBalanco(nome)} /></th><th className="sp-indicators__number">{ultimoDiaDoMes(mes)}</th></tr></thead>
         <tbody>
           {linhas.map((linha, indice) => {
             const chave = `${nome}:${indice}`;

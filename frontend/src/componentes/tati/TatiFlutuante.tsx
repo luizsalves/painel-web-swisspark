@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import { ArrowUp, Minus, SquarePen } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useFiltros } from "../../contexts/FiltrosContext";
+import { useTati } from "../../contexts/TatiContext";
 import { useEmpresasConsolidadas } from "../../hooks/useEmpresasConsolidadas";
 import LoadingSpinner from "../ui/LoadingSpinner";
 import { extrairMensagemDeErro } from "../../services/api";
@@ -35,8 +36,9 @@ function renderizarTexto(texto: string) {
 /**
  * A Tati nas outras telas: fechada, é o rostinho dela no canto; clicou, abre a conversa por cima
  * da tela. Fica fora das rotas, então a conversa continua quando o usuário troca de tela. Cada
- * pergunta vai com a tela (e a aba) aberta e os filtros que ela usa. Só para o superadmin, como
- * a tela da Tati; outro usuário que entra começa uma conversa nova.
+ * pergunta vai com a tela (e a aba) aberta e os filtros que ela usa; os botões "Analisar" dos
+ * cards mandam a pergunta pronta por aqui (TatiContext). Só para o superadmin, como a tela da
+ * Tati; outro usuário que entra começa uma conversa nova.
  */
 export default function TatiFlutuante() {
   const { user } = useAuth();
@@ -45,6 +47,7 @@ export default function TatiFlutuante() {
 
 function ConversaFlutuante() {
   const { filtros } = useFiltros();
+  const { pedido, atender } = useTati();
   const { pathname, search } = useLocation();
   const consolidaFiliais = useEmpresasConsolidadas();
   const consolidada = Boolean(consolidaFiliais(filtros.empresa));
@@ -74,16 +77,13 @@ function ConversaFlutuante() {
     if (aberta) campoRef.current?.focus();
   }, [aberta]);
 
-  // Na tela da Tati, no login e na troca de senha o ícone some, mas a conversa fica guardada.
-  if (!tela) return null;
-
   const ultimaMensagem = mensagens[mensagens.length - 1];
   const opcoesAtuais = ultimaMensagem?.autor === "tati" ? lerRespostaTati(ultimaMensagem.texto).opcoes : [];
-  const contexto = descreverContexto(tela, filtros, consolidada);
+  const contexto = tela ? descreverContexto(tela, filtros, consolidada) : "";
 
   const enviarPergunta = async (texto: string) => {
     let perguntaLimpa = texto.trim();
-    if (!perguntaLimpa || isEnviando) return;
+    if (!perguntaLimpa || isEnviando || !tela) return;
 
     // Digitar só o número escolhe a opção correspondente da última resposta.
     const numero = /^\d+$/.test(perguntaLimpa) ? Number(perguntaLimpa) : 0;
@@ -105,6 +105,18 @@ function ConversaFlutuante() {
       setIsEnviando(false);
     }
   };
+
+  // Um botão "Analisar" de um card pediu uma análise: abre a conversa e manda a pergunta pronta,
+  // depois da resposta em andamento, se houver uma.
+  useEffect(() => {
+    if (!pedido || isEnviando || !tela) return;
+    atender(pedido.id);
+    setAberta(true);
+    void enviarPergunta(pedido.pergunta);
+  }, [pedido, isEnviando, tela, atender, enviarPergunta]);
+
+  // Na tela da Tati, no login e na troca de senha o ícone some, mas a conversa fica guardada.
+  if (!tela) return null;
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();

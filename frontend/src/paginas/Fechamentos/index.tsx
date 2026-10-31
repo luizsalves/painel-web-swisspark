@@ -1,3 +1,5 @@
+import BotaoAnalisarTati from "../../componentes/tati/BotaoAnalisarTati";
+import { perguntasAnalisar } from "../../componentes/tati/perguntasAnalisar";
 import { FILIAL_CONSOLIDADA, coligadaDaEmpresa } from "../../utils/empresaContabil";
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -827,7 +829,7 @@ export default function Fechamentos() {
           </section>
 
           <aside className="sp-closing__actions" aria-label="Ações do fechamento">
-            <h2>Ações</h2>
+            <h2>Ações<BotaoAnalisarTati assunto="o fechamento desta conta" pergunta={perguntasAnalisar.fechamentoDaConta()} /></h2>
 
             {erroValidacao && (
               <span className="sp-closing__feedback sp-closing__feedback--error" role="alert">

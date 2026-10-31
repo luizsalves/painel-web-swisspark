@@ -1,4 +1,6 @@
 import { Info } from "lucide-react";
+import BotaoAnalisarTati from "../../../componentes/tati/BotaoAnalisarTati";
+import { perguntasAnalisar } from "../../../componentes/tati/perguntasAnalisar";
 import { idDoDetalhe } from "../ancoras";
 import { GRUPOS } from "../config";
 import type { HistoricoIndicadores } from "../historico";
@@ -80,6 +82,7 @@ export default function TabelaIndicadores({ indicadores, rotulos, historico, per
                           title={`${linha.config.formula}\n${linha.config.explicacao}`}>
                           <Info size={16} aria-hidden="true" />
                         </span>
+                        <BotaoAnalisarTati assunto={linha.config.nome} pergunta={perguntasAnalisar.indicador(linha.config.nome)} />
                       </div>
                       {linha.nota && <small>{linha.nota}</small>}
                     </div>
